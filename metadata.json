@@ -1,0 +1,7 @@
+{
+  "name": "Aura",
+  "description": "An application for long-distance couples to feel connected by sharing their real-time local weather and time, creating a shared digital atmosphere.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
