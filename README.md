@@ -33,7 +33,7 @@ Our mission is to transform the two most fundamental environmental factors, **ti
 
 *   **Frontend:** React, TypeScript, Tailwind CSS
 *   **APIs:**
-    *   **Google Gemini API:** For natural language-based geolocation lookup (city name to coordinates and vice-versa).
+    *   **OpenStreetMap Nominatim API:** For free geolocation lookup (city name to coordinates and vice-versa). No API key required.
     *   **Open-Meteo API:** For comprehensive and free weather data.
 
 ---
@@ -46,7 +46,6 @@ Follow these instructions to set up and run Aura on your local machine for devel
 
 *   [Node.js](https://nodejs.org/) (v18 or later recommended)
 *   A package manager like `npm` or `yarn`
-*   A Google Gemini API Key
 
 ### Installation & Setup
 
@@ -57,55 +56,42 @@ Follow these instructions to set up and run Aura on your local machine for devel
     ```
 
 2.  **Install dependencies:**
-    This project is configured to use dependencies from a CDN via an import map in `index.html`, so no `npm install` is required for the core libraries (React, @google/genai). If you add other dependencies, you'll need to manage them accordingly.
-
-3.  **Set up your Environment Variables:**
-    Aura requires a Google Gemini API key to function. This key must be available as an environment variable. When running in a development environment that supports it (like the one this project is designed for), the `process.env.API_KEY` will be automatically populated.
-
-    If you are setting this up in a different environment, you would typically create a `.env` file in the root of your project:
-    ```
-    API_KEY=YOUR_GEMINI_API_KEY
-    ```
-    **Important:** Never commit your `.env` file or expose your API key in public code.
-
-4.  **Run the application:**
-    You can serve the `index.html` file using any simple local web server. A popular choice is `live-server`:
     ```bash
-    # Install live-server if you don't have it
-    npm install -g live-server
-
-    # Run the server from the project root
-    live-server
+    npm install
     ```
-    Your application will now be running at `http://127.0.0.1:8080`.
+
+3.  **Run the application:**
+    ```bash
+    npm run dev
+    ```
+    Your application will now be running at `http://localhost:3000`.
 
 ## 🌐 API Integration Deep Dive
 
-### 1. Google Gemini API
+### 1. OpenStreetMap Nominatim API
 
-The Gemini API is the "magic" behind Aura's intuitive location setup. Instead of forcing users to find exact coordinates, we use a powerful language model to do the work.
+The Nominatim API provides free geolocation services without requiring an API key, making it perfect for Aura's location setup.
 
 *   **How it's used:**
-    *   `getCoordinatesForCity`: Takes a user-input city name (e.g., "paris", "NYC") and asks Gemini to return the precise latitude, longitude, and the official, corrected city name in a structured JSON format. This handles typos and variations gracefully.
-    *   `getCityForCoordinates`: Used for the "Use My Location" feature. After the browser provides coordinates, we ask Gemini to return the name of the city at that location.
+    *   `getCoordinatesForCity`: Takes a user-input city name (e.g., "paris", "NYC") and queries Nominatim to return the precise latitude, longitude, and the official city name. This handles various city name formats gracefully.
+    *   `getCityForCoordinates`: Used for the "Use My Location" feature. After the browser provides coordinates, we use Nominatim's reverse geocoding to return the name of the city at that location.
 *   **API Features Utilized:**
-    *   `ai.models.generateContent`: The core function for making requests.
-    *   **JSON Mode (`responseSchema`)**: We enforce a strict JSON output schema. This is crucial for reliability, ensuring we always get data back in a predictable format (`{ latitude, longitude, cityName }`) that our application can parse without errors.
-*   **API Features NOT Utilized (Potential for future expansion):**
-    *   **Chat (`ai.chats.create`)**: Could be used to build a "relationship journal" feature where couples can add notes about their day.
-    *   **Grounding (`tools: [{googleSearch: {}}]`)**: Could provide interesting facts or news about the partner's city.
-    *   **Image Generation**: Could generate an artistic, AI-powered representation of the "blended atmosphere."
+    *   **Search API**: Converts city names to coordinates with address details
+    *   **Reverse Geocoding**: Converts coordinates to city names
+    *   **Rate Limiting**: Automatic 1-second delay between requests to respect Nominatim's usage policy
 *   **⚠️ Important Considerations:**
-    *   **API Key:** You **must** have a valid Gemini API key. You can get one from [Google AI Studio](https://aistudio.google.com/app/apikey).
-    *   **Quotas & Billing:** Be mindful of the API usage limits on the free tier. For a production app, you would need to set up billing.
-    *   **Accuracy:** While highly accurate, LLMs can occasionally misinterpret ambiguous city names. The app includes a confirmation step ("Did you mean...?") to mitigate this.
+    *   **No API Key Required:** Completely free to use, no registration needed
+    *   **Rate Limit:** 1 request per second (automatically handled by the service)
+    *   **User-Agent Required:** Must include a User-Agent header (already configured as "Aura-App/1.0")
+    *   **Attribution:** Please include attribution to OpenStreetMap in your app's "About" section as per their terms of service
+    *   **Accuracy:** Very reliable for major cities and locations. The app includes a confirmation step ("Did you mean...?") to handle ambiguous names.
 
 ### 2. Open-Meteo API
 
 Open-Meteo is a fantastic open-source weather forecast API. It's fast, reliable, and doesn't require an API key for its free-to-use models, making it perfect for projects like Aura.
 
 *   **How it's used:**
-    *   We make a single API call per location to fetch all the necessary data. The coordinates obtained from the Gemini API are passed directly to Open-Meteo.
+    *   We make a single API call per location to fetch all the necessary data. The coordinates obtained from the Nominatim API are passed directly to Open-Meteo.
 *   **API Features Utilized:**
     *   `current`: `temperature_2m`, `is_day`, `weather_code` (a numerical code we map to icons and descriptions).
     *   `daily`: `sunrise`, `sunset` times for the celestial tracking feature.
@@ -121,13 +107,18 @@ Open-Meteo is a fantastic open-source weather forecast API. It's fast, reliable,
 
 This is a static React application. You can deploy it to any static site hosting service.
 
-1.  **Build the application:** For a standard React setup, you would run `npm run build`. This creates a `build` or `dist` directory with optimized, static files.
-2.  **Deploy:** Drag and drop the build folder into services like:
+1.  **Build the application:**
+    ```bash
+    npm run build
+    ```
+    This creates a `dist` directory with optimized, static files.
+
+2.  **Deploy:** Upload the build folder to services like:
     *   [Vercel](https://vercel.com/)
     *   [Netlify](https://www.netlify.com/)
     *   [GitHub Pages](https://pages.github.com/)
 
-**Remember to configure your environment variables (especially `API_KEY`) in your hosting provider's settings.**
+**No environment variables needed!** This app uses free, public APIs only.
 
 ## 🤝 Contributing
 
