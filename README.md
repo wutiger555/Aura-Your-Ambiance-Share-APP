@@ -91,7 +91,7 @@ The Nominatim API provides free geolocation services without requiring an API ke
 Open-Meteo is a fantastic open-source weather forecast API. It's fast, reliable, and doesn't require an API key for its free-to-use models, making it perfect for projects like Aura.
 
 *   **How it's used:**
-    *   We make a single API call per location to fetch all the necessary data. The coordinates obtained from the Gemini API are passed directly to Open-Meteo.
+    *   We make a single API call per location to fetch all the necessary data. The coordinates obtained from the Nominatim API are passed directly to Open-Meteo.
 *   **API Features Utilized:**
     *   `current`: `temperature_2m`, `is_day`, `weather_code` (a numerical code we map to icons and descriptions).
     *   `daily`: `sunrise`, `sunset` times for the celestial tracking feature.
