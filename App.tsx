@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { LocationData, WeatherData } from './types';
-import { getCoordinatesForCity, getCityForCoordinates } from './services/geminiService';
+import { getCoordinatesForCity, getCityForCoordinates } from './services/geocodingService';
 import { getWeather } from './services/weatherService';
 import TimeBridge from './components/MapPeek';
 import { Loader2, MapPin, Settings, X, Check, RefreshCw, ArrowRight, ArrowLeft, Globe, Clock as ClockIcon, Moon, Sun, Coffee } from 'lucide-react';
