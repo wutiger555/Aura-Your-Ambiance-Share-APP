@@ -29,12 +29,39 @@ Our mission is to transform the two most fundamental environmental factors, **ti
 *   **Connection Data:** Subtly displays the physical distance and time zone difference, grounding the digital connection in real-world context.
 *   **Elegant & Minimalist UI:** A focus on a beautiful, immersive experience rather than cluttered social features.
 
+## 🏗️ Project Structure
+
+This is a monorepo containing multiple platforms:
+
+```
+Aura-Your-Ambiance-Share-APP/
+├── apps/
+│   ├── web/           # React + Vite web application
+│   └── mobile/        # React Native (Expo) mobile app for iOS/Android
+├── packages/
+│   └── shared/        # Shared business logic, types, and utilities
+└── package.json       # Root workspace configuration
+```
+
 ## 🛠️ Technology Stack
 
-*   **Frontend:** React, TypeScript, Tailwind CSS
-*   **APIs:**
-    *   **OpenStreetMap Nominatim API:** For free geolocation lookup (city name to coordinates and vice-versa). No API key required.
-    *   **Open-Meteo API:** For comprehensive and free weather data.
+### Web App
+*   **Frontend:** React 19, TypeScript, Vite, Tailwind CSS
+*   **Icons:** Lucide React
+
+### Mobile App
+*   **Framework:** React Native with Expo SDK 54
+*   **State Management:** Zustand with AsyncStorage persistence
+*   **UI:** React Native StyleSheet, LinearGradient, Reanimated
+*   **Icons:** Lucide React Native
+
+### Shared Package
+*   **Language:** TypeScript
+*   **Contains:** Business logic, type definitions, API services, utility functions
+
+### APIs (Both Platforms)
+*   **OpenStreetMap Nominatim API:** Free geolocation lookup (city name to coordinates and vice-versa). No API key required.
+*   **Open-Meteo API:** Comprehensive and free weather data.
 
 ---
 
@@ -52,19 +79,28 @@ Follow these instructions to set up and run Aura on your local machine for devel
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/your-username/aura.git
-    cd aura
+    cd Aura-Your-Ambiance-Share-APP
     ```
 
 2.  **Install dependencies:**
     ```bash
     npm install
     ```
+    This installs dependencies for all workspaces (web, mobile, and shared).
 
-3.  **Run the application:**
+3.  **Run the applications:**
+
+    **Web App:**
     ```bash
-    npm run dev
+    npm run web
     ```
-    Your application will now be running at `http://localhost:3000`.
+    Your application will now be running at `http://localhost:5173`.
+
+    **Mobile App:**
+    ```bash
+    npm run mobile
+    ```
+    Then press `i` for iOS simulator, `a` for Android emulator, or scan QR code with Expo Go app.
 
 ## 🌐 API Integration Deep Dive
 
@@ -105,20 +141,36 @@ Open-Meteo is a fantastic open-source weather forecast API. It's fast, reliable,
 
 ## ☁️ Deployment
 
+### Web App
 This is a static React application. You can deploy it to any static site hosting service.
 
 1.  **Build the application:**
     ```bash
-    npm run build
+    npm run build:web
     ```
-    This creates a `dist` directory with optimized, static files.
+    This creates a `dist` directory in `apps/web/` with optimized, static files.
 
 2.  **Deploy:** Upload the build folder to services like:
     *   [Vercel](https://vercel.com/)
     *   [Netlify](https://www.netlify.com/)
     *   [GitHub Pages](https://pages.github.com/)
 
-**No environment variables needed!** This app uses free, public APIs only.
+### Mobile App
+For iOS App Store and Google Play Store deployment:
+
+1.  **iOS:** Requires macOS with Xcode. Use EAS Build:
+    ```bash
+    cd apps/mobile
+    npx eas build --platform ios
+    ```
+
+2.  **Android:**
+    ```bash
+    cd apps/mobile
+    npx eas build --platform android
+    ```
+
+**No environment variables needed!** Both apps use free, public APIs only.
 
 ## 🤝 Contributing
 
