@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,17 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  Settings,
-  RefreshCw,
-  ArrowRight,
-  Globe,
-  MapPin,
-  Sun,
-  Moon,
-  Coffee,
-} from 'lucide-react-native';
-import Clock from './src/components/aura/Clock';
+import { Settings, RefreshCw, ArrowRight } from 'lucide-react-native';
 import { useLocationStore } from './src/stores/useLocationStore';
 import { useWeatherStore } from './src/stores/useWeatherStore';
 import {
@@ -31,10 +21,15 @@ import {
   getWeather,
   calculateDistance,
   calculateTimeDifference,
-  getSemanticTimeOfDay,
-  getWeatherDescription,
 } from '@aura/shared';
-import { getWeatherGradient } from './src/constants/Gradients';
+
+// New Components
+import ConnectionIntro from './src/components/aura/ConnectionIntro';
+import BlendedSky from './src/components/aura/BlendedSky';
+import AuraGlobe from './src/components/aura/AuraGlobe';
+import Heartline from './src/components/aura/Heartline';
+import TimeBridge from './src/components/aura/TimeBridge';
+import { ANIMATION_DURATIONS } from './src/constants/Animations';
 
 type SetupStep = 'intro' | 'inputMy' | 'inputPartner' | 'done';
 
@@ -59,19 +54,23 @@ export default function App() {
 
   const [setupStep, setSetupStep] = useState<SetupStep>('intro');
   const [showSettings, setShowSettings] = useState(false);
+  const [showTimeBridge, setShowTimeBridge] = useState(false);
   const [cityInput, setCityInput] = useState('');
   const [cityError, setCityError] = useState('');
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Update current time every second
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const [showIntro, setShowIntro] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   // Check if setup is complete
   useEffect(() => {
     if (hasSetup && myLocation && partnerLocation) {
+      if (isFirstLoad) {
+        // Show intro animation on first load
+        setShowIntro(true);
+        setTimeout(() => {
+          setShowIntro(false);
+          setIsFirstLoad(false);
+        }, ANIMATION_DURATIONS.CONNECTION_INTRO);
+      }
       setSetupStep('done');
       fetchWeatherData();
     }
@@ -153,19 +152,17 @@ export default function App() {
             setPartnerWeather(null as any);
             setSetupStep('intro');
             setShowSettings(false);
+            setIsFirstLoad(true);
           },
         },
       ]
     );
   };
 
-  // Get time status icon
-  const getTimeIcon = (hour: number) => {
-    if (hour >= 23 || hour < 6) return Moon;
-    if (hour >= 6 && hour < 9) return Coffee;
-    if (hour >= 9 && hour < 18) return Sun;
-    return Moon;
-  };
+  // Show intro animation
+  if (showIntro) {
+    return <ConnectionIntro />;
+  }
 
   // Render Setup Flow
   if (setupStep !== 'done' || !myWeather || !partnerWeather) {
@@ -251,118 +248,68 @@ export default function App() {
   const distance = calculateDistance(myLocation!, partnerLocation!);
   const timeDiff = calculateTimeDifference(myWeather.timezone, partnerWeather.timezone);
 
-  // Get gradients
-  const myGradient = getWeatherGradient(
-    myWeather.current.weather_code,
-    myWeather.current.is_day === 1,
-    distance
-  );
-  const partnerGradient = getWeatherGradient(
-    partnerWeather.current.weather_code,
-    partnerWeather.current.is_day === 1,
-    distance
-  );
-
-  // Get time status
-  const myHour = new Date(myWeather.current.time).getHours();
-  const partnerHour = new Date(partnerWeather.current.time).getHours();
-  const myTimeStatus = getSemanticTimeOfDay(myHour);
-  const partnerTimeStatus = getSemanticTimeOfDay(partnerHour);
-  const MyTimeIcon = getTimeIcon(myHour);
-  const PartnerTimeIcon = getTimeIcon(partnerHour);
-
-  // Render Main App
+  // Render Main App with new components
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* My Location (Top Half) */}
-      <LinearGradient colors={myGradient as any} style={styles.half}>
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.halfContent}>
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => setShowSettings(!showSettings)}>
-                <Settings size={24} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={fetchWeatherData} disabled={isLoading}>
-                <RefreshCw size={24} color="white" />
-              </TouchableOpacity>
-            </View>
+      {/* Blended Sky Background with Celestial Bodies and Particles */}
+      <BlendedSky
+        myWeather={myWeather}
+        partnerWeather={partnerWeather}
+        distance={distance}
+      />
 
-            {/* Location Info */}
-            <View style={styles.locationInfo}>
-              <View style={styles.locationHeader}>
-                <MapPin size={16} color="white" />
-                <Text style={styles.locationName}>{myLocation!.name}</Text>
-              </View>
-              <Text style={styles.temperature}>
-                {Math.round(myWeather.current.temperature_2m)}°C
-              </Text>
-              <Text style={styles.weatherDesc}>
-                {getWeatherDescription(myWeather.current.weather_code)}
-              </Text>
-              <View style={styles.timeStatus}>
-                <MyTimeIcon size={16} color="white" />
-                <Text style={styles.timeStatusText}>{myTimeStatus}</Text>
-              </View>
-            </View>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+      {/* AuraGlobe for Partner (Top) */}
+      <AuraGlobe
+        location={partnerLocation}
+        weather={partnerWeather}
+        position="top"
+        distance={distance}
+      />
 
-      {/* Divider with Clock and Stats */}
-      <View style={styles.divider}>
-        <Clock />
-        <View style={styles.stats}>
-          <View style={styles.statItem}>
-            <Globe size={16} color="white" />
-            <Text style={styles.statText}>{Math.round(distance)} km apart</Text>
-          </View>
-          {timeDiff !== 0 && (
-            <View style={styles.statItem}>
-              <Sun size={16} color="white" />
-              <Text style={styles.statText}>
-                {Math.abs(timeDiff)}h {timeDiff > 0 ? 'ahead' : 'behind'}
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
+      {/* AuraGlobe for Me (Bottom) */}
+      <AuraGlobe
+        location={myLocation}
+        weather={myWeather}
+        position="bottom"
+        distance={distance}
+      />
 
-      {/* Partner Location (Bottom Half) */}
-      <LinearGradient colors={partnerGradient as any} style={styles.half}>
-        <View style={styles.halfContent}>
-          {/* Location Info (Rotated) */}
-          <View style={[styles.locationInfo, styles.rotated]}>
-            <View style={styles.timeStatus}>
-              <Text style={styles.timeStatusText}>{partnerTimeStatus}</Text>
-              <PartnerTimeIcon size={16} color="white" />
-            </View>
-            <Text style={styles.weatherDesc}>
-              {getWeatherDescription(partnerWeather.current.weather_code)}
-            </Text>
-            <Text style={styles.temperature}>
-              {Math.round(partnerWeather.current.temperature_2m)}°C
-            </Text>
-            <View style={styles.locationHeader}>
-              <Text style={styles.locationName}>{partnerLocation!.name}</Text>
-              <MapPin size={16} color="white" />
-            </View>
-          </View>
-        </View>
-      </LinearGradient>
+      {/* Heartline (Connection curve with stats) */}
+      <Heartline
+        distance={distance}
+        timeDifference={timeDiff}
+        onShowDetails={() => setShowTimeBridge(true)}
+      />
+
+      {/* Settings Button */}
+      <SafeAreaView style={styles.settingsButtonContainer}>
+        <TouchableOpacity
+          onPress={() => setShowSettings(!showSettings)}
+          style={styles.settingsButton}
+        >
+          <Settings size={24} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={fetchWeatherData}
+          disabled={isLoading}
+          style={styles.settingsButton}
+        >
+          <RefreshCw size={24} color="white" />
+        </TouchableOpacity>
+      </SafeAreaView>
 
       {/* Settings Modal */}
       {showSettings && (
         <View style={styles.settingsOverlay}>
           <View style={styles.settingsCard}>
             <Text style={styles.settingsTitle}>Settings</Text>
-            <TouchableOpacity style={styles.settingsButton} onPress={handleReset}>
+            <TouchableOpacity style={styles.settingsButton2} onPress={handleReset}>
               <Text style={styles.settingsButtonText}>Reset Locations</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.settingsButton, styles.cancelButton]}
+              style={[styles.settingsButton2, styles.cancelButton]}
               onPress={() => setShowSettings(false)}
             >
               <Text style={styles.settingsButtonText}>Cancel</Text>
@@ -370,6 +317,18 @@ export default function App() {
           </View>
         </View>
       )}
+
+      {/* TimeBridge Modal */}
+      <TimeBridge
+        visible={showTimeBridge}
+        onClose={() => setShowTimeBridge(false)}
+        myLocation={myLocation}
+        partnerLocation={partnerLocation}
+        myWeather={myWeather}
+        partnerWeather={partnerWeather}
+        distance={distance}
+        timeDifference={timeDiff}
+      />
     </View>
   );
 }
@@ -468,77 +427,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 16,
   },
-  half: {
-    flex: 1,
-  },
-  halfContent: {
-    flex: 1,
-    padding: 20,
-  },
-  header: {
+  settingsButtonContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    zIndex: 100,
   },
-  locationInfo: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  locationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  locationName: {
-    fontSize: 18,
-    color: 'white',
-    fontWeight: '600',
-  },
-  temperature: {
-    fontSize: 64,
-    fontWeight: '200',
-    color: 'white',
-    marginVertical: 8,
-  },
-  weatherDesc: {
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 8,
-  },
-  timeStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  timeStatusText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  rotated: {
-    transform: [{ rotate: '180deg' }],
-  },
-  divider: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stats: {
-    flexDirection: 'row',
-    gap: 24,
-    marginTop: 12,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  statText: {
-    color: 'white',
-    fontSize: 14,
+  settingsButton: {
+    padding: 12,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   settingsOverlay: {
     position: 'absolute',
@@ -564,7 +467,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  settingsButton: {
+  settingsButton2: {
     backgroundColor: '#06b6d4',
     padding: 16,
     borderRadius: 12,
