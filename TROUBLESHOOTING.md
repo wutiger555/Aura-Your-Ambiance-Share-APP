@@ -328,6 +328,61 @@ React Native Reanimated is not properly initialized at app startup.
 
 ---
 
+### 11. Time Difference Shows "NaNh"
+
+**Symptoms:**
+- Heartline displays "NaNh" instead of actual time difference
+- Time difference calculation fails
+
+**Cause:**
+The original implementation used `Date.toLocaleString()` which behaves inconsistently in React Native, returning invalid date objects that produce NaN when calculating time differences.
+
+**Solution:**
+
+This was fixed in the codebase by refactoring `calculateTimeDifference()` in `/packages/shared/utils/index.ts` to use `Intl.DateTimeFormat.formatToParts()` instead:
+
+```typescript
+// ❌ Old unreliable approach
+const date = new Date(now.toLocaleString('en-US', { timeZone }));
+
+// ✅ New reliable approach using formatToParts
+const formatter = new Intl.DateTimeFormat('en-US', {
+  timeZone,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+});
+const parts = formatter.formatToParts(now);
+```
+
+**If you still see this issue:**
+
+1. **Clear cache and restart:**
+   ```bash
+   cd apps/mobile
+   rm -rf node_modules/.cache .expo
+   npm start -- --clear
+   ```
+
+2. **Verify shared package is updated:**
+   ```bash
+   cd packages/shared
+   # Check that utils/index.ts has the updated implementation
+   ```
+
+3. **Reinstall dependencies:**
+   ```bash
+   npm install
+   ```
+
+**Status:** ✅ Fixed in v2.0.0 - Now uses cross-platform compatible Intl API
+
+---
+
 ## Web App Issues
 
 ### 1. Vite Dev Server Issues

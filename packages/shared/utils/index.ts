@@ -24,28 +24,59 @@ function deg2rad(deg: number): number {
 
 /**
  * Calculates the time difference in hours between two IANA timezones robustly.
+ * Uses Intl.DateTimeFormat which works reliably in both web and React Native.
  * @param tz1 - The first timezone string (e.g., 'America/New_York').
  * @param tz2 - The second timezone string (e.g., 'Asia/Tokyo').
  * @returns The time difference in hours (tz2 - tz1).
  */
 export function calculateTimeDifference(tz1: string, tz2: string): number {
     try {
-        const now = new Date();
+        // Get UTC offset in minutes for a timezone
+        const getOffset = (timeZone: string): number => {
+            const now = new Date();
 
-        const getOffset = (timeZone: string) => {
-            const date = new Date(now.toLocaleString('en-US', { timeZone }));
-            const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
-            return date.getTime() - utcDate.getTime();
+            // Get the time parts in the specified timezone
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+            });
+
+            const parts = formatter.formatToParts(now);
+            const getValue = (type: string) => {
+                const part = parts.find(p => p.type === type);
+                return part ? parseInt(part.value, 10) : 0;
+            };
+
+            // Reconstruct the date in the target timezone
+            const tzDate = new Date(
+                getValue('year'),
+                getValue('month') - 1, // months are 0-indexed
+                getValue('day'),
+                getValue('hour'),
+                getValue('minute'),
+                getValue('second')
+            );
+
+            // Calculate the offset in minutes
+            const offset = (tzDate.getTime() - now.getTime()) / (1000 * 60);
+            return offset;
         };
 
         const offset1 = getOffset(tz1);
         const offset2 = getOffset(tz2);
 
-        const diffHours = (offset2 - offset1) / (1000 * 60 * 60);
+        // Convert minutes to hours
+        const diffHours = (offset2 - offset1) / 60;
 
         // Handle cases crossing the international date line by normalizing
-        if (diffHours > 12) return diffHours - 24;
-        if (diffHours < -12) return diffHours + 24;
+        if (diffHours > 12) return Math.round(diffHours - 24);
+        if (diffHours < -12) return Math.round(diffHours + 24);
         return Math.round(diffHours);
 
     } catch (e) {

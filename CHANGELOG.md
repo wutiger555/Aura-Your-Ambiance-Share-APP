@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CRITICAL**: Fixed time difference calculation returning NaN by replacing unreliable `Date.toLocaleString()` with `Intl.DateTimeFormat.formatToParts()` for cross-platform compatibility
 - Fixed React Native Reanimated initialization error by importing at app entry point (`index.ts`)
 - Resolved duplicate dependency conflicts in monorepo by removing root-level native dependencies
 - Fixed React and React Native version mismatches between root and mobile workspace
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Mobile app now matches web app visual design and animations
+- Refactored `calculateTimeDifference()` to use reliable Intl API that works in both web and React Native environments
 - Fixed peer dependency conflict for `react` by relaxing the version constraint in the `shared` package to resolve `npm install` errors
 - Simplified AuraLogo animation to avoid Animated SVG conflicts
 - Created mobile-specific `weatherUtils.ts` for gradient color mapping
