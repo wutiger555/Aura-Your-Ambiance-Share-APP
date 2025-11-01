@@ -1,25 +1,70 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Globe, Clock } from 'lucide-react-native';
+import { WeatherData } from '@aura/shared';
+import { getDSTInfo } from '../../utils/dstUtils';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface HeartlineProps {
   distance: number | null;
   timeDifference: number | null;
+  myWeather: WeatherData | null;
+  partnerWeather: WeatherData | null;
   onShowDetails: () => void;
 }
 
 /**
- * Heartline - SVG connection curve with interactive button
- * Displays distance and time difference between locations
+ * Heartline - SVG connection curve with interactive button and DST warnings
+ * Displays distance, time difference, and upcoming time changes.
  */
 const Heartline: React.FC<HeartlineProps> = ({
   distance,
   timeDifference,
+  myWeather,
+  partnerWeather,
   onShowDetails,
 }) => {
+  const dstStatus = useMemo(() => {
+    if (!myWeather || !partnerWeather || timeDifference === null) return null;
+
+    const myDst = getDSTInfo(myWeather.timezone);
+    const partnerDst = getDSTInfo(partnerWeather.timezone);
+
+    let transitionInfo = null;
+    let locationName = '';
+    let futureDiff = 0;
+
+    if (myDst.transitionInfo) {
+      transitionInfo = myDst.transitionInfo;
+      locationName = 'Your location';
+      const futureMyOffset = transitionInfo.futureOffset / 60;
+      const partnerOffset = partnerWeather.utc_offset_seconds / 3600;
+      futureDiff = Math.abs(futureMyOffset - partnerOffset);
+    } else if (partnerDst.transitionInfo) {
+      transitionInfo = partnerDst.transitionInfo;
+      locationName = `Partner's location`;
+      const myOffset = myWeather.utc_offset_seconds / 3600;
+      const futurePartnerOffset = transitionInfo.futureOffset / 60;
+      futureDiff = Math.abs(myOffset - futurePartnerOffset);
+    }
+
+    // If a transition is coming and it changes the time difference, return a detailed warning.
+    if (transitionInfo && Math.abs(timeDifference - futureDiff) > 0) {
+      return {
+        text: `Heads up: ${locationName} is set ${transitionInfo.warningMessage}. The new difference will be ${futureDiff}h.`,
+        isWarning: true,
+      };
+    }
+
+    // Otherwise, return the standard timezone abbreviations.
+    return {
+      text: `Timezones: ${myDst.timezoneAbbr} / ${partnerDst.timezoneAbbr}`,
+      isWarning: false,
+    };
+  }, [myWeather, partnerWeather, timeDifference]);
+
   return (
     <View style={styles.container} pointerEvents="box-none">
       {/* SVG connection curve */}
@@ -41,34 +86,42 @@ const Heartline: React.FC<HeartlineProps> = ({
       </Svg>
 
       {/* Interactive button in center */}
-      <TouchableOpacity
-        style={styles.button}
-        onPress={onShowDetails}
-        activeOpacity={0.8}
-      >
-        {distance !== null && (
-          <View style={styles.stat}>
-            <Globe size={16} color="white" />
-            <Text style={styles.statText}>
-              {Math.round(distance).toLocaleString()} km
-            </Text>
-          </View>
-        )}
+      <View style={styles.centerContent}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={onShowDetails}
+          activeOpacity={0.8}
+        >
+          {distance !== null && (
+            <View style={styles.stat}>
+              <Globe size={16} color="white" />
+              <Text style={styles.statText}>
+                {Math.round(distance).toLocaleString()} km
+              </Text>
+            </View>
+          )}
 
-        {distance !== null && timeDifference !== null && (
-          <View style={styles.divider} />
-        )}
+          {distance !== null && timeDifference !== null && (
+            <View style={styles.divider} />
+          )}
 
-        {timeDifference !== null && (
-          <View style={styles.stat}>
-            <Clock size={16} color="white" />
-            <Text style={styles.statText}>
-              {timeDifference >= 0 ? '+' : ''}
-              {timeDifference}h
-            </Text>
-          </View>
+          {timeDifference !== null && (
+            <View style={styles.stat}>
+              <Clock size={16} color="white" />
+              <Text style={styles.statText}>
+                {timeDifference >= 0 ? '+' : ''}
+                {timeDifference}h
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {dstStatus && (
+          <Text style={[styles.dstText, dstStatus.isWarning && styles.dstWarning]}>
+            {dstStatus.text}
+          </Text>
         )}
-      </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -84,6 +137,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
+  },
+  centerContent: {
+    alignItems: 'center',
+    gap: 12,
   },
   button: {
     flexDirection: 'row',
@@ -115,6 +172,19 @@ const styles = StyleSheet.create({
     width: 1,
     height: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  dstText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '500',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  dstWarning: {
+    color: '#facc15', // Yellow for warning
   },
 });
 

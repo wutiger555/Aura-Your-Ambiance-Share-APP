@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { X, AlertCircle, Clock, MapPin, Edit2, Save } from 'lucide-react-native';
 import { LocationData, WeatherData } from '@aura/shared';
-import { getDSTInfo, formatDSTStatus } from '../utils/dstUtils';
+import { getDSTInfo, formatUTCOffset } from '../utils/dstUtils';
 
 interface SettingsProps {
   visible: boolean;
@@ -54,7 +54,7 @@ export default function Settings({
   }, [partnerWeather?.timezone]);
 
   // Check if any location has an upcoming DST transition
-  const hasUpcomingTransition = myDSTInfo?.transitionWarning || partnerDSTInfo?.transitionWarning;
+  const hasUpcomingTransition = myDSTInfo?.transitionInfo || partnerDSTInfo?.transitionInfo;
 
   const handleSaveNicknames = () => {
     if (onUpdateNicknames) {
@@ -102,14 +102,14 @@ export default function Settings({
                   <AlertCircle size={20} color="#fb923c" />
                   <View style={styles.warningTextContainer}>
                     <Text style={styles.warningTitle}>Time Change Alert</Text>
-                    {myDSTInfo?.transitionWarning && (
+                    {myDSTInfo?.transitionInfo && (
                       <Text style={styles.warningText}>
-                        Your location: {myDSTInfo.transitionWarning}
+                        Your location: {myDSTInfo.transitionInfo.warningMessage}
                       </Text>
                     )}
-                    {partnerDSTInfo?.transitionWarning && (
+                    {partnerDSTInfo?.transitionInfo && (
                       <Text style={styles.warningText}>
-                        Partner's location: {partnerDSTInfo.transitionWarning}
+                        Partner's location: {partnerDSTInfo.transitionInfo.warningMessage}
                       </Text>
                     )}
                   </View>
@@ -247,15 +247,8 @@ export default function Settings({
                     <Text style={styles.timezoneName}>{myWeather.timezone}</Text>
                     <View style={styles.dstInfo}>
                       <Clock size={14} color="#64748b" />
-                      <Text style={styles.dstText}>{formatDSTStatus(myDSTInfo)}</Text>
+                      <Text style={styles.dstText}>{formatUTCOffset(myDSTInfo)}</Text>
                     </View>
-                    {myDSTInfo.standardOffset !== myDSTInfo.dstOffset && (
-                      <Text style={styles.timezoneDetail}>
-                        {myDSTInfo.isDST
-                          ? `Currently in DST (UTC${formatOffset(myDSTInfo.dstOffset)})`
-                          : `Standard Time (UTC${formatOffset(myDSTInfo.standardOffset)})`}
-                      </Text>
-                    )}
                   </View>
                 )}
 
@@ -265,15 +258,8 @@ export default function Settings({
                     <Text style={styles.timezoneName}>{partnerWeather.timezone}</Text>
                     <View style={styles.dstInfo}>
                       <Clock size={14} color="#64748b" />
-                      <Text style={styles.dstText}>{formatDSTStatus(partnerDSTInfo)}</Text>
+                      <Text style={styles.dstText}>{formatUTCOffset(partnerDSTInfo)}</Text>
                     </View>
-                    {partnerDSTInfo.standardOffset !== partnerDSTInfo.dstOffset && (
-                      <Text style={styles.timezoneDetail}>
-                        {partnerDSTInfo.isDST
-                          ? `Currently in DST (UTC${formatOffset(partnerDSTInfo.dstOffset)})`
-                          : `Standard Time (UTC${formatOffset(partnerDSTInfo.standardOffset)})`}
-                      </Text>
-                    )}
                   </View>
                 )}
               </View>
@@ -296,17 +282,6 @@ export default function Settings({
   );
 }
 
-// Helper function to format UTC offset
-function formatOffset(offsetMinutes: number): string {
-  const hours = Math.floor(Math.abs(offsetMinutes) / 60);
-  const minutes = Math.abs(offsetMinutes) % 60;
-  const sign = offsetMinutes >= 0 ? '+' : '-';
-
-  if (minutes === 0) {
-    return `${sign}${hours}`;
-  }
-  return `${sign}${hours}:${minutes.toString().padStart(2, '0')}`;
-}
 
 const styles = StyleSheet.create({
   keyboardAvoidingView: {

@@ -7,14 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **Settings Modal Scrolling:** Completely refactored the `Settings.tsx` component layout to permanently fix a persistent scrolling bug. Replaced the brittle layout with a canonical, robust structure using `KeyboardAvoidingView` and a `ScrollView` with `flex: 1` inside a container with a bounded height. This ensures scrolling is reliable and consistent, even after content changes or keyboard interactions.
-- **Time Difference Calculation:** Corrected the time difference logic in `packages/shared/utils/index.ts` to be accurate and robust, properly accounting for DST. The previous implementation produced incorrect offsets (e.g., 9 hours instead of 15).
-- **Time Bridge Analog Clocks:** Completely rebuilt the analog clocks in the `TimeBridge` modal using `react-native-svg`. The new implementation is fully functional, displaying the correct time for each timezone, and resolves all visual glitches, including incorrect hand rotation and alignment.
-- **Time Bridge UI Alignment:**
-  - Fixed the layout of the "Distance Between Locations" visualization, ensuring the animated plane and dashed line are correctly centered.
-  - Corrected the alignment in the "24-Hour Time Comparison" table, ensuring the partner's time and status icon are properly right-aligned.
 
+## [2.1.0] - 2025-11-02
+
+### Added
+- **Contextual DST Warnings:** Implemented a new, robust Daylight Saving Time warning system centralized in the `Heartline` component.
+  - When a DST change is imminent (today or within 14 days), a detailed warning appears, explaining the change (e.g., "fall back 1 hour") and its impact on the time difference.
+  - When no change is imminent, a simple, persistent status shows the current timezone abbreviations (e.g., "PST / CST") for reference.
+
+### Changed
+- **DST Detection Engine:** Completely rewrote the DST detection logic in `dstUtils.ts` to use the `date-fns` and `date-fns-tz` libraries, ensuring robust and reliable detection of DST status and transitions, including edge cases like same-day changes.
+- **Animation Pacing:** Reverted the main `ConnectionIntro` animation to its original, faster 8-second duration while preserving the longer text pause for a better user experience.
+
+### Fixed
+- **Critical UI Crash:** Fixed a series of `TypeError` and `ReferenceError` crashes in the `Settings` modal and `Heartline` component caused by incorrect DST function implementations and faulty imports.
+- **Critical Layout Bug:** Restored the `AuraGlobe` components that were accidentally deleted, fixing a bug that caused the main screen to appear blank.
+- **Settings Modal Scrolling:** Permanently fixed a persistent scrolling bug in the Settings modal by refactoring the layout to use `KeyboardAvoidingView` and a canonical, robust flexbox structure.
+- **Time Difference Calculation:** Corrected a critical bug in the time difference logic that produced incorrect offsets (e.g., +9 instead of -15 hours).
+- **Time Bridge Analog Clocks:** Rebuilt the non-functional analog clocks in the `TimeBridge` modal using `react-native-svg`.
+- **Time Bridge UI Alignment:** Fixed multiple layout issues in the `TimeBridge` modal.
+- **Location Input Flow:** Improved the UX of the location input screen by fixing keyboard appearance timing and preventing incorrect city name pre-filling.
+
+### Dependencies
+- Added `date-fns` and `date-fns-tz` to handle all timezone and DST calculations reliably.
 
 ### Added
 - **Welcome Flow with Star Animation** - Re-implemented the initial setup experience
@@ -58,25 +73,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Checks for upcoming DST transitions up to 14 days in advance
   - Provides localized timezone names
   - Cross-platform compatible using Intl API
-
-### Fixed
-- **CRITICAL**: Fixed time difference calculation returning NaN by replacing unreliable `Date.toLocaleString()` with `Intl.DateTimeFormat.formatToParts()` for cross-platform compatibility
-- **CRITICAL**: Fixed Settings modal black screen issue by rewriting component structure and removing problematic LinearGradient usage
-- **CRITICAL**: Fixed setup flow not resetting properly - Now properly calls `clearLocations()` to clear AsyncStorage when resetting app
-- **CRITICAL**: Fixed TimeBridge animated plane error - Replaced `left` property with `transform: [{ translateX }]` for native driver compatibility
-- **CRITICAL**: Fixed Settings modal showing only header - Restructured container hierarchy with proper height constraints to allow ScrollView to work properly
-- **CRITICAL**: Fixed Settings modal content not scrollable and losing scroll after reopen/reset - Changed from `flex: 1` to explicit `height: '85%'` on wrapper and `height: '100%'` on container with `flexDirection: 'column'`, explicitly enabled `scrollEnabled={true}` and `nestedScrollEnabled={true}`, increased bottom padding to 120px to ensure Reset button is fully visible
-- **Fixed Settings button position** - Moved Settings button to bottom-right corner to completely avoid iOS status bar and notch interference
-- **Fixed DST and Settings button overlap** - Settings button now positioned at bottom-right, DST indicators on left side, no overlap possible
-- **Fixed Settings content being cut off** - Added proper bottom padding (40px) to Settings modal ScrollView to prevent Location section from being clipped
-- **Fixed Settings button visibility** - Enhanced button styling with border, shadow, and darker background for better visibility
-- Fixed Settings modal z-index issue where Heartline would obstruct the settings overlay
-- Fixed React Native Reanimated initialization error by importing at app entry point (`index.ts`)
-- Resolved duplicate dependency conflicts in monorepo by removing root-level native dependencies
-- Fixed React and React Native version mismatches between root and mobile workspace
-- Corrected `react-native-svg` to use Expo SDK 54 compatible version (15.12.1)
-- Fixed TypeScript compilation errors in mobile components
-- All Expo doctor checks now pass (17/17)
 
 ### Changed
 - **Completely rewrote welcome/setup flow** to include star animations and logo combination effect

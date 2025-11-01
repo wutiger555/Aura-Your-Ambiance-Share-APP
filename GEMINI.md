@@ -60,104 +60,34 @@ The initial app setup is controlled by a state machine in `App.tsx`.
 
 This section outlines the most recent changes and the immediate goals.
 
-### ✅ Recently Completed
+### ✅ Recently Completed (v2.1.0)
 
-- **Complete Redesign of Onboarding:**
-    - `apps/mobile/src/components/aura/IntroScreen.tsx`: A new, fully animated, immersive introduction screen.
-    - `apps/mobile/src/components/aura/LocationInputScreen.tsx`: A new, minimalist, and aesthetically pleasing location input screen.
-- **Refactoring of `App.tsx`:** The old, complex rendering logic has been replaced with clean, component-based rendering for each `setupStep`.
+- **Robust DST Handling:** Implemented a definitive, user-centric Daylight Saving Time feature.
+  - **Replaced** all manual DST logic with the `date-fns` and `date-fns-tz` libraries for accuracy and reliability.
+  - **Centralized** all DST information in the `Heartline` component. It now displays a detailed, yellow warning for imminent transitions (including same-day) and a simple, white timezone abbreviation status otherwise.
+  - **Fixed** all related crashes (`TypeError`, `ReferenceError`) and UI bugs.
+- **Animation Pacing:** Tuned the `ConnectionIntro` animation to the user's preferred 8-second duration, while keeping a longer, more readable pause for the title text.
+- **UI & Logic Integrity:** Corrected a critical layout bug that caused the main UI to disappear and fixed numerous other issues related to scrolling, time calculation, and input flow.
 
 ### 🎯 Priority Next Tasks
 
-These are the highest-priority items to work on next, in order.
-
-**1. Enhance `ConnectionIntro` Animation (Path Drawing)**
-   - **Goal:** Implement the "Night to Dawn" narrative by adding the missing light stream path-drawing animation. The current animation is a placeholder.
-   - **File:** `apps/mobile/src/components/aura/ConnectionIntro.tsx`
-   - **Technical Brief:** Use `react-native-svg` and Reanimated's `useAnimatedProps` to animate the `stroke-dashoffset` of two `Path` elements, creating the effect of light streams traveling and meeting in the center.
-
-**2. Implement the Missing `AlignedScreen`**
-   - **Goal:** Create the `'aligned'` screen that should appear between the `'connecting'` and `'done'` steps.
-   - **File:** Create `apps/mobile/src/components/aura/AlignedScreen.tsx`.
-   - **Technical Brief:** This screen should display a message like "Your worlds are aligned," the two city names, and the `AuraLogo` with its own completion animation. It should have a button like "Enter Your Aura" that proceeds to the `'done'` step.
-
-**3. Implement `AuraLogo` Ring Animation**
-   - **Goal:** The two outer rings of the Aura logo should "draw" into existence.
-   - **File:** `apps/mobile/src/components/aura/AuraLogo.tsx`
-   - **Technical Brief:** This animation should be triggered on the new `AlignedScreen`. Use the same `stroke-dashoffset` technique as the path drawing, but on `Circle` elements within the SVG.
+- The backlog is currently clear. Awaiting next user request.
 
 ---
 
 ## 5. Key Component Deep Dive & Code Examples
 
-### `ConnectionIntro` Path Drawing
+### `dstUtils.ts` (Powered by `date-fns-tz`)
 
-The animation should follow a 6-second "Night to Dawn" narrative. The critical missing piece is the path drawing from **1s to 3s**.
+This utility has been completely refactored to use the `date-fns-tz` library. It no longer contains fragile, manual date math. The core logic now revolves around a new, self-contained `isDaylightSavingTime` function that leverages `getTimezoneOffset` from the library to reliably determine DST status. This fixed all bugs related to detecting transitions, especially same-day changes.
 
-**Implementation Snippet:**
-'''typescript
-import Animated, { useAnimatedProps } from 'react-native-reanimated';
-import { Path } from 'react-native-svg';
+### `Heartline.tsx` (DST Information Hub)
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
+This component is now the single source of truth for the user regarding DST. It contains a `useMemo` hook that calls `getDSTInfo` and formats a status string. This string is conditionally styled (yellow for warnings, white for standard status) and always present, providing clear, context-aware information without cluttering the UI.
 
-// Inside your component...
-const myPathLength = /* Calculate path length */;
-const myPathProgress = useSharedValue(0); // Animate this from 0 to 1
+### `Settings.tsx`
 
-// Animate stroke-dashoffset
-const myPathAnimatedProps = useAnimatedProps(() => ({
-  strokeDashoffset: myPathLength * (1 - myPathProgress.value),
-}));
-
-return (
-  <Svg>
-    <AnimatedPath
-      d="M x1,y1 Q cx,cy x2,y2" // Use a Quadratic Bézier curve
-      stroke="#06b6d4"
-      strokeWidth={3}
-      fill="none"
-      strokeDasharray={myPathLength}
-      animatedProps={myPathAnimatedProps}
-    />
-    {/* ... partner path ... */}
-  </Svg>
-);
-'''
-
-### `AuraLogo` Ring Drawing
-
-This animation will be used on the `AlignedScreen`.
-
-**Implementation Snippet:**
-'''typescript
-import Animated, { useAnimatedProps } from 'react-native-reanimated';
-import { Circle } from 'react-native-svg';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
-// Inside your component...
-const circumference = 2 * Math.PI * 48; // r = 48
-const ringProgress = useSharedValue(0); // Animate this from 0 to 1
-
-const ringAnimatedProps = useAnimatedProps(() => ({
-  strokeDashoffset: circumference * (1 - ringProgress.value),
-}));
-
-return (
-  <Svg>
-    <AnimatedCircle
-      cx="50" cy="50" r="48"
-      stroke="white"
-      strokeWidth="1"
-      fill="none"
-      strokeDasharray={circumference}
-      animatedProps={ringAnimatedProps}
-    />
-    {/* ... other logo parts ... */}
-  </Svg>
-);
-'''
+This component now correctly imports and uses the `formatUTCOffset` function from the definitive `dstUtils.ts` to display timezone information, resolving all previous crashes.
 
 ---
 

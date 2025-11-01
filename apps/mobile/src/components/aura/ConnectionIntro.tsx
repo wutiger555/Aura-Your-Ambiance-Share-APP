@@ -105,7 +105,7 @@ const ConnectionIntro: React.FC = () => {
   useEffect(() => {
     // Master timeline animation (8s total)
     masterProgress.value = withTiming(1, {
-      duration: 8000, // Extended to 8s for new sequence
+      duration: 8000,
       easing: Easing.inOut(Easing.cubic),
     });
   }, []);
@@ -127,7 +127,7 @@ const ConnectionIntro: React.FC = () => {
   const myStarAnimatedStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
 
-    // Move: 0.1-0.375 (3s duration in 8s timeline)
+    // Move: 0.1-0.375 (2.2s duration in 8s timeline)
     const moveProgress = interpolate(progress, [0.1, 0.375], [0, 1], 'clamp');
 
     const x = interpolate(moveProgress, [0, 1], [myStartX, centerX]);
@@ -293,12 +293,12 @@ const ConnectionIntro: React.FC = () => {
     };
   });
 
-  // Text animation (0.5-0.7)
+  // Text animation (0.6-0.75)
   const textAnimatedStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
 
-    const textProgress = interpolate(progress, [0.5, 0.7], [0, 1], 'clamp');
-    const fadeOut = interpolate(progress, [0.7, 0.85], [1, 0], 'clamp');
+    const textProgress = interpolate(progress, [0.6, 0.75], [0, 1], 'clamp');
+    const fadeOut = interpolate(progress, [0.85, 0.95], [1, 0], 'clamp');
 
     const opacity = interpolate(textProgress, [0, 1], [0, 1], 'clamp') * fadeOut;
     const translateY = interpolate(textProgress, [0, 1], [20, 0], 'clamp');

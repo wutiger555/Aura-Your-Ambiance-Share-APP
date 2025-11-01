@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -117,6 +117,8 @@ interface LocationInputScreenProps {
   onSubmit: (city: string) => Promise<void>;
   isLoading: boolean;
   error?: string;
+  city: string; // New prop for controlled component
+  onCityChange: (text: string) => void; // New prop for controlled component
 }
 
 /**
@@ -140,9 +142,11 @@ const LocationInputScreen: React.FC<LocationInputScreenProps> = ({
   onSubmit,
   isLoading,
   error,
+  city,
+  onCityChange,
 }) => {
-  const [cityInput, setCityInput] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
 
   // Animation values
   const markerOpacity = useSharedValue(0);
@@ -205,6 +209,13 @@ const LocationInputScreen: React.FC<LocationInputScreenProps> = ({
         false
       );
     }, 1000);
+    
+    // Delay focus to allow screen transition to complete
+    const focusTimer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 1500); // Increased delay to account for animations
+
+    return () => clearTimeout(focusTimer);
   }, [step]);
 
   // Input focus glow effect
@@ -229,10 +240,10 @@ const LocationInputScreen: React.FC<LocationInputScreenProps> = ({
   }));
 
   const handleSubmit = async () => {
-    if (!cityInput.trim() || isLoading) return;
+    if (!city.trim() || isLoading) return;
 
     Keyboard.dismiss();
-    await onSubmit(cityInput.trim());
+    await onSubmit(city.trim());
   };
 
   // Copy based on step
@@ -315,15 +326,15 @@ const LocationInputScreen: React.FC<LocationInputScreenProps> = ({
           <View style={[styles.inputWrapper, isFocused && { borderColor: accentColor }]}>
             <MapPin size={20} color="#64748b" style={styles.inputIcon} />
             <TextInput
+              ref={inputRef}
               style={styles.input}
               placeholder={placeholder}
               placeholderTextColor="#64748b"
-              value={cityInput}
-              onChangeText={setCityInput}
+              value={city}
+              onChangeText={onCityChange}
               onSubmitEditing={handleSubmit}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              autoFocus
               autoCapitalize="words"
               autoCorrect={false}
               returnKeyType="done"
@@ -345,10 +356,10 @@ const LocationInputScreen: React.FC<LocationInputScreenProps> = ({
             style={[
               styles.submitButton,
               { backgroundColor: accentColor },
-              (!cityInput.trim() || isLoading) && styles.disabledButton,
+              (!city.trim() || isLoading) && styles.disabledButton,
             ]}
             onPress={handleSubmit}
-            disabled={!cityInput.trim() || isLoading}
+            disabled={!city.trim() || isLoading}
             activeOpacity={0.85}
           >
             {isLoading ? (

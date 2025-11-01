@@ -28,7 +28,6 @@ import BlendedSky from './src/components/aura/BlendedSky';
 import AuraGlobe from './src/components/aura/AuraGlobe';
 import Heartline from './src/components/aura/Heartline';
 import TimeBridge from './src/components/aura/TimeBridge';
-import DSTPanel from './src/components/aura/DSTPanel';
 import Settings from './src/components/Settings';
 import { ANIMATION_DURATIONS } from './src/constants/Animations';
 
@@ -58,6 +57,7 @@ export default function App() {
   const [setupStep, setSetupStep] = useState<SetupStep>('intro');
   const [showSettings, setShowSettings] = useState(false);
   const [showTimeBridge, setShowTimeBridge] = useState(false);
+  const [cityInput, setCityInput] = useState(''); // State for the input field
   const [cityError, setCityError] = useState('');
   const [showIntro, setShowIntro] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
@@ -117,30 +117,29 @@ export default function App() {
   };
 
   // Handle location submission for both steps
-  const handleLocationSubmit = async (city: string, step: 'my' | 'partner') => {
+  const handleLocationSubmit = async (step: 'my' | 'partner') => {
     setCityError('');
+    setLoading(true);
 
     try {
-      setLoading(true);
-      const location = await getCoordinatesForCity(city);
+      const location = await getCoordinatesForCity(cityInput);
 
       if (!location) {
         setCityError('City not found. Please try again.');
+        setLoading(false);
         return;
       }
 
       if (step === 'my') {
         setMyLocation(location);
-        // Quick transition to partner input
+        setCityInput(''); // Clear input for next step
         setTimeout(() => {
           setSetupStep('inputPartner');
         }, 400);
       } else {
         setPartnerLocation(location);
-        // Quick transition to connecting animation
         setTimeout(() => {
           setSetupStep('connecting');
-          // Auto-advance to done after animation completes
           setTimeout(() => {
             setSetupStep('done');
           }, ANIMATION_DURATIONS.CONNECTION_INTRO);
@@ -148,7 +147,8 @@ export default function App() {
       }
     } catch (error) {
       setCityError('Failed to find city. Please try again.');
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   };
@@ -202,9 +202,11 @@ export default function App() {
         <StatusBar barStyle="light-content" />
         <LocationInputScreen
           step="my"
-          onSubmit={(city) => handleLocationSubmit(city, 'my')}
+          onSubmit={() => handleLocationSubmit('my')}
           isLoading={isLoading}
           error={cityError}
+          city={cityInput}
+          onCityChange={setCityInput}
         />
       </>
     );
@@ -217,9 +219,11 @@ export default function App() {
         <StatusBar barStyle="light-content" />
         <LocationInputScreen
           step="partner"
-          onSubmit={(city) => handleLocationSubmit(city, 'partner')}
+          onSubmit={() => handleLocationSubmit('partner')}
           isLoading={isLoading}
           error={cityError}
+          city={cityInput}
+          onCityChange={setCityInput}
         />
       </>
     );
@@ -287,16 +291,8 @@ export default function App() {
       <Heartline
         distance={distance}
         timeDifference={timeDiff}
-        onShowDetails={() => setShowTimeBridge(true)}
-      />
-
-      {/* DST Panel - Prominent display for DST status and warnings */}
-      <DSTPanel
-        myLocation={myLocation!}
-        partnerLocation={partnerLocation!}
-        myWeather={myWeather!}
-        partnerWeather={partnerWeather!}
-        currentTimeDiff={timeDiff}
+        myWeather={myWeather}
+        partnerWeather={partnerWeather}
         onShowDetails={() => setShowTimeBridge(true)}
       />
 
