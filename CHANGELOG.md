@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Time Difference Calculation:** Corrected the time difference logic in `packages/shared/utils/index.ts` to be accurate and robust, properly accounting for DST. The previous implementation produced incorrect offsets (e.g., 9 hours instead of 15).
+- **Time Bridge Analog Clocks:** Completely rebuilt the analog clocks in the `TimeBridge` modal using `react-native-svg`. The new implementation is fully functional, displaying the correct time for each timezone, and resolves all visual glitches, including incorrect hand rotation and alignment.
+- **Time Bridge UI Alignment:**
+  - Fixed the layout of the "Distance Between Locations" visualization, ensuring the animated plane and dashed line are correctly centered.
+  - Corrected the alignment in the "24-Hour Time Comparison" table, ensuring the partner's time and status icon are properly right-aligned.
+
+
 ### Added
 - **Welcome Flow with Star Animation** - Re-implemented the initial setup experience
   - First star lights up when user enters their location

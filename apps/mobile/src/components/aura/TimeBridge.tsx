@@ -193,9 +193,12 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
   const renderDistanceVisualization = () => {
     if (!distance) return null;
 
+    const [containerWidth, setContainerWidth] = useState(0);
+
     const planeTranslateX = planeOffset.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, SCREEN_WIDTH - 140],
+      // Ensure containerWidth is not 0 to avoid division by zero or NaN
+      outputRange: [0, containerWidth > 0 ? containerWidth - 24 : 0],
     });
 
     return (
@@ -213,30 +216,35 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
             <Text style={styles.locationLabel}>You</Text>
           </View>
 
-          {/* Animated connection line */}
-          <Svg height="80" width={SCREEN_WIDTH - 80} style={styles.connectionLine}>
-            <Line
-              x1="10"
-              y1="20"
-              x2={SCREEN_WIDTH - 90}
-              y2="20"
-              stroke="#334155"
-              strokeWidth="2"
-              strokeDasharray="5,5"
-            />
-          </Svg>
-
-          {/* Animated plane - Fixed to use transform instead of left */}
-          <RNAnimated.View
-            style={{
-              position: 'absolute',
-              left: 40,
-              top: 5,
-              transform: [{ translateX: planeTranslateX }],
-            }}
+          {/* This container will measure itself and hold the line/plane */}
+          <View 
+            style={styles.connectionAndPlaneContainer}
+            onLayout={(event) => setContainerWidth(event.nativeEvent.layout.width)}
           >
-            <Plane size={24} color="#06b6d4" />
-          </RNAnimated.View>
+            {containerWidth > 0 && (
+              <>
+                <Svg height="100%" width="100%">
+                  <Line
+                    x1="0"
+                    y1="50%"
+                    x2="100%"
+                    y2="50%"
+                    stroke="#334155"
+                    strokeWidth="2"
+                    strokeDasharray="5,5"
+                  />
+                </Svg>
+                <RNAnimated.View
+                  style={[
+                    styles.animatedPlane,
+                    { transform: [{ translateX: planeTranslateX }] },
+                  ]}
+                >
+                  <Plane size={24} color="#06b6d4" />
+                </RNAnimated.View>
+              </>
+            )}
+          </View>
 
           {/* Ending point */}
           <View style={styles.locationDot}>
@@ -261,17 +269,88 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
 
   // Render time difference with dual clocks
   const renderTimeDifferenceVisualization = () => {
-    if (timeDifference === null) return null;
+    if (timeDifference === null || !myWeather?.timezone || !partnerWeather?.timezone) return null;
 
-    const myRotation = myClockRotation.interpolate({
-      inputRange: [0, 360],
-      outputRange: ['0deg', '360deg'],
-    });
+    // A new, functional Analog Clock component
+    const AnalogClock = ({ timeZone }: { timeZone: string }) => {
+      const [time, setTime] = useState(new Date());
 
-    const partnerRotation = partnerClockRotation.interpolate({
-      inputRange: [0, 360],
-      outputRange: ['0deg', '360deg'],
-    });
+      useEffect(() => {
+        const timerId = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timerId);
+      }, []);
+
+      const timeParts = useMemo(() => {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone,
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric',
+          hour12: false,
+        });
+        const parts = formatter.formatToParts(time);
+        const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || '0', 10);
+        return {
+          hours: get('hour'),
+          minutes: get('minute'),
+          seconds: get('second'),
+        };
+      }, [time, timeZone]);
+
+      const { hours, minutes, seconds } = timeParts;
+      const secondDeg = seconds * 6;
+      const minuteDeg = minutes * 6 + seconds * 0.1;
+      const hourDeg = (hours % 12) * 30 + minutes * 0.5;
+
+      return (
+        <View style={styles.clock}>
+          <Svg height="80" width="80" viewBox="0 0 80 80">
+            <Circle cx="40" cy="40" r="38" stroke="#334155" strokeWidth="2" fill="rgba(15, 23, 42, 0.8)" />
+            
+            {/* Hour Hand */}
+            <Line
+              x1="40"
+              y1="40"
+              x2="40"
+              y2="20"
+              stroke="#94a3b8"
+              strokeWidth="3"
+              strokeLinecap="round"
+              rotation={hourDeg}
+              origin="40, 40"
+            />
+            
+            {/* Minute Hand */}
+            <Line
+              x1="40"
+              y1="40"
+              x2="40"
+              y2="12"
+              stroke="#e2e8f0"
+              strokeWidth="2"
+              strokeLinecap="round"
+              rotation={minuteDeg}
+              origin="40, 40"
+            />
+
+            {/* Second Hand */}
+            <Line
+              x1="40"
+              y1="40"
+              x2="40"
+              y2="8"
+              stroke="#ec4899"
+              strokeWidth="1"
+              strokeLinecap="round"
+              rotation={secondDeg}
+              origin="40, 40"
+            />
+
+            <Circle cx="40" cy="40" r="3" fill="#ec4899" />
+          </Svg>
+        </View>
+      );
+    };
 
     return (
       <View style={styles.timeDiffCard}>
@@ -286,30 +365,7 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
             <Text style={styles.clockLabel}>
               {myLocation?.nickname || myLocation?.name || 'You'}
             </Text>
-            <View style={styles.clock}>
-              <View style={styles.clockFace}>
-                {[...Array(12)].map((_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.clockMark,
-                      {
-                        transform: [
-                          { rotate: `${i * 30}deg` },
-                          { translateY: -35 },
-                        ],
-                      },
-                    ]}
-                  />
-                ))}
-                <RNAnimated.View
-                  style={[
-                    styles.clockHand,
-                    { transform: [{ rotate: myRotation }] },
-                  ]}
-                />
-              </View>
-            </View>
+            <AnalogClock timeZone={myWeather.timezone} />
             <Text style={styles.clockTime}>
               {new Date().toLocaleTimeString('en-US', {
                 hour: '2-digit',
@@ -333,30 +389,7 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
             <Text style={styles.clockLabel}>
               {partnerLocation?.nickname || partnerLocation?.name || 'Partner'}
             </Text>
-            <View style={styles.clock}>
-              <View style={styles.clockFace}>
-                {[...Array(12)].map((_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.clockMark,
-                      {
-                        transform: [
-                          { rotate: `${i * 30}deg` },
-                          { translateY: -35 },
-                        ],
-                      },
-                    ]}
-                  />
-                ))}
-                <RNAnimated.View
-                  style={[
-                    styles.clockHand,
-                    { transform: [{ rotate: partnerRotation }] },
-                  ]}
-                />
-              </View>
-            </View>
+            <AnalogClock timeZone={partnerWeather.timezone} />
             <Text style={styles.clockTime}>
               {new Date().toLocaleTimeString('en-US', {
                 hour: '2-digit',
@@ -462,7 +495,7 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
                     </View>
 
                     {/* Partner Time */}
-                    <View style={styles.timeCell}>
+                    <View style={[styles.timeCell, { justifyContent: 'flex-end' }]}>
                       <View style={styles.timeCellContent}>
                         {mapping.isPartnerDay ? (
                           <Sun size={16} color="#fbbf24" />
@@ -579,10 +612,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 16,
+    height: 50, // Give a fixed height for vertical alignment
   },
   locationDot: {
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
+    width: 60, // Increased width to prevent text wrapping
   },
   locationPin: {
     width: 16,
@@ -599,10 +634,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#cbd5e1',
   },
-  connectionLine: {
+  connectionAndPlaneContainer: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  animatedPlane: {
     position: 'absolute',
-    left: 40,
-    top: 0,
+    top: '50%',
+    marginTop: -12, // Half of plane size (24)
   },
   distanceInfo: {
     alignItems: 'center',
@@ -661,29 +701,6 @@ const styles = StyleSheet.create({
     height: 80,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  clockFace: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-    borderWidth: 2,
-    borderColor: '#334155',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  clockMark: {
-    position: 'absolute',
-    width: 2,
-    height: 8,
-    backgroundColor: '#64748b',
-  },
-  clockHand: {
-    position: 'absolute',
-    width: 2,
-    height: 25,
-    backgroundColor: '#06b6d4',
-    transformOrigin: 'center bottom',
   },
   clockTime: {
     fontSize: 14,

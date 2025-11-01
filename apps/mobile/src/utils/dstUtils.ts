@@ -12,10 +12,23 @@ export interface DSTInfo {
 
 /**
  * Check if a timezone is currently observing DST
+ * More reliable method using timezone name abbreviation
  */
 export function isDaylightSavingTime(timeZone: string, date: Date = new Date()): boolean {
   try {
-    // Get the timezone offset in January (winter) and July (summer)
+    // Method 1: Check timezone abbreviation (most reliable)
+    const tzString = date.toLocaleString('en-US', {
+      timeZone,
+      timeZoneName: 'short',
+    });
+
+    // Common DST indicators
+    const dstIndicators = ['PDT', 'EDT', 'CDT', 'MDT', 'CEST', 'BST', 'EEST', 'NZDT', 'AEDT'];
+    const hasDSTIndicator = dstIndicators.some(indicator => tzString.includes(indicator));
+
+    if (hasDSTIndicator) return true;
+
+    // Method 2: Fallback to offset comparison
     const jan = new Date(date.getFullYear(), 0, 1);
     const jul = new Date(date.getFullYear(), 6, 1);
 
@@ -27,13 +40,12 @@ export function isDaylightSavingTime(timeZone: string, date: Date = new Date()):
       return false;
     }
 
-    // Current offset
     const currentOffset = getTimezoneOffset(timeZone, date);
 
-    // DST is when offset is different from standard time (winter)
-    // For Northern Hemisphere: DST offset > standard offset
+    // DST is when offset is LESS than standard offset (more negative = more ahead of UTC)
+    // For Northern Hemisphere: DST offset < standard offset (e.g., -420 vs -480)
     // For Southern Hemisphere: DST offset < standard offset
-    return currentOffset !== Math.max(janOffset, julOffset);
+    return currentOffset < Math.max(janOffset, julOffset);
   } catch (e) {
     console.error('Error detecting DST:', e);
     return false;
@@ -139,14 +151,21 @@ function checkUpcomingTransition(timeZone: string, now: Date): string | null {
         const daysUntil = i;
         const transitionType = currentIsDST ? 'Standard Time' : 'Daylight Saving Time';
 
+        // Get transition time info
+        const transitionDate = futureDate.toLocaleDateString('en-US', {
+          timeZone,
+          month: 'short',
+          day: 'numeric',
+        });
+
         if (daysUntil === 1) {
-          return `Switching to ${transitionType} tomorrow`;
-        } else if (daysUntil <= 3) {
-          return `Switching to ${transitionType} in ${daysUntil} days`;
+          return `Clocks change TOMORROW (${transitionDate})!\nSwitching to ${transitionType}`;
+        } else if (daysUntil === 2) {
+          return `Clocks change in 2 days (${transitionDate})\nSwitching to ${transitionType}`;
         } else if (daysUntil <= 7) {
-          return `Switching to ${transitionType} in ${daysUntil} days`;
+          return `Clocks change in ${daysUntil} days (${transitionDate})\nSwitching to ${transitionType}`;
         } else {
-          return `Switching to ${transitionType} in ${daysUntil} days`;
+          return `Clocks change on ${transitionDate}\nSwitching to ${transitionType}`;
         }
       }
     }
