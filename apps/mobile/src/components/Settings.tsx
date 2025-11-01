@@ -9,6 +9,8 @@ import {
   Pressable,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { X, AlertCircle, Clock, MapPin, Edit2, Save } from 'lucide-react-native';
 import { LocationData, WeatherData } from '@aura/shared';
@@ -73,9 +75,13 @@ export default function Settings({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable onPress={(e) => e.stopPropagation()} style={styles.containerWrapper}>
-          <View style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <Pressable style={styles.overlay} onPress={onClose}>
+          {/* This is the main sheet container with a bounded height */}
+          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Settings</Text>
@@ -84,13 +90,11 @@ export default function Settings({
               </TouchableOpacity>
             </View>
 
+            {/* The ScrollView now has a parent with a fixed height and can use flex: 1 */}
             <ScrollView
               style={styles.content}
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={true}
-              bounces={true}
-              scrollEnabled={true}
-              nestedScrollEnabled={true}
             >
               {/* DST Transition Warning */}
               {hasUpcomingTransition && (
@@ -287,7 +291,7 @@ export default function Settings({
             </ScrollView>
           </View>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -305,29 +309,26 @@ function formatOffset(offsetMinutes: number): string {
 }
 
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: 'flex-end', // Pushes modal sheet to the bottom
   },
-  containerWrapper: {
+  modalSheet: { // The container with a bounded height
+    height: '95%',
     width: '100%',
-    maxWidth: 480,
-    height: '85%',
-  },
-  container: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
     backgroundColor: '#1e293b',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    flexDirection: 'column',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
     elevation: 10,
-    flexDirection: 'column',
   },
   header: {
     flexDirection: 'row',
@@ -336,9 +337,6 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(148, 163, 184, 0.2)',
-    backgroundColor: '#1e293b',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
   },
   title: {
     fontSize: 28,
@@ -351,7 +349,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(148, 163, 184, 0.2)',
   },
   content: {
-    flex: 1,
+    flex: 1, // This makes the ScrollView fill the rest of the modalSheet
   },
   scrollContent: {
     paddingHorizontal: 20,

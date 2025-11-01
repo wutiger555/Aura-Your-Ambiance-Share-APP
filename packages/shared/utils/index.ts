@@ -56,13 +56,6 @@ export function calculateTimeDifference(tz1: string, tz2: string): number {
         const diffMinutes = offset2 - offset1;
         const diffHours = diffMinutes / 60;
 
-        // Normalize the difference to be within -12 to +12 hours
-        if (diffHours > 12) {
-            return diffHours - 24;
-        }
-        if (diffHours < -12) {
-            return diffHours + 24;
-        }
         return Math.round(diffHours * 2) / 2; // Return in 0.5 hour increments
 
     } catch (e) {

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Settings Modal Scrolling:** Completely refactored the `Settings.tsx` component layout to permanently fix a persistent scrolling bug. Replaced the brittle layout with a canonical, robust structure using `KeyboardAvoidingView` and a `ScrollView` with `flex: 1` inside a container with a bounded height. This ensures scrolling is reliable and consistent, even after content changes or keyboard interactions.
 - **Time Difference Calculation:** Corrected the time difference logic in `packages/shared/utils/index.ts` to be accurate and robust, properly accounting for DST. The previous implementation produced incorrect offsets (e.g., 9 hours instead of 15).
 - **Time Bridge Analog Clocks:** Completely rebuilt the analog clocks in the `TimeBridge` modal using `react-native-svg`. The new implementation is fully functional, displaying the correct time for each timezone, and resolves all visual glitches, including incorrect hand rotation and alignment.
 - **Time Bridge UI Alignment:**
