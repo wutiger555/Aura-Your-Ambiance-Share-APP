@@ -9,6 +9,7 @@ interface LocationStore {
   hasSetup: boolean;
   setMyLocation: (location: LocationData) => void;
   setPartnerLocation: (location: LocationData) => void;
+  updateNicknames: (myNickname: string, partnerNickname: string) => void;
   clearLocations: () => void;
 }
 
@@ -20,6 +21,15 @@ export const useLocationStore = create<LocationStore>()(
       hasSetup: false,
       setMyLocation: (location) => set({ myLocation: location, hasSetup: true }),
       setPartnerLocation: (location) => set({ partnerLocation: location, hasSetup: true }),
+      updateNicknames: (myNickname, partnerNickname) =>
+        set((state) => ({
+          myLocation: state.myLocation
+            ? { ...state.myLocation, nickname: myNickname }
+            : null,
+          partnerLocation: state.partnerLocation
+            ? { ...state.partnerLocation, nickname: partnerNickname }
+            : null,
+        })),
       clearLocations: () => set({ myLocation: null, partnerLocation: null, hasSetup: false }),
     }),
     {

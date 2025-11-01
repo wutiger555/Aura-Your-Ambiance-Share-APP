@@ -7,8 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Welcome Flow with Star Animation** - Re-implemented the initial setup experience
+  - First star lights up when user enters their location
+  - Second star appears when partner's location is entered
+  - Both stars fly together and merge into the Aura logo
+  - Beautiful background with animated starfield
+  - Smooth transitions using React Native Animated API
+  - ConnectionIntro animation plays after setup completion
+- **Enhanced TimeBridge Modal** - Complete 24-hour timezone comparison table
+  - Side-by-side comparison of all 24 hours for both timezones
+  - Day/night indicators (sun/moon icons) for each hour
+  - Current time highlighting with "NOW" badge
+  - Real-time clock display at the top showing both locations' current times
+  - Automatically updates every minute
+  - Beautiful legend explaining the symbols
+  - Scrollable table with smooth animations
+  - Distance and time difference stats at the top
+- **DST Indicators on Main Page** - Beautiful real-time status badges
+  - Displays current DST status (DST or Standard Time) for both locations
+  - Green badge for Daylight Saving Time, gray for Standard Time
+  - **Animated warning badges** when time change is approaching (within 14 days)
+  - Pulsing animation on warning badges to draw attention
+  - Positioned elegantly on left side near each location
+  - Automatically hides for locations that don't observe DST
+- **Custom Nickname System** for personalizing locations
+  - Set meaningful names like "My Love", "Mom", "Best Friend" for locations
+  - Edit nicknames directly from Settings with instant save
+  - Nicknames persist in AsyncStorage
+  - Friendly placeholder suggestions for user guidance
+- **Enhanced Settings Modal** with comprehensive location and timezone information
+  - Beautiful dark-themed design matching app aesthetic
+  - Displays detailed location coordinates and timezone information
+  - Shows Daylight Saving Time (DST) status for both locations
+  - **DST Transition Warnings**: Alerts when time changes are upcoming (within 14 days)
+  - Proper modal overlay that prevents UI obstruction
+  - Improved visual hierarchy and information architecture
+- **DST Detection System** (`dstUtils.ts`):
+  - Automatic detection of DST vs Standard Time
+  - Calculates timezone offsets for both DST and standard periods
+  - Checks for upcoming DST transitions up to 14 days in advance
+  - Provides localized timezone names
+  - Cross-platform compatible using Intl API
+
 ### Fixed
 - **CRITICAL**: Fixed time difference calculation returning NaN by replacing unreliable `Date.toLocaleString()` with `Intl.DateTimeFormat.formatToParts()` for cross-platform compatibility
+- **CRITICAL**: Fixed Settings modal black screen issue by rewriting component structure and removing problematic LinearGradient usage
+- **CRITICAL**: Fixed setup flow not resetting properly - Now properly calls `clearLocations()` to clear AsyncStorage when resetting app
+- **CRITICAL**: Fixed TimeBridge animated plane error - Replaced `left` property with `transform: [{ translateX }]` for native driver compatibility
+- **CRITICAL**: Fixed Settings modal showing only header - Restructured container hierarchy with proper height constraints to allow ScrollView to work properly
+- **CRITICAL**: Fixed Settings modal content not scrollable and losing scroll after reopen/reset - Changed from `flex: 1` to explicit `height: '85%'` on wrapper and `height: '100%'` on container with `flexDirection: 'column'`, explicitly enabled `scrollEnabled={true}` and `nestedScrollEnabled={true}`, increased bottom padding to 120px to ensure Reset button is fully visible
+- **Fixed Settings button position** - Moved Settings button to bottom-right corner to completely avoid iOS status bar and notch interference
+- **Fixed DST and Settings button overlap** - Settings button now positioned at bottom-right, DST indicators on left side, no overlap possible
+- **Fixed Settings content being cut off** - Added proper bottom padding (40px) to Settings modal ScrollView to prevent Location section from being clipped
+- **Fixed Settings button visibility** - Enhanced button styling with border, shadow, and darker background for better visibility
+- Fixed Settings modal z-index issue where Heartline would obstruct the settings overlay
 - Fixed React Native Reanimated initialization error by importing at app entry point (`index.ts`)
 - Resolved duplicate dependency conflicts in monorepo by removing root-level native dependencies
 - Fixed React and React Native version mismatches between root and mobile workspace
@@ -17,11 +70,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All Expo doctor checks now pass (17/17)
 
 ### Changed
+- **Completely rewrote welcome/setup flow** to include star animations and logo combination effect
+- **Replaced basic TimeBridge** with comprehensive 24-hour timezone comparison table
+- **Redesigned DST indicators** with clearer labeling:
+  - Normal state shows "Daylight Saving" or "Standard Time" instead of just "DST"
+  - Warning state shows "Ending Soon" or "Starting Soon" with full description
+  - Enhanced styling with better visibility and pulsing animation for warnings
+- **Moved Settings button** from top-left to bottom-right corner to avoid iOS status bar and for better UX
+- Replaced simple settings overlay with dedicated Settings component with full functionality
 - Mobile app now matches web app visual design and animations
 - Refactored `calculateTimeDifference()` to use reliable Intl API that works in both web and React Native environments
+- Enhanced settings UI with dark theme and better visual feedback
+- Improved information display with dedicated sections for locations, timezones, and custom names
+- Removed unnecessary refresh button from main page (settings button now sole control)
 - Fixed peer dependency conflict for `react` by relaxing the version constraint in the `shared` package to resolve `npm install` errors
 - Simplified AuraLogo animation to avoid Animated SVG conflicts
 - Created mobile-specific `weatherUtils.ts` for gradient color mapping
+- Added `nickname` field to `LocationData` interface for personalization
+
+### Dependencies
+- Added `react-native-safe-area-context` for proper safe area handling
 
 ## [2.0.0] - 2025-11-01
 

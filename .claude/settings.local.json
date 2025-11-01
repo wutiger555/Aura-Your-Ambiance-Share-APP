@@ -8,7 +8,11 @@
       "Bash(watchman watch-del-all:*)",
       "Bash(pkill:*)",
       "Bash(npx expo-doctor)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(timeout 20 npx tsc:*)",
+      "Bash(cd /Users/tzuhuiwu/Documents/Redmine Dashboard/Redmine-UAT-Dashboard/Aura-Your-Ambiance-Share-APP && npx react-native log-ios:*)",
+      "Bash(cd:*)",
+      "Bash(npx react-native:*)"
     ],
     "deny": [],
     "ask": []

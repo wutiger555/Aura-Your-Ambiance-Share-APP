@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  Animated as RNAnimated,
 } from 'react-native';
 import { WeatherData, LocationData } from '@aura/shared';
-import { X } from 'lucide-react-native';
+import { X, Sun, Moon, Clock, MapPin, Plane } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Line, Circle, Path } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -25,9 +27,18 @@ interface TimeBridgeProps {
   timeDifference: number | null;
 }
 
+interface TimeMapping {
+  myHour: number;
+  partnerHour: number;
+  myMinute: number;
+  partnerMinute: number;
+  isMyDay: boolean;
+  isPartnerDay: boolean;
+  isCurrent: boolean;
+}
+
 /**
- * TimeBridge - Modal showing detailed timeline comparison
- * Simplified version of web's MapPeek component
+ * TimeBridge - Enhanced timezone comparison with visual elements
  */
 const TimeBridge: React.FC<TimeBridgeProps> = ({
   visible,
@@ -39,102 +50,321 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
   distance,
   timeDifference,
 }) => {
-  const renderTimeline = (
-    weather: WeatherData | null,
-    location: LocationData | null,
-    label: string
-  ) => {
-    if (!weather || !location) return null;
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const scrollViewRef = useRef<ScrollView>(null);
 
-    const sunrise = new Date(weather.daily.sunrise[0]);
-    const sunset = new Date(weather.daily.sunset[0]);
+  // Animation values for clocks
+  const myClockRotation = useRef(new RNAnimated.Value(0)).current;
+  const partnerClockRotation = useRef(new RNAnimated.Value(0)).current;
+  const planeOffset = useRef(new RNAnimated.Value(0)).current;
 
-    // Calculate percentages for timeline
-    const sunrisePercent = (sunrise.getHours() * 60 + sunrise.getMinutes()) / (24 * 60);
-    const sunsetPercent = (sunset.getHours() * 60 + sunset.getMinutes()) / (24 * 60);
-    const dayPercent = (sunsetPercent - sunrisePercent) * 100;
-    const nightBeforePercent = sunrisePercent * 100;
+  // Update current time every minute
+  useEffect(() => {
+    if (!visible) return;
+
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, [visible]);
+
+  // Animate clocks and plane when visible
+  useEffect(() => {
+    if (visible) {
+      // Clock rotation animation
+      RNAnimated.loop(
+        RNAnimated.timing(myClockRotation, {
+          toValue: 360,
+          duration: 60000, // One full rotation per minute
+          useNativeDriver: true,
+        })
+      ).start();
+
+      RNAnimated.loop(
+        RNAnimated.timing(partnerClockRotation, {
+          toValue: 360,
+          duration: 60000,
+          useNativeDriver: true,
+        })
+      ).start();
+
+      // Plane flying animation
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(planeOffset, {
+            toValue: 1,
+            duration: 3000,
+            useNativeDriver: true,
+          }),
+          RNAnimated.timing(planeOffset, {
+            toValue: 0,
+            duration: 3000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [visible]);
+
+  // Scroll to current time when opening
+  useEffect(() => {
+    if (visible && myWeather && scrollViewRef.current) {
+      const myTimeParts = new Intl.DateTimeFormat('en-US', {
+        timeZone: myWeather.timezone,
+        hour: 'numeric',
+        hour12: false,
+      }).formatToParts(currentTime);
+
+      const currentHour = parseInt(
+        myTimeParts.find((part) => part.type === 'hour')?.value || '0'
+      );
+
+      // Scroll to current time (each row is about 60px)
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          y: Math.max(0, currentHour * 60 - 150),
+          animated: true,
+        });
+      }, 500);
+    }
+  }, [visible]);
+
+  // Generate 24-hour time comparison table
+  const timeTable = useMemo((): TimeMapping[] => {
+    if (!myWeather || !partnerWeather) return [];
+
+    const table: TimeMapping[] = [];
+
+    const myTimeParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: myWeather.timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+    }).formatToParts(currentTime);
+
+    const myCurrentHour = parseInt(
+      myTimeParts.find((part) => part.type === 'hour')?.value || '0'
+    );
+    const myCurrentMinute = parseInt(
+      myTimeParts.find((part) => part.type === 'minute')?.value || '0'
+    );
+
+    const mySunrise = new Date(myWeather.daily.sunrise[0]);
+    const mySunset = new Date(myWeather.daily.sunset[0]);
+    const partnerSunrise = new Date(partnerWeather.daily.sunrise[0]);
+    const partnerSunset = new Date(partnerWeather.daily.sunset[0]);
+
+    const mySunriseHour = mySunrise.getUTCHours();
+    const mySunsetHour = mySunset.getUTCHours();
+    const partnerSunriseHour = partnerSunrise.getUTCHours();
+    const partnerSunsetHour = partnerSunset.getUTCHours();
+
+    for (let i = 0; i < 24; i++) {
+      const myHour = i;
+      const partnerHour = (i + (timeDifference || 0) + 24) % 24;
+
+      const isMyDay = myHour >= mySunriseHour && myHour < mySunsetHour;
+      const isPartnerDay = partnerHour >= partnerSunriseHour && partnerHour < partnerSunsetHour;
+      const isCurrent = myHour === myCurrentHour;
+
+      table.push({
+        myHour,
+        partnerHour,
+        myMinute: isCurrent ? myCurrentMinute : 0,
+        partnerMinute: isCurrent ? myCurrentMinute : 0,
+        isMyDay,
+        isPartnerDay,
+        isCurrent,
+      });
+    }
+
+    return table;
+  }, [myWeather, partnerWeather, timeDifference, currentTime]);
+
+  const formatTime = (hour: number, minute: number, showMinute: boolean = false) => {
+    if (showMinute) {
+      return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    }
+    return `${hour.toString().padStart(2, '0')}:00`;
+  };
+
+  // Render distance visualization with animated plane
+  const renderDistanceVisualization = () => {
+    if (!distance) return null;
+
+    const planeTranslateX = planeOffset.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, SCREEN_WIDTH - 140],
+    });
 
     return (
-      <View style={styles.timelineSection}>
-        <Text style={styles.timelineLabel}>{label}</Text>
-        <Text style={styles.locationName}>{location.name}</Text>
+      <View style={styles.distanceCard}>
+        <View style={styles.distanceHeader}>
+          <MapPin size={18} color="#06b6d4" />
+          <Text style={styles.distanceTitle}>Distance Between Locations</Text>
+        </View>
 
-        {/* Timeline bar */}
-        <View style={styles.timelineContainer}>
-          <View style={styles.timelineBar}>
-            {/* Night before sunrise */}
-            <View
-              style={[
-                styles.nightSegment,
-                {
-                  left: 0,
-                  width: `${nightBeforePercent}%`,
-                },
-              ]}
+        {/* Visual distance representation */}
+        <View style={styles.distanceVisual}>
+          {/* Starting point */}
+          <View style={styles.locationDot}>
+            <View style={[styles.locationPin, { backgroundColor: '#06b6d4' }]} />
+            <Text style={styles.locationLabel}>You</Text>
+          </View>
+
+          {/* Animated connection line */}
+          <Svg height="80" width={SCREEN_WIDTH - 80} style={styles.connectionLine}>
+            <Line
+              x1="10"
+              y1="20"
+              x2={SCREEN_WIDTH - 90}
+              y2="20"
+              stroke="#334155"
+              strokeWidth="2"
+              strokeDasharray="5,5"
             />
-            {/* Night after sunset */}
-            <View
-              style={[
-                styles.nightSegment,
-                {
-                  left: `${sunsetPercent * 100}%`,
-                  width: `${(1 - sunsetPercent) * 100}%`,
-                },
-              ]}
-            />
+          </Svg>
 
-            {/* Sunrise marker */}
-            <View
-              style={[
-                styles.timelineMarker,
-                styles.sunriseMarker,
-                { left: `${sunrisePercent * 100}%` },
-              ]}
-            >
-              <Text style={styles.markerLabel}>↑</Text>
-            </View>
+          {/* Animated plane - Fixed to use transform instead of left */}
+          <RNAnimated.View
+            style={{
+              position: 'absolute',
+              left: 40,
+              top: 5,
+              transform: [{ translateX: planeTranslateX }],
+            }}
+          >
+            <Plane size={24} color="#06b6d4" />
+          </RNAnimated.View>
 
-            {/* Sunset marker */}
-            <View
-              style={[
-                styles.timelineMarker,
-                styles.sunsetMarker,
-                { left: `${sunsetPercent * 100}%` },
-              ]}
-            >
-              <Text style={styles.markerLabel}>↓</Text>
-            </View>
+          {/* Ending point */}
+          <View style={styles.locationDot}>
+            <View style={[styles.locationPin, { backgroundColor: '#ec4899' }]} />
+            <Text style={styles.locationLabel}>Partner</Text>
           </View>
         </View>
 
-        {/* Time labels */}
-        <View style={styles.timeLabels}>
-          <Text style={styles.timeLabel}>00:00</Text>
-          <Text style={styles.timeLabel}>06:00</Text>
-          <Text style={styles.timeLabel}>12:00</Text>
-          <Text style={styles.timeLabel}>18:00</Text>
-          <Text style={styles.timeLabel}>24:00</Text>
+        {/* Distance info */}
+        <View style={styles.distanceInfo}>
+          <Text style={styles.distanceValue}>{Math.round(distance).toLocaleString()} km</Text>
+          <Text style={styles.distanceSubtext}>
+            ≈ {Math.round(distance * 0.621371).toLocaleString()} miles
+          </Text>
+          <Text style={styles.distanceSubtext}>
+            Flight time: ≈ {Math.round(distance / 800)} hours
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
+  // Render time difference with dual clocks
+  const renderTimeDifferenceVisualization = () => {
+    if (timeDifference === null) return null;
+
+    const myRotation = myClockRotation.interpolate({
+      inputRange: [0, 360],
+      outputRange: ['0deg', '360deg'],
+    });
+
+    const partnerRotation = partnerClockRotation.interpolate({
+      inputRange: [0, 360],
+      outputRange: ['0deg', '360deg'],
+    });
+
+    return (
+      <View style={styles.timeDiffCard}>
+        <View style={styles.timeDiffHeader}>
+          <Clock size={18} color="#fbbf24" />
+          <Text style={styles.timeDiffTitle}>Time Difference</Text>
         </View>
 
-        {/* Sunrise/Sunset times */}
-        <View style={styles.sunTimes}>
-          <Text style={styles.sunTimeText}>
-            Sunrise:{' '}
-            {sunrise.toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-              timeZone: weather.timezone,
-            })}
-          </Text>
-          <Text style={styles.sunTimeText}>
-            Sunset:{' '}
-            {sunset.toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-              timeZone: weather.timezone,
-            })}
-          </Text>
+        <View style={styles.clocksContainer}>
+          {/* My Clock */}
+          <View style={styles.clockWrapper}>
+            <Text style={styles.clockLabel}>
+              {myLocation?.nickname || myLocation?.name || 'You'}
+            </Text>
+            <View style={styles.clock}>
+              <View style={styles.clockFace}>
+                {[...Array(12)].map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.clockMark,
+                      {
+                        transform: [
+                          { rotate: `${i * 30}deg` },
+                          { translateY: -35 },
+                        ],
+                      },
+                    ]}
+                  />
+                ))}
+                <RNAnimated.View
+                  style={[
+                    styles.clockHand,
+                    { transform: [{ rotate: myRotation }] },
+                  ]}
+                />
+              </View>
+            </View>
+            <Text style={styles.clockTime}>
+              {new Date().toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: myWeather?.timezone,
+              })}
+            </Text>
+          </View>
+
+          {/* Time Difference Display */}
+          <View style={styles.diffIndicator}>
+            <Text style={styles.diffValue}>
+              {timeDifference >= 0 ? '+' : ''}
+              {timeDifference}
+            </Text>
+            <Text style={styles.diffLabel}>hours</Text>
+          </View>
+
+          {/* Partner Clock */}
+          <View style={styles.clockWrapper}>
+            <Text style={styles.clockLabel}>
+              {partnerLocation?.nickname || partnerLocation?.name || 'Partner'}
+            </Text>
+            <View style={styles.clock}>
+              <View style={styles.clockFace}>
+                {[...Array(12)].map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.clockMark,
+                      {
+                        transform: [
+                          { rotate: `${i * 30}deg` },
+                          { translateY: -35 },
+                        ],
+                      },
+                    ]}
+                  />
+                ))}
+                <RNAnimated.View
+                  style={[
+                    styles.clockHand,
+                    { transform: [{ rotate: partnerRotation }] },
+                  ]}
+                />
+              </View>
+            </View>
+            <Text style={styles.clockTime}>
+              {new Date().toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: partnerWeather?.timezone,
+              })}
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -144,38 +374,142 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
     <Modal visible={visible} animationType="slide" transparent={true}>
       <View style={styles.modalOverlay}>
         <LinearGradient
-          colors={['rgba(15, 23, 42, 0.95)', 'rgba(30, 41, 59, 0.95)']}
+          colors={['rgba(15, 23, 42, 0.98)', 'rgba(30, 41, 59, 0.98)']}
           style={styles.modalContent}
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Time Bridge</Text>
+            <View>
+              <Text style={styles.title}>Time Bridge</Text>
+              <Text style={styles.headerSubtitle}>Complete Timezone Comparison</Text>
+            </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <X size={24} color="white" />
             </TouchableOpacity>
           </View>
 
-          {/* Stats */}
-          {(distance !== null || timeDifference !== null) && (
-            <View style={styles.stats}>
-              {distance !== null && (
-                <Text style={styles.statText}>
-                  Distance: {Math.round(distance).toLocaleString()} km
-                </Text>
-              )}
-              {timeDifference !== null && (
-                <Text style={styles.statText}>
-                  Time difference: {timeDifference >= 0 ? '+' : ''}
-                  {timeDifference}h
-                </Text>
-              )}
-            </View>
-          )}
+          <ScrollView style={styles.mainScroll} showsVerticalScrollIndicator={false}>
+            {/* Distance Visualization */}
+            {renderDistanceVisualization()}
 
-          {/* Timelines */}
-          <ScrollView style={styles.scrollView}>
-            {renderTimeline(partnerWeather, partnerLocation, 'Partner')}
-            {renderTimeline(myWeather, myLocation, 'You')}
+            {/* Time Difference Visualization */}
+            {renderTimeDifferenceVisualization()}
+
+            {/* 24-Hour Comparison Table */}
+            <View style={styles.tableSection}>
+              <Text style={styles.sectionTitle}>24-Hour Time Comparison</Text>
+              <Text style={styles.sectionSubtitle}>Scroll to see all hours</Text>
+
+              {/* Table Header */}
+              <View style={styles.tableHeader}>
+                <View style={styles.tableHeaderCell}>
+                  <Text style={styles.tableHeaderText}>
+                    {myLocation?.nickname || myLocation?.name || 'You'}
+                  </Text>
+                </View>
+                <View style={styles.tableHeaderDivider} />
+                <View style={styles.tableHeaderCell}>
+                  <Text style={styles.tableHeaderText}>
+                    {partnerLocation?.nickname || partnerLocation?.name || 'Partner'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Scrollable Time Table */}
+              <ScrollView
+                ref={scrollViewRef}
+                style={styles.timeTableScroll}
+                showsVerticalScrollIndicator={true}
+                nestedScrollEnabled={true}
+              >
+                {timeTable.map((mapping, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.tableRow,
+                      mapping.isCurrent && styles.tableRowCurrent,
+                    ]}
+                  >
+                    {/* My Time */}
+                    <View style={styles.timeCell}>
+                      <View style={styles.timeCellContent}>
+                        {mapping.isMyDay ? (
+                          <Sun size={16} color="#fbbf24" />
+                        ) : (
+                          <Moon size={16} color="#93c5fd" />
+                        )}
+                        <Text
+                          style={[
+                            styles.timeText,
+                            mapping.isCurrent && styles.timeTextCurrent,
+                          ]}
+                        >
+                          {formatTime(mapping.myHour, mapping.myMinute, mapping.isCurrent)}
+                        </Text>
+                      </View>
+                      {mapping.isCurrent && (
+                        <View style={styles.currentBadge}>
+                          <Text style={styles.currentBadgeText}>NOW</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Connection Line */}
+                    <View style={styles.connectionCell}>
+                      <View style={styles.connectionDot} />
+                      <View style={styles.connectionLineHorizontal} />
+                      <View style={styles.connectionDot} />
+                    </View>
+
+                    {/* Partner Time */}
+                    <View style={styles.timeCell}>
+                      <View style={styles.timeCellContent}>
+                        {mapping.isPartnerDay ? (
+                          <Sun size={16} color="#fbbf24" />
+                        ) : (
+                          <Moon size={16} color="#93c5fd" />
+                        )}
+                        <Text
+                          style={[
+                            styles.timeText,
+                            mapping.isCurrent && styles.timeTextCurrent,
+                          ]}
+                        >
+                          {formatTime(
+                            mapping.partnerHour,
+                            mapping.partnerMinute,
+                            mapping.isCurrent
+                          )}
+                        </Text>
+                      </View>
+                      {mapping.isCurrent && (
+                        <View style={styles.currentBadge}>
+                          <Text style={styles.currentBadgeText}>NOW</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+
+              {/* Legend */}
+              <View style={styles.legend}>
+                <View style={styles.legendItem}>
+                  <Sun size={14} color="#fbbf24" />
+                  <Text style={styles.legendText}>Day</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <Moon size={14} color="#93c5fd" />
+                  <Text style={styles.legendText}>Night</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={styles.currentBadge}>
+                    <Text style={styles.currentBadgeText}>NOW</Text>
+                  </View>
+                  <Text style={styles.legendText}>Current time</Text>
+                </View>
+              </View>
+            </View>
           </ScrollView>
         </LinearGradient>
       </View>
@@ -186,114 +520,317 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    maxHeight: '80%',
+    height: '95%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 24,
+    paddingTop: 24,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
   },
+  headerSubtitle: {
+    fontSize: 13,
+    color: '#94a3b8',
+    marginTop: 2,
+  },
   closeButton: {
     padding: 8,
   },
-  stats: {
-    marginBottom: 24,
-    gap: 8,
-  },
-  statText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  scrollView: {
+  mainScroll: {
     flex: 1,
   },
-  timelineSection: {
-    marginBottom: 32,
+
+  // Distance Card
+  distanceCard: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    backgroundColor: 'rgba(51, 65, 85, 0.5)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
   },
-  timelineLabel: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  locationName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: 'white',
+  distanceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: 16,
   },
-  timelineContainer: {
-    height: 40,
-    marginBottom: 8,
+  distanceTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#06b6d4',
   },
-  timelineBar: {
-    width: '100%',
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    position: 'relative',
-    overflow: 'visible',
+  distanceVisual: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  nightSegment: {
+  locationDot: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  locationPin: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  locationLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#cbd5e1',
+  },
+  connectionLine: {
     position: 'absolute',
+    left: 40,
     top: 0,
-    height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
-  timelineMarker: {
-    position: 'absolute',
-    top: '50%',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    marginLeft: -10,
-    marginTop: -10,
+  distanceInfo: {
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(148, 163, 184, 0.2)',
+  },
+  distanceValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#06b6d4',
+  },
+  distanceSubtext: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 4,
+  },
+
+  // Time Difference Card
+  timeDiffCard: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    backgroundColor: 'rgba(51, 65, 85, 0.5)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.3)',
+  },
+  timeDiffHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  timeDiffTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fbbf24',
+  },
+  clocksContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+  },
+  clockWrapper: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  clockLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94a3b8',
+  },
+  clock: {
+    width: 80,
+    height: 80,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  clockFace: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
     borderWidth: 2,
-    borderColor: 'white',
+    borderColor: '#334155',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sunriseMarker: {
-    backgroundColor: '#fbbf24', // amber-400
+  clockMark: {
+    position: 'absolute',
+    width: 2,
+    height: 8,
+    backgroundColor: '#64748b',
   },
-  sunsetMarker: {
-    backgroundColor: '#f97316', // orange-500
+  clockHand: {
+    position: 'absolute',
+    width: 2,
+    height: 25,
+    backgroundColor: '#06b6d4',
+    transformOrigin: 'center bottom',
   },
-  markerLabel: {
-    fontSize: 10,
+  clockTime: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  diffIndicator: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  diffValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fbbf24',
+  },
+  diffLabel: {
+    fontSize: 12,
+    color: '#94a3b8',
+  },
+
+  // Table Section
+  tableSection: {
+    flex: 1,
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 12,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    backgroundColor: 'rgba(51, 65, 85, 0.5)',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    borderColor: 'rgba(148, 163, 184, 0.2)',
+  },
+  tableHeaderCell: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  tableHeaderText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  tableHeaderDivider: {
+    width: 2,
+    backgroundColor: 'rgba(148, 163, 184, 0.3)',
+  },
+  timeTableScroll: {
+    maxHeight: 300,
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: 'rgba(148, 163, 184, 0.2)',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(148, 163, 184, 0.1)',
+    paddingVertical: 10,
+  },
+  tableRowCurrent: {
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+  },
+  timeCell: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+  },
+  timeCellContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  timeText: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
+  },
+  timeTextCurrent: {
+    fontSize: 16,
     color: 'white',
     fontWeight: 'bold',
   },
-  timeLabels: {
+  connectionCell: {
+    width: 40,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  timeLabel: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.5)',
+  connectionDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#64748b',
   },
-  sunTimes: {
+  connectionLineHorizontal: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#334155',
+  },
+  currentBadge: {
+    backgroundColor: '#06b6d4',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  currentBadgeText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: 'white',
+    letterSpacing: 0.5,
+  },
+  legend: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 12,
+    paddingVertical: 12,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(148, 163, 184, 0.2)',
   },
-  sunTimeText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendText: {
+    fontSize: 11,
+    color: '#94a3b8',
   },
 });
 

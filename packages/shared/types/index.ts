@@ -2,6 +2,7 @@ export interface LocationData {
   name: string;
   latitude: number;
   longitude: number;
+  nickname?: string; // Optional custom nickname for the location
 }
 
 export interface WeatherData {

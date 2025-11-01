@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,16 +7,18 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  SafeAreaView,
   StatusBar,
   Alert,
+  Animated as RNAnimated,
+  Dimensions,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Settings, RefreshCw, ArrowRight } from 'lucide-react-native';
+import { Settings as SettingsIcon, ArrowRight } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocationStore } from './src/stores/useLocationStore';
 import { useWeatherStore } from './src/stores/useWeatherStore';
 import {
-  LocationData,
   getCoordinatesForCity,
   getWeather,
   calculateDistance,
@@ -29,9 +31,14 @@ import BlendedSky from './src/components/aura/BlendedSky';
 import AuraGlobe from './src/components/aura/AuraGlobe';
 import Heartline from './src/components/aura/Heartline';
 import TimeBridge from './src/components/aura/TimeBridge';
-import { ANIMATION_DURATIONS } from './src/constants/Animations';
+import DSTIndicator from './src/components/aura/DSTIndicator';
+import Settings from './src/components/Settings';
+import { ANIMATION_DURATIONS, MARKER_CONFIG, STARRY_CONFIG } from './src/constants/Animations';
+import { generateStars } from './src/utils/animationUtils';
 
-type SetupStep = 'intro' | 'inputMy' | 'inputPartner' | 'done';
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+type SetupStep = 'intro' | 'inputMy' | 'inputPartner' | 'connecting' | 'done';
 
 export default function App() {
   const {
@@ -40,6 +47,8 @@ export default function App() {
     hasSetup,
     setMyLocation,
     setPartnerLocation,
+    updateNicknames,
+    clearLocations,
   } = useLocationStore();
 
   const {
@@ -60,6 +69,20 @@ export default function App() {
   const [showIntro, setShowIntro] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
+  // Star animations for setup flow
+  const star1Opacity = useRef(new RNAnimated.Value(0)).current;
+  const star1Scale = useRef(new RNAnimated.Value(0)).current;
+  const star2Opacity = useRef(new RNAnimated.Value(0)).current;
+  const star2Scale = useRef(new RNAnimated.Value(0)).current;
+  const logoOpacity = useRef(new RNAnimated.Value(0)).current;
+  const logoScale = useRef(new RNAnimated.Value(0)).current;
+
+  // Generate stars for setup background
+  const stars = useMemo(
+    () => generateStars(STARRY_CONFIG.STAR_COUNT, SCREEN_WIDTH, SCREEN_HEIGHT),
+    []
+  );
+
   // Check if setup is complete
   useEffect(() => {
     if (hasSetup && myLocation && partnerLocation) {
@@ -73,6 +96,9 @@ export default function App() {
       }
       setSetupStep('done');
       fetchWeatherData();
+    } else {
+      // If no locations set, ensure we're in setup mode
+      setSetupStep('intro');
     }
   }, [hasSetup, myLocation, partnerLocation]);
 
@@ -102,6 +128,70 @@ export default function App() {
     }
   };
 
+  // Animate star when location is set
+  const animateStar = (starOpacity: RNAnimated.Value, starScale: RNAnimated.Value) => {
+    RNAnimated.parallel([
+      RNAnimated.timing(starOpacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      RNAnimated.sequence([
+        RNAnimated.timing(starScale, {
+          toValue: 1.5,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(starScale, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  };
+
+  // Animate logo combination
+  const animateLogoCombination = () => {
+    // Move stars together
+    RNAnimated.parallel([
+      RNAnimated.timing(star1Scale, {
+        toValue: 0,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      RNAnimated.timing(star2Scale, {
+        toValue: 0,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Show logo
+      RNAnimated.parallel([
+        RNAnimated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        RNAnimated.spring(logoScale, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // After logo animation, transition to connecting
+        setTimeout(() => {
+          setSetupStep('connecting');
+          // Then fetch weather and go to done
+          setTimeout(() => {
+            setSetupStep('done');
+          }, 2000);
+        }, 1500);
+      });
+    });
+  };
+
   const handleCitySubmit = async () => {
     if (!cityInput.trim()) {
       setCityError('Please enter a city name');
@@ -123,11 +213,20 @@ export default function App() {
       if (setupStep === 'inputMy') {
         setMyLocation(location);
         setCityInput('');
-        setSetupStep('inputPartner');
+        // Animate first star
+        animateStar(star1Opacity, star1Scale);
+        setTimeout(() => {
+          setSetupStep('inputPartner');
+        }, 1000);
       } else if (setupStep === 'inputPartner') {
         setPartnerLocation(location);
         setCityInput('');
-        setSetupStep('done');
+        // Animate second star
+        animateStar(star2Opacity, star2Scale);
+        // After second star animation, show logo combination
+        setTimeout(() => {
+          animateLogoCombination();
+        }, 1000);
       }
     } catch (error) {
       setCityError('Failed to find city. Please try again.');
@@ -146,13 +245,22 @@ export default function App() {
           text: 'Reset',
           style: 'destructive',
           onPress: () => {
-            setMyLocation(null as any);
-            setPartnerLocation(null as any);
+            // Clear locations from store (will also clear AsyncStorage)
+            clearLocations();
+            // Clear weather data
             setMyWeather(null as any);
             setPartnerWeather(null as any);
+            // Reset UI state
             setSetupStep('intro');
             setShowSettings(false);
             setIsFirstLoad(true);
+            // Reset animations
+            star1Opacity.setValue(0);
+            star1Scale.setValue(0);
+            star2Opacity.setValue(0);
+            star2Scale.setValue(0);
+            logoOpacity.setValue(0);
+            logoScale.setValue(0);
           },
         },
       ]
@@ -164,17 +272,45 @@ export default function App() {
     return <ConnectionIntro />;
   }
 
+  // Show connecting animation
+  if (setupStep === 'connecting') {
+    return <ConnectionIntro />;
+  }
+
   // Render Setup Flow
   if (setupStep !== 'done' || !myWeather || !partnerWeather) {
     return (
-      <LinearGradient colors={['#1e293b', '#0f172a']} style={styles.container}>
+      <LinearGradient colors={['#0f172a', '#1e293b', '#334155']} style={styles.container}>
         <StatusBar barStyle="light-content" />
+
+        {/* Background stars */}
+        {stars.map((star) => (
+          <View
+            key={star.id}
+            style={[
+              styles.bgStar,
+              {
+                left: star.x,
+                top: star.y,
+                width: star.size,
+                height: star.size,
+                opacity: star.opacity * 0.3,
+              },
+            ]}
+          />
+        ))}
+
         <SafeAreaView style={styles.safeArea}>
           <ScrollView contentContainerStyle={styles.setupContainer}>
             {setupStep === 'intro' && (
               <View style={styles.introCard}>
+                <Image
+                  source={require('./assets/aura-logo.png')}
+                  style={styles.introLogo}
+                  resizeMode="contain"
+                />
                 <Text style={styles.title}>Aura</Text>
-                <Text style={styles.subtitle}>Your Ambiance Share APP</Text>
+                <Text style={styles.subtitle}>Feel your atmosphere, instantly</Text>
                 <Text style={styles.description}>
                   Connect with someone special by sharing your ambient weather and time
                 </Text>
@@ -190,12 +326,73 @@ export default function App() {
 
             {(setupStep === 'inputMy' || setupStep === 'inputPartner') && (
               <View style={styles.inputCard}>
+                {/* Animated stars - always rendered, controlled by opacity */}
+                <RNAnimated.View
+                  style={[
+                    styles.animatedStar,
+                    {
+                      left: SCREEN_WIDTH * 0.2,
+                      top: 60,
+                      opacity: star1Opacity,
+                      transform: [{ scale: star1Scale }],
+                    },
+                  ]}
+                  pointerEvents="none"
+                >
+                  <View style={[styles.starDot, { backgroundColor: MARKER_CONFIG.MY_COLOR }]} />
+                  <View
+                    style={[
+                      styles.starPulse,
+                      { backgroundColor: MARKER_CONFIG.MY_COLOR, opacity: 0.4 },
+                    ]}
+                  />
+                </RNAnimated.View>
+
+                <RNAnimated.View
+                  style={[
+                    styles.animatedStar,
+                    {
+                      right: SCREEN_WIDTH * 0.2,
+                      top: 60,
+                      opacity: star2Opacity,
+                      transform: [{ scale: star2Scale }],
+                    },
+                  ]}
+                  pointerEvents="none"
+                >
+                  <View
+                    style={[styles.starDot, { backgroundColor: MARKER_CONFIG.PARTNER_COLOR }]}
+                  />
+                  <View
+                    style={[
+                      styles.starPulse,
+                      { backgroundColor: MARKER_CONFIG.PARTNER_COLOR, opacity: 0.4 },
+                    ]}
+                  />
+                </RNAnimated.View>
+
+                {/* Logo (shown after both stars combine) */}
+                <RNAnimated.View
+                  style={[
+                    styles.centerLogo,
+                    {
+                      opacity: logoOpacity,
+                      transform: [{ scale: logoScale }],
+                    },
+                  ]}
+                  pointerEvents="none"
+                >
+                  <Image
+                    source={require('./assets/aura-logo.png')}
+                    style={styles.centerLogoImage}
+                    resizeMode="contain"
+                  />
+                </RNAnimated.View>
+
                 <Text style={styles.inputTitle}>
                   {setupStep === 'inputMy' ? 'Your Location' : "Partner's Location"}
                 </Text>
-                <Text style={styles.inputSubtitle}>
-                  Enter the city name
-                </Text>
+                <Text style={styles.inputSubtitle}>Enter the city name</Text>
 
                 <TextInput
                   style={styles.input}
@@ -211,9 +408,7 @@ export default function App() {
                   autoCapitalize="words"
                 />
 
-                {cityError ? (
-                  <Text style={styles.errorText}>{cityError}</Text>
-                ) : null}
+                {cityError ? <Text style={styles.errorText}>{cityError}</Text> : null}
 
                 <TouchableOpacity
                   style={[styles.primaryButton, isLoading && styles.disabledButton]}
@@ -268,6 +463,9 @@ export default function App() {
         distance={distance}
       />
 
+      {/* DST Indicator for Partner (Top) */}
+      <DSTIndicator weather={partnerWeather} position="top" />
+
       {/* AuraGlobe for Me (Bottom) */}
       <AuraGlobe
         location={myLocation}
@@ -276,6 +474,9 @@ export default function App() {
         distance={distance}
       />
 
+      {/* DST Indicator for Me (Bottom) */}
+      <DSTIndicator weather={myWeather} position="bottom" />
+
       {/* Heartline (Connection curve with stats) */}
       <Heartline
         distance={distance}
@@ -283,40 +484,27 @@ export default function App() {
         onShowDetails={() => setShowTimeBridge(true)}
       />
 
-      {/* Settings Button */}
-      <SafeAreaView style={styles.settingsButtonContainer}>
+      {/* Settings Button (Bottom Right) */}
+      <SafeAreaView style={styles.settingsButtonContainer} edges={['bottom', 'right']}>
         <TouchableOpacity
           onPress={() => setShowSettings(!showSettings)}
           style={styles.settingsButton}
         >
-          <Settings size={24} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={fetchWeatherData}
-          disabled={isLoading}
-          style={styles.settingsButton}
-        >
-          <RefreshCw size={24} color="white" />
+          <SettingsIcon size={24} color="white" />
         </TouchableOpacity>
       </SafeAreaView>
 
       {/* Settings Modal */}
-      {showSettings && (
-        <View style={styles.settingsOverlay}>
-          <View style={styles.settingsCard}>
-            <Text style={styles.settingsTitle}>Settings</Text>
-            <TouchableOpacity style={styles.settingsButton2} onPress={handleReset}>
-              <Text style={styles.settingsButtonText}>Reset Locations</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.settingsButton2, styles.cancelButton]}
-              onPress={() => setShowSettings(false)}
-            >
-              <Text style={styles.settingsButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      <Settings
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+        onReset={handleReset}
+        myLocation={myLocation}
+        partnerLocation={partnerLocation}
+        myWeather={myWeather}
+        partnerWeather={partnerWeather}
+        onUpdateNicknames={updateNicknames}
+      />
 
       {/* TimeBridge Modal */}
       <TimeBridge
@@ -346,9 +534,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
+  bgStar: {
+    position: 'absolute',
+    backgroundColor: 'white',
+    borderRadius: 100,
+  },
   introCard: {
     alignItems: 'center',
     padding: 30,
+  },
+  introLogo: {
+    width: 200,
+    height: 200,
+    marginBottom: 20,
   },
   title: {
     fontSize: 48,
@@ -370,6 +568,40 @@ const styles = StyleSheet.create({
   },
   inputCard: {
     padding: 20,
+    position: 'relative',
+    minHeight: 500,
+  },
+  animatedStar: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  starDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    position: 'absolute',
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  starPulse: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+  centerLogo: {
+    position: 'absolute',
+    top: 80,
+    alignSelf: 'center',
+    zIndex: 20,
+  },
+  centerLogoImage: {
+    width: 150,
+    height: 150,
   },
   inputTitle: {
     fontSize: 24,
@@ -377,6 +609,7 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     marginBottom: 8,
+    marginTop: 200,
   },
   inputSubtitle: {
     fontSize: 14,
@@ -429,57 +662,22 @@ const styles = StyleSheet.create({
   },
   settingsButtonContainer: {
     position: 'absolute',
-    top: 0,
-    left: 0,
+    bottom: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 8,
     zIndex: 100,
   },
   settingsButton: {
     padding: 12,
     borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-  },
-  settingsOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  settingsCard: {
-    backgroundColor: '#1e293b',
-    padding: 24,
-    borderRadius: 16,
-    width: '80%',
-    maxWidth: 400,
-  },
-  settingsTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  settingsButton2: {
-    backgroundColor: '#06b6d4',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  cancelButton: {
-    backgroundColor: '#475569',
-  },
-  settingsButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });
