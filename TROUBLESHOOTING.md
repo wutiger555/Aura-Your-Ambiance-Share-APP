@@ -1,611 +1,128 @@
 # Troubleshooting Guide
 
-This document contains solutions to common issues you might encounter with the Aura app.
-
-## Mobile App Issues
-
-### 1. SVG Component Registration Error
-
-**Error Message:**
-```
-ERROR [runtime not ready]: Invariant Violation: Tried to register two views with the same name RNSVGCircle
-```
-
-**Cause:**
-Multiple versions of `react-native-svg` are installed, causing duplicate component registration. This typically happens when dependencies have different version requirements.
-
-**Solution:**
-
-1. **Check for duplicate versions:**
-   ```bash
-   cd apps/mobile
-   npm ls react-native-svg
-   ```
-
-2. **If you see multiple versions, update package.json:**
-   ```json
-   {
-     "dependencies": {
-       "react-native-svg": "15.14.0"  // Use the latest version
-     }
-   }
-   ```
-
-3. **Clean install:**
-   ```bash
-   cd apps/mobile
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
-
-4. **Verify single version:**
-   ```bash
-   npm ls react-native-svg
-   ```
-   You should see `deduped` next to nested dependencies.
-
-5. **Clear Metro bundler cache:**
-   ```bash
-   npm start -- --clear
-   ```
-
-**Status:** ✅ Fixed in v2.0.0 - Updated to unified SVG version 15.14.0
+This guide provides solutions to common issues for the Aura mobile app, from animation glitches to build errors.
 
 ---
 
-### 2. Reanimated Initialization Errors
-
-**Error Messages:**
-```
-ERROR  ExceptionsManager should be set up after React DevTools to avoid console.error arguments mutation
-ERROR  [TypeError: property is not writable]
-ERROR  [TypeError: Cannot read property 'default' of undefined]
-```
-
-**Cause:**
-React Native Reanimated is not properly initialized at app startup.
-
-**Solution:**
-
-1. **Ensure Reanimated is imported first in `index.ts`:**
-   ```typescript
-   // apps/mobile/index.ts
-   import 'react-native-reanimated'; // MUST be first
-   import { registerRootComponent } from 'expo';
-   import App from './App';
-
-   registerRootComponent(App);
-   ```
-
-2. **Check `babel.config.js`:**
-   ```javascript
-   module.exports = function (api) {
-     api.cache(true);
-     return {
-       presets: ['babel-preset-expo'],
-       plugins: ['react-native-reanimated/plugin'], // Must be last
-     };
-   };
-   ```
-
-3. **Important:**
-   - The Reanimated import MUST be the first import in your entry file
-   - The Reanimated plugin MUST be the last item in the plugins array
-
-4. **Clear cache and restart:**
-   ```bash
-   rm -rf node_modules/.cache .expo
-   watchman watch-del-all  # If watchman is installed
-   npm start -- --clear
-   ```
-
-**Status:** ✅ Fixed in v2.0.0
-
----
-
-### 3. Metro Bundler Cache Issues
-
-**Symptoms:**
-- Old code still running after changes
-- Unexpected errors after installing packages
-- Components not updating
-
-**Solution:**
-
-1. **Clear Metro cache:**
-   ```bash
-   cd apps/mobile
-   npm start -- --clear
-   ```
-
-2. **Or manually clear cache:**
-   ```bash
-   rm -rf node_modules/.cache
-   watchman watch-del-all  # If watchman is installed
-   ```
-
-3. **For stubborn issues:**
-   ```bash
-   rm -rf node_modules
-   npm install
-   npm start -- --clear
-   ```
-
----
-
-### 4. iOS Build Issues
-
-**Symptoms:**
-- Pods installation fails
-- Build errors in Xcode
-
-**Solution:**
-
-1. **Clear iOS build cache:**
-   ```bash
-   cd apps/mobile/ios
-   rm -rf Pods Podfile.lock
-   pod install
-   ```
-
-2. **Clean Xcode build:**
-   - Open Xcode
-   - Product → Clean Build Folder (Cmd+Shift+K)
-
-3. **Reinstall dependencies:**
-   ```bash
-   cd apps/mobile
-   npx expo prebuild --clean
-   ```
+## 🎬 Animation & UI Issues
 
----
+### How to Reset the App to See the Intro Animations
 
-### 5. Android Build Issues
+If you have already set your locations, the app will skip the intro. To see the full animation flow again, you must reset the app state.
 
-**Symptoms:**
-- Gradle build fails
-- Dependencies not resolving
+**Recommended Method: In-App Settings**
 
-**Solution:**
+1.  On the main screen, tap the **Settings icon** (⚙️) in the top-left corner.
+2.  Scroll to the bottom.
+3.  Tap the red **"Reset Locations"** button and confirm.
+4.  The app will immediately return to the welcome screen.
 
-1. **Clean Gradle cache:**
-   ```bash
-   cd apps/mobile/android
-   ./gradlew clean
-   ```
+**Alternative Method: Developer Menu**
 
-2. **Clear Gradle cache completely:**
-   ```bash
-   rm -rf ~/.gradle/caches/
-   ```
+1.  Open the developer menu:
+    *   **iOS Simulator:** `Cmd + D`
+    *   **Android Emulator:** `Cmd + M`
+    *   **Physical Device:** Shake the device.
+2.  Select **"Clear AsyncStorage"**.
+3.  Reload the app (from the same menu, select "Reload").
 
-3. **Rebuild:**
-   ```bash
-   cd apps/mobile
-   npx expo run:android
-   ```
+### Onboarding Animation Flow Checklist
 
----
+After a reset, you should see the following sequence:
 
-### 6. Animation Performance Issues
+1.  **IntroScreen:** Immersive starry sky with animated logo and text.
+2.  **LocationInputScreen (You):** After pressing "Weave Your Connection", a large cyan marker appears with a pulse animation.
+3.  **LocationInputScreen (Partner):** After submitting your location, a large pink marker appears for your partner's location.
+4.  **ConnectionIntro:** After submitting the second location, the full-screen "Night to Dawn" connection animation plays.
+5.  **MainScreen:** The app transitions to the main blended sky experience.
 
-**Symptoms:**
-- Laggy animations
-- Choppy particle effects
-- App becomes slow
+### Issue: Animations are not playing or are stuck
 
-**Solution:**
+- **Cause:** This is often due to a stale Metro Bundler cache.
+- **Solution:** Quit the current process (`Ctrl+C`) and restart the server with a clean cache.
 
-1. **Reduce particle count in `/apps/mobile/src/constants/Animations.ts`:**
-   ```typescript
-   export const PARTICLE_CONFIG = {
-     COUNT: 4, // Reduce from 8 to 4 for older devices
-     // ...
-   };
-   ```
+  ```bash
+  # From the /apps/mobile directory
+  npx expo start -c
+  ```
 
-2. **Disable some animations for older devices:**
-   ```typescript
-   // In ConnectionIntro.tsx, reduce star count
-   const stars = useMemo(
-     () => generateStars(25, SCREEN_WIDTH, SCREEN_HEIGHT), // Reduce from 50
-     []
-   );
-   ```
+--- 
 
-3. **Enable native driver where possible:**
-   - All transform and opacity animations should use native driver
-   - Check that animations use `useNativeDriver: true` where supported
+## ⚙️ Build, Cache, and Dependency Errors
 
----
+### Understanding `expo start -c`
 
-### 7. Weather Data Not Loading
+The `-c` or `--clear` flag is crucial for troubleshooting. However, it's important to know what it does and doesn't do:
 
-**Symptoms:**
-- Locations load but weather stays blank
-- Error: "Failed to fetch weather data"
+- ✅ **It clears:** The Metro Bundler cache (your app's bundled JavaScript).
+- ❌ **It does NOT clear:** `AsyncStorage` (your saved locations and app state).
 
-**Solution:**
+**Rule of thumb:** Use `expo start -c` after installing or updating packages, or when code changes don't appear to be loading.
 
-1. **Check internet connection:**
-   - Ensure device has active internet
-   - Try opening a browser
+### Error: `Invariant Violation: Tried to register two views with the same name RNSVGCircle`
 
-2. **Check API endpoints:**
-   - Open-Meteo API might be temporarily down
-   - Check status at https://open-meteo.com
+- **Cause:** Multiple, conflicting versions of `react-native-svg` are installed in the monorepo.
+- **Solution:** Ensure `react-native-svg` is defined **only** in `apps/mobile/package.json` and not in the root `package.json`. Then, perform a clean reinstall:
 
-3. **Check location data:**
-   - In Settings, reset locations
-   - Re-enter city names
-   - Ensure city names are spelled correctly
+  ```bash
+  # From the project root
+  rm -rf node_modules apps/mobile/node_modules
+  npm install
+  ```
 
-4. **Debug mode:**
-   ```typescript
-   // In shared/services/weatherService.ts
-   console.log('Fetching weather for:', latitude, longitude);
-   ```
+### Error: Reanimated errors on startup (e.g., `property is not writable`)
 
----
+- **Cause:** React Native Reanimated is not initialized correctly.
+- **Solution:** Check two files in `apps/mobile`:
+    1.  **`index.ts`**: The import `import 'react-native-reanimated';` **must be the very first line**.
+    2.  **`babel.config.js`**: The plugin `'react-native-reanimated/plugin'` **must be the last item** in the `plugins` array.
 
-### 8. Location Search Not Working
+    After verifying, restart with a clean cache: `npx expo start -c`.
 
-**Symptoms:**
-- "City not found" errors
-- Location input doesn't respond
+### Issue: `npx expo-doctor` shows duplicate dependencies
 
-**Solution:**
+- **Cause:** A dependency (like `react` or `react-native`) is installed both at the project root and in a workspace (`apps/mobile`), which is incompatible with Expo.
+- **Solution:** Edit the root `package.json` to move the conflicting dependency to `devDependencies` or remove it if it's only needed in the workspace. Then, perform a clean reinstall.
 
-1. **Check geocoding service:**
-   - Nominatim API might be rate-limited
-   - Wait a few seconds between searches
+--- 
 
-2. **Try alternative city names:**
-   ```
-   Instead of: NYC
-   Try: New York City
+## 🌐 Data & API Issues
 
-   Instead of: LA
-   Try: Los Angeles
-   ```
+### Issue: Weather or location data is not loading
 
-3. **Check network logs:**
-   - Enable Chrome DevTools for debugging
-   - Look for failed network requests
+1.  **Check Internet Connection:** Ensure your device or simulator has network access.
+2.  **Check API Status:** The Open-Meteo or Nominatim APIs might be temporarily down.
+3.  **Rate Limiting:** The Nominatim API has a rate limit of 1 request per second. If you search for cities too quickly, you may get temporarily blocked.
+4.  **Invalid City Name:** Ensure you are using a valid, recognized city name (e.g., "New York City" instead of "NYC").
 
----
+### Issue: Time difference shows `NaNh`
 
-### 9. State Persistence Issues
+- **Cause:** This was a bug in older versions where `Date.toLocaleString()` behaved inconsistently in the React Native environment.
+- **Status:** ✅ **Fixed.** The logic now uses the cross-platform reliable `Intl.DateTimeFormat` API.
+- **Solution:** If you still encounter this, it is a caching issue. Restart with `npx expo start -c`.
 
-**Symptoms:**
-- Locations not saved between app restarts
-- Weather data resets
+--- 
 
-**Solution:**
+## 🛠️ General Development Workflow
 
-1. **Clear AsyncStorage:**
-   ```typescript
-   // In React Native Debugger or dev tools
-   import AsyncStorage from '@react-native-async-storage/async-storage';
-   AsyncStorage.clear();
-   ```
-
-2. **Check Zustand persist config:**
-   - Verify store configuration in `/apps/mobile/src/stores/`
-   - Ensure AsyncStorage is properly configured
-
-3. **Reinstall app:**
-   - Delete app from device
-   - Rebuild and install fresh
-
----
-
-### 10. TypeScript Errors
-
-**Symptoms:**
-- Type errors in IDE
-- Build fails due to type mismatches
-
-**Solution:**
-
-1. **Regenerate types:**
-   ```bash
-   cd apps/mobile
-   npx tsc --noEmit
-   ```
-
-2. **Check shared package types:**
-   ```bash
-   cd packages/shared
-   npm run build  # If build script exists
-   ```
-
-3. **Update TypeScript:**
-   ```bash
-   cd apps/mobile
-   npm install typescript@latest --save-dev
-   ```
-
----
-
-### 11. Time Difference Shows "NaNh"
-
-**Symptoms:**
-- Heartline displays "NaNh" instead of actual time difference
-- Time difference calculation fails
-
-**Cause:**
-The original implementation used `Date.toLocaleString()` which behaves inconsistently in React Native, returning invalid date objects that produce NaN when calculating time differences.
-
-**Solution:**
-
-This was fixed in the codebase by refactoring `calculateTimeDifference()` in `/packages/shared/utils/index.ts` to use `Intl.DateTimeFormat.formatToParts()` instead:
-
-```typescript
-// ❌ Old unreliable approach
-const date = new Date(now.toLocaleString('en-US', { timeZone }));
-
-// ✅ New reliable approach using formatToParts
-const formatter = new Intl.DateTimeFormat('en-US', {
-  timeZone,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: false,
-});
-const parts = formatter.formatToParts(now);
-```
-
-**If you still see this issue:**
-
-1. **Clear cache and restart:**
-   ```bash
-   cd apps/mobile
-   rm -rf node_modules/.cache .expo
-   npm start -- --clear
-   ```
-
-2. **Verify shared package is updated:**
-   ```bash
-   cd packages/shared
-   # Check that utils/index.ts has the updated implementation
-   ```
-
-3. **Reinstall dependencies:**
-   ```bash
-   npm install
-   ```
-
-**Status:** ✅ Fixed in v2.0.0 - Now uses cross-platform compatible Intl API
-
----
-
-## Web App Issues
-
-### 1. Vite Dev Server Issues
-
-**Solution:**
-```bash
-cd apps/web
-rm -rf node_modules .vite
-npm install
-npm run dev
-```
-
-### 2. CSS Not Loading
-
-**Solution:**
-- Check that Tailwind CDN is loading
-- Verify `index.html` includes Tailwind script
-- Clear browser cache
-
----
-
-## Monorepo Issues
-
-### 1. Duplicate Dependencies in Workspaces
-
-**Error from `npx expo-doctor`:**
-```
-✖ Check that no duplicate dependencies are installed
-Found duplicates for react
-Found duplicates for react-native
-Found duplicates for react-native-svg
-```
-
-**Cause:**
-In a monorepo setup, dependencies installed at the root level can conflict with workspace-specific dependencies.
-
-**Solution:**
-
-1. **Remove native dependencies from root `package.json`:**
-   ```json
-   // ❌ DON'T install React Native packages at root
-   {
-     "dependencies": {
-       "react-native-svg": "15.12.1"  // Remove this
-     }
-   }
-   ```
-
-2. **Keep only dev dependencies at root:**
-   ```json
-   {
-     "devDependencies": {
-       "typescript": "^5.8.0"  // This is OK
-     }
-   }
-   ```
-
-3. **Clean reinstall:**
-   ```bash
-   # From repository root
-   rm -rf node_modules package-lock.json
-   rm -rf apps/mobile/node_modules apps/mobile/package-lock.json
-   npm install
-   cd apps/mobile && npm install
-   ```
-
-4. **Verify with Expo doctor:**
-   ```bash
-   cd apps/mobile
-   npx expo-doctor
-   ```
-
-**Status:** ✅ Fixed - All checks pass (17/17)
-
----
-
-## Shared Package Issues
-
-### 1. Module Not Found Errors
-
-**Symptoms:**
-```
-Cannot find module '@aura/shared'
-```
-
-**Solution:**
-
-1. **Rebuild shared package:**
-   ```bash
-   cd packages/shared
-   npm install
-   ```
-
-2. **Link packages in monorepo:**
-   ```bash
-   cd root
-   npm install
-   ```
-
-3. **Verify imports:**
-   ```typescript
-   // Correct
-   import { LocationData } from '@aura/shared';
-
-   // Incorrect
-   import { LocationData } from 'shared';
-   ```
-
----
-
-## General Tips
-
-### Development Best Practices
-
-1. **Always clear cache after installing packages:**
-   ```bash
-   npm start -- --clear
-   ```
-
-2. **Use TypeScript strict mode:**
-   - Catches errors early
-   - Better IDE support
-
-3. **Monitor bundle size:**
-   - Use Expo's production build to check size
-   - Remove unused dependencies
-
-4. **Test on real devices:**
-   - Simulators don't reflect real performance
-   - Test on both iOS and Android
-
-### Performance Monitoring
-
-1. **Use React DevTools Profiler:**
-   - Identify slow renders
-   - Optimize heavy components
-
-2. **Monitor memory usage:**
-   - Check for memory leaks
-   - Ensure animations are cleaned up
-
-3. **Use native driver for animations:**
-   - Much better performance
-   - Animations run on UI thread
-
----
-
-## Getting Help
-
-### Before Asking for Help
-
-1. **Check console logs:**
-   - Look for error messages
-   - Note the full error stack trace
-
-2. **Reproduce the issue:**
-   - Document steps to reproduce
-   - Note any error messages
-
-3. **Check this troubleshooting guide:**
-   - Search for similar issues
-   - Try suggested solutions
-
-### Reporting Bugs
-
-When reporting bugs, include:
-
-1. **Environment:**
-   - OS version (iOS/Android version)
-   - Device model
-   - App version
-   - React Native version
-
-2. **Steps to reproduce:**
-   - Detailed steps
-   - Expected vs actual behavior
-
-3. **Error logs:**
-   - Full error messages
-   - Console logs
-   - Screenshots if applicable
-
-4. **Code samples:**
-   - Relevant code snippets
-   - Configuration files
-
----
-
-## Quick Reference
-
-### Common Commands
-
-```bash
-# Start mobile app with clean cache
-cd apps/mobile && npm start -- --clear
-
-# Start web app
-cd apps/web && npm run dev
-
-# Reinstall all dependencies (from root)
-rm -rf node_modules apps/*/node_modules packages/*/node_modules
-npm install
-
-# Check for duplicate dependencies
-cd apps/mobile && npm ls <package-name>
-
-# Update all packages
-npx expo install --check
-```
-
-### File Locations
-
-- **Mobile animations:** `/apps/mobile/src/constants/Animations.ts`
-- **Mobile components:** `/apps/mobile/src/components/aura/`
-- **Shared utilities:** `/packages/shared/`
-- **Configuration files:**
-  - `apps/mobile/babel.config.js`
-  - `apps/mobile/app.json`
-  - `apps/mobile/package.json`
-
----
-
-**Last Updated:** 2025-11-01
-**Version:** 2.0.0
-
-For more detailed implementation notes, see [MOBILE_WEB_SYNC.md](./MOBILE_WEB_SYNC.md)
+- **For normal development:**
+  ```bash
+  cd apps/mobile
+  npx expo start
+  ```
+
+- **After installing or updating packages:**
+  ```bash
+  cd apps/mobile
+  npx expo start -c
+  ```
+
+- **For a complete, fresh start (the "nuke" option):**
+  ```bash
+  # From the project root
+  rm -rf node_modules apps/*/node_modules packages/*/node_modules
+  npm install
+  cd apps/mobile
+  npx expo start -c
+  ```
+  Then, use the in-app "Reset Locations" button.

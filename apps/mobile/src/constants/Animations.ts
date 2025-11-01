@@ -3,7 +3,7 @@
 
 export const ANIMATION_DURATIONS = {
   // Intro animations
-  CONNECTION_INTRO: 3000, // Total intro duration
+  CONNECTION_INTRO: 8000, // Total intro duration (extended for world map sequence)
   CONNECTION_FLASH: 1500, // Flash animation duration
   MARKER_APPEAR: 800, // Marker pop-in duration
   FADE_IN: 800, // Basic fade in

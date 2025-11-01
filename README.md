@@ -90,17 +90,28 @@ Follow these instructions to set up and run Aura on your local machine for devel
 
 3.  **Run the applications:**
 
-    **Web App:**
+    A set of `npm` scripts are available at the root of the monorepo to manage the applications.
+
+    ### Mobile App (`apps/mobile`)
     ```bash
+    # Start the development server
+    npm run mobile
+
+    # Then, in the Metro Bundler terminal:
+    # - Press `i` to open the iOS simulator
+    # - Press `a` to open the Android emulator
+    # - Scan the QR code with the Expo Go app on your phone
+
+    # To start with a clean cache (recommended after package changes)
+    npm run mobile -- --clear
+    ```
+
+    ### Web App (`apps/web`)
+    ```bash
+    # Start the development server
     npm run web
     ```
-    Your application will now be running at `http://localhost:5173`.
-
-    **Mobile App:**
-    ```bash
-    npm run mobile
-    ```
-    Then press `i` for iOS simulator, `a` for Android emulator, or scan QR code with Expo Go app.
+    The application will be available at `http://localhost:5173`.
 
 ## 🌐 API Integration Deep Dive
 

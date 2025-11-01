@@ -15,12 +15,30 @@ interface LocationStore {
 
 export const useLocationStore = create<LocationStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       myLocation: null,
       partnerLocation: null,
       hasSetup: false,
-      setMyLocation: (location) => set({ myLocation: location, hasSetup: true }),
-      setPartnerLocation: (location) => set({ partnerLocation: location, hasSetup: true }),
+      setMyLocation: (location) => {
+        console.log('[LocationStore] Setting myLocation:', location.city);
+        set({ myLocation: location });
+        // Only set hasSetup when both locations are present
+        const state = get();
+        if (state.partnerLocation) {
+          console.log('[LocationStore] Both locations set, marking hasSetup = true');
+          set({ hasSetup: true });
+        }
+      },
+      setPartnerLocation: (location) => {
+        console.log('[LocationStore] Setting partnerLocation:', location.city);
+        set({ partnerLocation: location });
+        // Only set hasSetup when both locations are present
+        const state = get();
+        if (state.myLocation) {
+          console.log('[LocationStore] Both locations set, marking hasSetup = true');
+          set({ hasSetup: true });
+        }
+      },
       updateNicknames: (myNickname, partnerNickname) =>
         set((state) => ({
           myLocation: state.myLocation
