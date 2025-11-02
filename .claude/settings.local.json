@@ -15,7 +15,11 @@
       "Bash(npx react-native:*)",
       "Bash(cd /Users/tzuhuiwu/Documents/Redmine Dashboard/Redmine-UAT-Dashboard/Aura-Your-Ambiance-Share-APP && npm run type-check:*)",
       "Bash(cd /Users/tzuhuiwu/Documents/Redmine\\ Dashboard/Redmine-UAT-Dashboard/Aura-Your-Ambiance-Share-APP && npm run type-check:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run mobile:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill -9)"
     ],
     "deny": [],
     "ask": []

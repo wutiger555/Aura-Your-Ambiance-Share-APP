@@ -22,12 +22,49 @@ Our mission is to transform the two most fundamental environmental factors, **ti
 
 ## ✨ Features
 
+### Core Experience
 *   **Blended Sky:** A dynamic, full-screen background that seamlessly merges the weather conditions and time of day from both locations. Your sky and your partner's sky become one.
 *   **Real-time Atmosphere:** Fetches and displays current weather (temperature, conditions like sun, clouds, rain) and local time for both users.
 *   **Celestial Tracking:** A beautiful, animated sun and moon arc across each user's half of the sky, accurately tracking their position from sunrise to sunset and beyond.
 *   **Time Bridge:** A detailed overlay that visualizes and compares the 24-hour daily timelines for both individuals, highlighting sunrise, sunset, and current times.
 *   **Connection Data:** Subtly displays the physical distance and time zone difference, grounding the digital connection in real-world context.
 *   **Elegant & Minimalist UI:** A focus on a beautiful, immersive experience rather than cluttered social features.
+
+### New in v2.4.0 (Bridging Worlds)
+
+#### Dynamic Weather Effects
+*   **Living Weather Animations:** The background now responds to real-time weather conditions with immersive animations:
+    *   **Rain**: Realistic raindrop animations with adjustable intensity (light, moderate, heavy)
+    *   **Snow**: Gentle snowflakes with rotation and horizontal drift
+    *   **Clouds**: Soft, drifting cloud formations using blur effects
+    *   **Thunderstorm**: Dramatic lightning flashes with jagged bolts
+*   All effects are mobile-optimized for 60fps performance and don't interfere with the main UI
+
+#### Living Heartline Connection
+*   **Breathing Animation:** The connection line now pulses with a gentle, continuous breathing rhythm (4-second cycle), symbolizing "shared breath across the distance"
+*   **Bidirectional Particle Flow:** Energy particles travel along the curve in both directions, representing the active exchange between two people
+    *   Particles are color-coded based on day/night status
+    *   Particle count dynamically adjusts based on your distance (closer = fewer particles, farther = more)
+*   The Heartline transforms from a static indicator into a "living" representation of your emotional connection
+
+#### Narrative-Driven Onboarding
+*   **Redesigned Intro Screen (8-second journey):**
+    1. **Separation:** Two glowing globes appear from opposite sides (you and your partner)
+    2. **Hope:** The Aura logo emerges in the center as a bridge between worlds
+    3. **Connection:** Energy lines gracefully draw from the globes to the logo
+    4. **Unity:** The Heartline forms, previewing the main experience
+    *   Accompanied by poetic narrative text: "Two people. Different skies. One shared atmosphere."
+
+*   **Enhanced Connection Animation (10-second transition):**
+    1. Globes pulse in and breathe together
+    2. World map emerges showing actual geographic locations
+    3. City names appear with your actual locations ("{City} ✦ {City}")
+    4. Heartline draws between the cities and begins breathing
+    5. Smooth transition to the main blended sky experience
+    *   Uses precise Mercator projection for geographic accuracy
+
+#### Design Philosophy
+All new features follow Aura's core narrative: **"From Separation to Unity"**. Every animation, every particle, every breathing pulse tells the story of two distant worlds coming together through technology and emotion.
 
 ## 🏗️ Project Structure
 

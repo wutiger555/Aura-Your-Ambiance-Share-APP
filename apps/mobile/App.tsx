@@ -21,9 +21,9 @@ import {
 } from '@aura/shared';
 
 // New Components
-import IntroScreen from './src/components/aura/IntroScreen';
+import IntroScreen from './src/components/aura/IntroScreenRedesign';
 import LocationInputScreen from './src/components/aura/LocationInputScreen';
-import ConnectionIntro from './src/components/aura/ConnectionIntro';
+import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
 import AuraGlobe from './src/components/aura/AuraGlobe';
 import Heartline from './src/components/aura/Heartline';

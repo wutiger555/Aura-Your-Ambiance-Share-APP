@@ -6,6 +6,7 @@ import { WeatherData } from '@aura/shared';
 import { getWeatherAtmosphere } from '../../utils/weatherUtils';
 import CelestialSky from './CelestialSky';
 import ParticleSystem from './ParticleSystem';
+import { RainEffect, SnowEffect, CloudEffect, ThunderstormEffect } from './weather-effects';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -16,7 +17,31 @@ interface BlendedSkyProps {
 }
 
 /**
- * BlendedSky - Blended gradient sky system matching web design
+ * Helper function to determine weather effect based on weather code
+ */
+const getWeatherEffect = (weatherCode: number) => {
+  // Rain (51-65, 80-82)
+  if (weatherCode >= 51 && weatherCode <= 55) return { type: 'rain', intensity: 'light' as const };
+  if (weatherCode >= 61 && weatherCode <= 63) return { type: 'rain', intensity: 'moderate' as const };
+  if (weatherCode === 65 || weatherCode >= 80 && weatherCode <= 82) return { type: 'rain', intensity: 'heavy' as const };
+
+  // Snow (71-86)
+  if (weatherCode >= 71 && weatherCode <= 73) return { type: 'snow', intensity: 'light' as const };
+  if (weatherCode === 75 || weatherCode === 85) return { type: 'snow', intensity: 'moderate' as const };
+  if (weatherCode === 86) return { type: 'snow', intensity: 'heavy' as const };
+
+  // Thunderstorm (95-99)
+  if (weatherCode >= 95 && weatherCode <= 99) return { type: 'thunderstorm' };
+
+  // Clouds (2-3)
+  if (weatherCode === 2) return { type: 'clouds', density: 'partly' as const };
+  if (weatherCode === 3) return { type: 'clouds', density: 'overcast' as const };
+
+  return null;
+};
+
+/**
+ * BlendedSky - Blended gradient sky system with dynamic weather effects
  * Uses MaskedView to create smooth gradient blending between two weather states
  */
 const BlendedSky: React.FC<BlendedSkyProps> = ({
@@ -45,6 +70,10 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
   const partnerColors = partnerAtmosphere?.gradient || ['#64748b', '#334155'];
   const myColors = myAtmosphere?.gradient || ['#64748b', '#334155'];
 
+  // Determine weather effects for each half
+  const myWeatherEffect = myWeather ? getWeatherEffect(myWeather.current.weather_code) : null;
+  const partnerWeatherEffect = partnerWeather ? getWeatherEffect(partnerWeather.current.weather_code) : null;
+
   return (
     <View style={styles.container}>
       {/* Top half (partner weather) with mask */}
@@ -70,6 +99,32 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
         {partnerWeather && (
           <CelestialSky weather={partnerWeather} isTop={true} />
         )}
+        {/* Weather effects for top half */}
+        {partnerWeatherEffect && partnerWeather && (
+          <>
+            {partnerWeatherEffect.type === 'rain' && (
+              <RainEffect
+                intensity={partnerWeatherEffect.intensity}
+                isDay={partnerWeather.current.is_day === 1}
+              />
+            )}
+            {partnerWeatherEffect.type === 'snow' && (
+              <SnowEffect
+                intensity={partnerWeatherEffect.intensity}
+                isDay={partnerWeather.current.is_day === 1}
+              />
+            )}
+            {partnerWeatherEffect.type === 'clouds' && (
+              <CloudEffect
+                density={partnerWeatherEffect.density}
+                isDay={partnerWeather.current.is_day === 1}
+              />
+            )}
+            {partnerWeatherEffect.type === 'thunderstorm' && (
+              <ThunderstormEffect isDay={partnerWeather.current.is_day === 1} />
+            )}
+          </>
+        )}
       </MaskedView>
 
       {/* Bottom half (my weather) with mask */}
@@ -93,6 +148,32 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
         <ParticleSystem count={4} color="rgba(255, 255, 255, 0.3)" />
         {/* Celestial body for bottom half */}
         {myWeather && <CelestialSky weather={myWeather} isTop={false} />}
+        {/* Weather effects for bottom half */}
+        {myWeatherEffect && myWeather && (
+          <>
+            {myWeatherEffect.type === 'rain' && (
+              <RainEffect
+                intensity={myWeatherEffect.intensity}
+                isDay={myWeather.current.is_day === 1}
+              />
+            )}
+            {myWeatherEffect.type === 'snow' && (
+              <SnowEffect
+                intensity={myWeatherEffect.intensity}
+                isDay={myWeather.current.is_day === 1}
+              />
+            )}
+            {myWeatherEffect.type === 'clouds' && (
+              <CloudEffect
+                density={myWeatherEffect.density}
+                isDay={myWeather.current.is_day === 1}
+              />
+            )}
+            {myWeatherEffect.type === 'thunderstorm' && (
+              <ThunderstormEffect isDay={myWeather.current.is_day === 1} />
+            )}
+          </>
+        )}
       </MaskedView>
     </View>
   );

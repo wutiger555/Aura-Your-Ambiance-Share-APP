@@ -8,6 +8,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.4.0] - 2025-11-02 (Bridging Worlds)
+
+### Added - Enhanced Visual Experience & Storytelling
+
+#### Dynamic Weather Effects
+- **Background Weather Animations**: Added immersive weather-based animations that respond to real-time conditions without interfering with main UI
+  - **RainEffect**: Light, moderate, and heavy rain animations with realistic drop patterns (15-40 particles)
+  - **SnowEffect**: Snowflakes with rotation and horizontal drift (20-50 particles) for light to heavy snow
+  - **CloudEffect**: Drifting clouds using expo-blur for soft appearance (3-6 clouds based on coverage)
+  - **ThunderstormEffect**: Dramatic lightning flash sequences with jagged bolt graphics and random intervals (5-15s)
+- **Weather Effect Integration**: BlendedSky now conditionally renders effects based on Open-Meteo weather codes (0-99)
+  - Rain: codes 51-65, 80-82 (drizzle, rain, showers)
+  - Snow: codes 71-86 (snow fall and showers)
+  - Clouds: codes 2-3 (partly cloudy, overcast)
+  - Thunderstorm: codes 95-99 (thunderstorm with rain/hail)
+
+#### Living Heartline Connection
+- **Heartline Redesign**: Transformed the static dashed line into a "living connection" with emotional resonance
+  - **Breathing Animation**: Continuous pulse effect (4-second cycle) with opacity (0.3 → 0.7) and width (1 → 2) variations
+  - **Bidirectional Particle Flow**: Energy particles travel along the Heartline curve in both directions
+    - Color-coded based on day/night status (warm for day, cool for night)
+    - Dynamic particle count based on distance (4-10 particles: <1000km=4, <5000km=6, <10000km=8, 10000km+=10)
+    - Smooth Bezier curve path following: Q(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
+    - Particles pulse in opacity and scale during journey (4-6 second duration)
+- **Design Philosophy**: Embodies "shared breath across the distance" with synchronized breathing rhythm
+
+#### Narrative-Driven Intro Screen
+- **IntroScreenRedesign**: Complete 4-act visual journey (8 seconds) connecting separation to unity
+  - **Act 1 (0-2s)**: Two globes (cyan left, pink right) fly in from opposite sides, representing separation
+  - **Act 2 (2-4s)**: Aura Logo emerges in center with breathing glow, representing hope and possibility
+  - **Act 3 (4-6s)**: Energy lines gracefully draw from globes to Logo, visualizing the connection process
+  - **Act 4 (6-8s)**: Heartline preview forms, transitioning from story to functionality
+  - **Narrative Text**: Progressive story - "Two people." → "Different skies." → "One shared atmosphere." (highlighted in gold)
+- **Visual Continuity**: Uses same globe design language throughout the app for consistency
+
+#### Enhanced Connection Animation
+- **ConnectionIntroRedesign**: 5-act bridge between location input and main screen (10 seconds)
+  - **Act 1 (0-2s)**: Globes pulse in, continuing from Intro Screen
+  - **Act 2 (2-4s)**: Globes breathe in sync (3-second cycle), building anticipation
+  - **Act 3 (4-6s)**: World map emerges with city markers appearing at actual geographic coordinates
+  - **Act 4 (6-8s)**: Heartline draws between cities and begins breathing
+  - **Act 5 (8-10s)**: Smooth fade to main screen gradient
+  - **Personalized Text**: "Weaving Your Connection" and "{City} ✦ {City}" display
+  - **Geographic Accuracy**: Uses Mercator projection for precise city marker placement
+
+### Changed
+
+#### Component Architecture
+- **Updated App.tsx** to use redesigned components:
+  - IntroScreen → IntroScreenRedesign
+  - ConnectionIntro → ConnectionIntroRedesign
+- **Enhanced BlendedSky**: Now serves as both gradient blending system and weather effect coordinator
+- **Heartline Component**: Integrated HeartlineParticles as child component with distance-based particle count
+
+#### Animation System
+- **All animations run at 60fps** on UI thread using React Native Reanimated v4
+- **Breathing Pattern Standardization**: Consistent 2-4 second cycles across all "living" elements
+- **Performance Optimizations**:
+  - Mobile-optimized particle counts (80% of web config for stars)
+  - Conditional rendering of weather effects based on actual weather
+  - Efficient SharedValue usage throughout
+
+### Fixed
+- **CloudEffect Easing**: Changed from non-existent `Easing.sine` to `Easing.sin`
+- **CloudEffect Translation**: Fixed translateX from percentage string to numeric value
+
+### Documentation
+- **Created HEARTLINE_DESIGN.md**: Comprehensive design philosophy, technical implementation, and symbolic meanings
+- **Created INTRO_REDESIGN.md**: 4-act narrative structure, visual elements breakdown, and design decisions
+- **Created CONNECTION_INTRO_REDESIGN.md**: 5-act structure, continuity strategy, and technical details
+- **Updated CLAUDE.md**: Added new component architecture and implementation guidelines
+
+### Design Philosophy
+
+This release embodies Aura's core narrative: **"From Separation to Unity"**
+
+- **Intro Screen**: Establishes the problem (distance, separation, different worlds)
+- **Connection Animation**: Shows the solution (technology bringing worlds together)
+- **Main Screen**: Delivers the experience (living, breathing connection in real-time)
+- **Weather Effects**: Makes the atmosphere tangible and dynamic
+- **Living Heartline**: Represents the ongoing, active nature of emotional connection
+
+All elements use consistent visual language (globes, breathing rhythm, color coding) to create a cohesive experience.
+
+---
+
 ## [2.1.0] - 2025-11-02
 
 ### Added
