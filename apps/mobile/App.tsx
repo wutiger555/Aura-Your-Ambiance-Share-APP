@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -9,10 +9,12 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Settings as SettingsIcon } from 'lucide-react-native';
+import { Settings as SettingsIcon, MessageCircle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useLocationStore } from './src/stores/useLocationStore';
 import { useWeatherStore } from './src/stores/useWeatherStore';
+import { useMessageStore } from './src/stores/useMessageStore'; // v2.5.0
 import {
   getCoordinatesForCity,
   getWeather,
@@ -22,6 +24,7 @@ import {
 
 // New Components
 import IntroScreen from './src/components/aura/IntroScreenRedesign';
+import CoupleSetupScreen from './src/components/aura/CoupleSetupScreen'; // v2.5.0
 import LocationInputScreen from './src/components/aura/LocationInputScreen';
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
@@ -29,17 +32,28 @@ import AuraGlobe from './src/components/aura/AuraGlobe';
 import Heartline from './src/components/aura/Heartline';
 import TimeBridge from './src/components/aura/TimeBridge';
 import Settings from './src/components/Settings';
+import SettingsRedesign from './src/components/SettingsRedesign'; // New visual map-based settings
+import StatusEditModal from './src/components/aura/StatusEditModal'; // v2.5.0
+import RelationshipMilestone from './src/components/aura/RelationshipMilestone'; // v2.5.0
+import MilestoneEditModal from './src/components/aura/MilestoneEditModal'; // v2.5.0
+import WeatherReminderCard from './src/components/aura/WeatherReminderCard'; // v2.5.0
+import MessageCenter from './src/components/aura/MessageCenter'; // v2.5.0
 import { ANIMATION_DURATIONS } from './src/constants/Animations';
+import { generateWeatherReminders, generateTemperatureDifferenceReminder } from './src/utils/weatherReminders'; // v2.5.0
 
-type SetupStep = 'intro' | 'inputMy' | 'inputPartner' | 'connecting' | 'done';
+type SetupStep = 'intro' | 'coupleSetup' | 'inputMy' | 'inputPartner' | 'connecting' | 'done';
 
 export default function App() {
   const {
     myLocation,
     partnerLocation,
+    coupleProfile, // v2.5.0
     hasSetup,
     setMyLocation,
     setPartnerLocation,
+    setCoupleProfile, // v2.5.0
+    updateStatusMessage, // v2.5.0
+    updateMilestoneDates, // v2.5.0
     updateNicknames,
     clearLocations,
   } = useLocationStore();
@@ -54,13 +68,51 @@ export default function App() {
     setError,
   } = useWeatherStore();
 
+  const {
+    messages,
+    addMessage,
+    deleteMessage,
+  } = useMessageStore(); // v2.5.0
+
   const [setupStep, setSetupStep] = useState<SetupStep>('intro');
+
+  // Debug: Log when messages change
+  useEffect(() => {
+    console.log('[App] Messages count changed:', messages.length);
+    console.log('[App] Messages array:', JSON.stringify(messages, null, 2));
+  }, [messages]);
   const [showSettings, setShowSettings] = useState(false);
   const [showTimeBridge, setShowTimeBridge] = useState(false);
   const [cityInput, setCityInput] = useState(''); // State for the input field
   const [cityError, setCityError] = useState('');
   const [showIntro, setShowIntro] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [editingStatus, setEditingStatus] = useState<'me' | 'partner' | null>(null); // v2.5.0
+  const [showMilestoneEdit, setShowMilestoneEdit] = useState(false); // v2.5.0
+  const [showMessages, setShowMessages] = useState(false); // v2.5.0
+
+  // v2.5.0: Generate weather reminders (must be before any conditional returns)
+  const weatherReminders = useMemo(() => {
+    if (!myWeather || !partnerWeather || !coupleProfile) return [];
+
+    const partnerReminders = generateWeatherReminders(
+      partnerWeather,
+      coupleProfile.partnerName
+    );
+
+    const tempDiffReminder = generateTemperatureDifferenceReminder(
+      myWeather,
+      partnerWeather,
+      coupleProfile.myName,
+      coupleProfile.partnerName
+    );
+
+    if (tempDiffReminder) {
+      return [tempDiffReminder, ...partnerReminders];
+    }
+
+    return partnerReminders;
+  }, [myWeather, partnerWeather, coupleProfile]);
 
   // Check if setup is complete
   useEffect(() => {
@@ -75,13 +127,18 @@ export default function App() {
       if (isFirstLoad) {
         // Show intro animation on first load
         setShowIntro(true);
+        // Fetch weather data during animation
+        fetchWeatherData();
         setTimeout(() => {
           setShowIntro(false);
           setIsFirstLoad(false);
+          setSetupStep('done');
         }, ANIMATION_DURATIONS.CONNECTION_INTRO);
+      } else {
+        // If not first load, go directly to done
+        setSetupStep('done');
+        fetchWeatherData();
       }
-      setSetupStep('done');
-      fetchWeatherData();
     } else if (!myLocation && !partnerLocation) {
       // Only reset to intro if both locations are null
       console.log('[App] No locations, showing intro');
@@ -140,9 +197,11 @@ export default function App() {
         setPartnerLocation(location);
         setTimeout(() => {
           setSetupStep('connecting');
+          // Start fetching weather data immediately when animation starts
+          fetchWeatherData();
           setTimeout(() => {
             setSetupStep('done');
-          }, ANIMATION_DURATIONS.CONNECTION_INTRO);
+          }, ANIMATION_DURATIONS.CONNECTION_INTRO + 800); // Add 800ms buffer after animation
         }, 400);
       }
     } catch (error) {
@@ -190,7 +249,29 @@ export default function App() {
     return (
       <>
         <StatusBar barStyle="light-content" />
-        <IntroScreen onStart={() => setSetupStep('inputMy')} />
+        <IntroScreen onStart={() => {
+          // v2.5.0: Check if coupleProfile exists, if not go to coupleSetup first
+          if (!coupleProfile) {
+            setSetupStep('coupleSetup');
+          } else {
+            setSetupStep('inputMy');
+          }
+        }} />
+      </>
+    );
+  }
+
+  // v2.5.0: Render CoupleSetupScreen
+  if (setupStep === 'coupleSetup') {
+    return (
+      <>
+        <StatusBar barStyle="light-content" />
+        <CoupleSetupScreen
+          onComplete={(profile) => {
+            setCoupleProfile(profile);
+            setSetupStep('inputMy');
+          }}
+        />
       </>
     );
   }
@@ -249,8 +330,10 @@ export default function App() {
           locations={[0, 0.3, 0.6, 1]}
           style={StyleSheet.absoluteFill}
         />
-        <ActivityIndicator size="large" color="#06b6d4" />
-        <Text style={styles.loadingText}>Loading weather data...</Text>
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color="#06b6d4" />
+          <Text style={styles.loadingText}>正在連接你們的天空...</Text>
+        </View>
       </View>
     );
   }
@@ -261,8 +344,9 @@ export default function App() {
 
   // Render Main App with new components
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" />
 
       {/* Blended Sky Background with Celestial Bodies and Particles */}
       <BlendedSky
@@ -277,6 +361,12 @@ export default function App() {
         weather={partnerWeather!}
         position="top"
         distance={distance}
+        profile={coupleProfile ? {
+          name: coupleProfile.partnerName,
+          emoji: coupleProfile.partnerEmoji,
+          statusMessage: partnerLocation?.statusMessage,
+        } : undefined}
+        onEditStatus={() => setEditingStatus('partner')}
       />
 
       {/* AuraGlobe for Me (Bottom) */}
@@ -285,6 +375,12 @@ export default function App() {
         weather={myWeather!}
         position="bottom"
         distance={distance}
+        profile={coupleProfile ? {
+          name: coupleProfile.myName,
+          emoji: coupleProfile.myEmoji,
+          statusMessage: myLocation?.statusMessage,
+        } : undefined}
+        onEditStatus={() => setEditingStatus('me')}
       />
 
       {/* Heartline (Connection curve with stats) */}
@@ -296,11 +392,40 @@ export default function App() {
         onShowDetails={() => setShowTimeBridge(true)}
       />
 
-      {/* Settings Button (Bottom Right) */}
-      <SafeAreaView style={styles.settingsButtonContainer} edges={['bottom', 'right']}>
+      {/* v2.5.0: Relationship Milestone */}
+      {coupleProfile && (
+        <RelationshipMilestone
+          relationshipStart={coupleProfile.relationshipStart}
+          nextMeetingDate={coupleProfile.nextMeetingDate}
+          lastMetDate={coupleProfile.lastMetDate}
+          onEdit={() => setShowMilestoneEdit(true)}
+        />
+      )}
+
+      {/* v2.5.0: Weather Reminder Card */}
+      {weatherReminders.length > 0 && (
+        <WeatherReminderCard reminders={weatherReminders} />
+      )}
+
+      {/* Action Buttons (Bottom Right) */}
+      <SafeAreaView style={styles.actionButtonsContainer} edges={['bottom', 'right']}>
+        {/* v2.5.0: Message Button */}
+        <TouchableOpacity
+          onPress={() => setShowMessages(true)}
+          style={[styles.actionButton, styles.messageButton]}
+        >
+          <MessageCircle size={22} color="white" />
+          {messages.length > 0 && (
+            <View style={styles.messageBadge}>
+              <Text style={styles.messageBadgeText}>{messages.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Settings Button */}
         <TouchableOpacity
           onPress={() => setShowSettings(!showSettings)}
-          style={styles.settingsButton}
+          style={styles.actionButton}
         >
           <SettingsIcon size={24} color="white" />
         </TouchableOpacity>
@@ -329,7 +454,58 @@ export default function App() {
         distance={distance}
         timeDifference={timeDiff}
       />
-    </View>
+
+      {/* v2.5.0: Status Edit Modal */}
+      <StatusEditModal
+        visible={editingStatus !== null}
+        currentStatus={
+          editingStatus === 'me'
+            ? myLocation?.statusMessage || ''
+            : editingStatus === 'partner'
+            ? partnerLocation?.statusMessage || ''
+            : ''
+        }
+        personName={
+          editingStatus === 'me'
+            ? coupleProfile?.myName || 'You'
+            : editingStatus === 'partner'
+            ? coupleProfile?.partnerName || 'Partner'
+            : ''
+        }
+        onSave={(newStatus) => {
+          if (editingStatus) {
+            updateStatusMessage(editingStatus === 'me', newStatus);
+            setEditingStatus(null);
+          }
+        }}
+        onClose={() => setEditingStatus(null)}
+      />
+
+      {/* v2.5.0: Milestone Edit Modal */}
+      <MilestoneEditModal
+        visible={showMilestoneEdit}
+        relationshipStart={coupleProfile?.relationshipStart}
+        nextMeetingDate={coupleProfile?.nextMeetingDate}
+        lastMetDate={coupleProfile?.lastMetDate}
+        onSave={(dates) => {
+          updateMilestoneDates(dates);
+          setShowMilestoneEdit(false);
+        }}
+        onClose={() => setShowMilestoneEdit(false)}
+      />
+
+      {/* v2.5.0: Message Center */}
+      <MessageCenter
+        visible={showMessages}
+        messages={messages}
+        myName={coupleProfile?.myName || 'You'}
+        partnerName={coupleProfile?.partnerName || 'Partner'}
+        onClose={() => setShowMessages(false)}
+        onSend={(content, emoji) => addMessage(content, true, emoji)}
+        onDelete={deleteMessage}
+      />
+      </View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -344,20 +520,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#000',
   },
-  loadingText: {
-    color: '#94a3b8',
-    fontSize: 16,
-    marginTop: 16,
+  loadingContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  settingsButtonContainer: {
+  loadingText: {
+    color: '#e0e7ff',
+    fontSize: 18,
+    marginTop: 20,
+    fontWeight: '500',
+    letterSpacing: 0.5,
+  },
+  // v2.5.0: Action buttons container
+  actionButtonsContainer: {
     position: 'absolute',
     bottom: 0,
     right: 0,
     paddingHorizontal: 20,
     paddingTop: 8,
     zIndex: 100,
+    gap: 12,
   },
-  settingsButton: {
+  actionButton: {
     padding: 12,
     borderRadius: 24,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -368,5 +552,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
+  },
+  messageButton: {
+    position: 'relative',
+  },
+  messageBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#000',
+  },
+  messageBadgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

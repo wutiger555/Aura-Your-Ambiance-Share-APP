@@ -19,7 +19,9 @@
       "Bash(npm run type-check:*)",
       "Bash(npm run mobile:*)",
       "Bash(lsof:*)",
-      "Bash(xargs kill -9)"
+      "Bash(xargs kill -9)",
+      "Bash(find:*)",
+      "Bash(npx expo start:*)"
     ],
     "deny": [],
     "ask": []

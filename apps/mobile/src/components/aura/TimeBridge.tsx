@@ -58,13 +58,13 @@ const TimeBridge: React.FC<TimeBridgeProps> = ({
   const partnerClockRotation = useRef(new RNAnimated.Value(0)).current;
   const planeOffset = useRef(new RNAnimated.Value(0)).current;
 
-  // Update current time every minute
+  // Update current time every second for real-time updates
   useEffect(() => {
     if (!visible) return;
 
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000);
+    }, 1000); // Update every second
 
     return () => clearInterval(timer);
   }, [visible]);

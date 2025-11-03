@@ -1,20 +1,30 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Modal,
-  Pressable,
   TextInput,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
+  Dimensions,
+  Image,
 } from 'react-native';
-import { X, AlertCircle, Clock, MapPin, Edit2, Save } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+import { X, Edit3, MapPin, Plane } from 'lucide-react-native';
+import Svg, { Path, Circle, Defs, LinearGradient as SvgLinearGradient, Stop, G } from 'react-native-svg';
 import { LocationData, WeatherData } from '@aura/shared';
-import { getDSTInfo, formatUTCOffset } from '../utils/dstUtils';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface SettingsProps {
   visible: boolean;
@@ -27,6 +37,16 @@ interface SettingsProps {
   onUpdateNicknames?: (myNickname: string, partnerNickname: string) => void;
 }
 
+type EditingLocation = 'my' | 'partner' | null;
+
+/**
+ * Settings - Connection Management Interface
+ * Design Philosophy:
+ * - World map showing actual geographic connection
+ * - Flight path with distance and duration
+ * - Inline editing for location nicknames
+ * - Ritualistic "break connection" for reset
+ */
 export default function Settings({
   visible,
   onClose,
@@ -37,524 +57,654 @@ export default function Settings({
   partnerWeather,
   onUpdateNicknames,
 }: SettingsProps) {
+  const [editing, setEditing] = useState<EditingLocation>(null);
   const [myNickname, setMyNickname] = useState(myLocation?.nickname || '');
   const [partnerNickname, setPartnerNickname] = useState(partnerLocation?.nickname || '');
-  const [isEditingMy, setIsEditingMy] = useState(false);
-  const [isEditingPartner, setIsEditingPartner] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetProgress, setResetProgress] = useState(0);
 
-  // Get DST information for both locations
-  const myDSTInfo = useMemo(() => {
-    if (!myWeather?.timezone) return null;
-    return getDSTInfo(myWeather.timezone);
-  }, [myWeather?.timezone]);
+  // Plane animation
+  const planePosition = useSharedValue(0);
 
-  const partnerDSTInfo = useMemo(() => {
-    if (!partnerWeather?.timezone) return null;
-    return getDSTInfo(partnerWeather.timezone);
-  }, [partnerWeather?.timezone]);
-
-  // Check if any location has an upcoming DST transition
-  const hasUpcomingTransition = myDSTInfo?.transitionInfo || partnerDSTInfo?.transitionInfo;
-
-  const handleSaveNicknames = () => {
-    if (onUpdateNicknames) {
-      onUpdateNicknames(myNickname.trim(), partnerNickname.trim());
+  React.useEffect(() => {
+    if (visible) {
+      // Animate plane
+      planePosition.value = withRepeat(
+        withTiming(1, {
+          duration: 8000,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        -1,
+        false
+      );
     }
-    setIsEditingMy(false);
-    setIsEditingPartner(false);
-    Alert.alert('Saved', 'Nicknames updated successfully!');
+  }, [visible]);
+
+  // Convert lat/long to screen coordinates (simplified for better visibility)
+  const latLongToMapCoords = (lat: number, long: number) => {
+    const mapWidth = SCREEN_WIDTH * 0.8;
+    const mapHeight = 200;
+    const centerX = SCREEN_WIDTH * 0.5;
+    const centerY = 230; // Fixed position
+
+    // Simplified projection
+    const x = centerX + ((long / 180) * (mapWidth / 2));
+    const latRad = (lat * Math.PI) / 180;
+    const mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));
+    const y = centerY - (mercN / Math.PI) * (mapHeight / 2);
+
+    return { x, y };
   };
+
+  const myMapPos = myLocation
+    ? latLongToMapCoords(myLocation.latitude, myLocation.longitude)
+    : { x: SCREEN_WIDTH * 0.25, y: 230 };
+
+  const partnerMapPos = partnerLocation
+    ? latLongToMapCoords(partnerLocation.latitude, partnerLocation.longitude)
+    : { x: SCREEN_WIDTH * 0.75, y: 230 };
+
+  // Calculate distance and flight time
+  const calculateDistance = () => {
+    if (!myLocation || !partnerLocation) return 0;
+    const R = 6371; // Earth's radius in km
+    const lat1 = (myLocation.latitude * Math.PI) / 180;
+    const lat2 = (partnerLocation.latitude * Math.PI) / 180;
+    const deltaLat = ((partnerLocation.latitude - myLocation.latitude) * Math.PI) / 180;
+    const deltaLon = ((partnerLocation.longitude - myLocation.longitude) * Math.PI) / 180;
+
+    const a =
+      Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  };
+
+  const distance = calculateDistance();
+  const flightHours = Math.floor(distance / 800); // Average flight speed ~800 km/h
+  const flightMinutes = Math.round((distance / 800 - flightHours) * 60);
+
+  // Bezier curve for flight path
+  const midX = (myMapPos.x + partnerMapPos.x) / 2;
+  const midY = Math.min(myMapPos.y, partnerMapPos.y) - 80; // Arc upwards
+  const flightPath = `M ${myMapPos.x} ${myMapPos.y} Q ${midX} ${midY} ${partnerMapPos.x} ${partnerMapPos.y}`;
+
+  const handleSave = (location: 'my' | 'partner') => {
+    if (onUpdateNicknames) {
+      onUpdateNicknames(
+        location === 'my' ? myNickname.trim() : myLocation?.nickname || '',
+        location === 'partner' ? partnerNickname.trim() : partnerLocation?.nickname || ''
+      );
+    }
+    setEditing(null);
+  };
+
+  const handleResetHold = () => {
+    // Hold to break connection
+    const interval = setInterval(() => {
+      setResetProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setShowResetConfirm(false);
+          onReset();
+          onClose();
+          return 0;
+        }
+        return prev + 2;
+      });
+    }, 30);
+
+    return () => {
+      clearInterval(interval);
+      setResetProgress(0);
+    };
+  };
+
+  const planeAnimatedStyle = useAnimatedStyle(() => {
+    const t = planePosition.value;
+    const x = (1 - t) * (1 - t) * myMapPos.x + 2 * (1 - t) * t * midX + t * t * partnerMapPos.x;
+    const y = (1 - t) * (1 - t) * myMapPos.y + 2 * (1 - t) * t * midY + t * t * partnerMapPos.y;
+
+    // Calculate rotation angle
+    const dx = partnerMapPos.x - myMapPos.x;
+    const dy = partnerMapPos.y - myMapPos.y;
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+    return {
+      transform: [
+        { translateX: x - 12 },
+        { translateY: y - 12 },
+        { rotate: `${angle + 90}deg` },
+      ],
+    };
+  });
 
   if (!visible) return null;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}
-      >
-        <Pressable style={styles.overlay} onPress={onClose}>
-          {/* This is the main sheet container with a bounded height */}
-          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Settings</Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <X size={24} color="white" />
-              </TouchableOpacity>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.container}>
+        {/* Background gradient */}
+        <LinearGradient
+          colors={['#0a0118', '#1a1230', '#1e1b4b', '#1e293b']}
+          locations={[0, 0.3, 0.6, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+
+        {/* Title */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Your Connection</Text>
+          <Text style={styles.subtitle}>Tap location names to edit</Text>
+        </View>
+
+        {/* Map Background - Stylized world map pattern */}
+        <View style={styles.mapBackground}>
+          {/* Grid lines to simulate map */}
+          <View style={styles.mapGrid}>
+            {[...Array(6)].map((_, i) => (
+              <View key={`h-${i}`} style={[styles.gridLineH, { top: `${(i + 1) * 16.66}%` }]} />
+            ))}
+            {[...Array(8)].map((_, i) => (
+              <View key={`v-${i}`} style={[styles.gridLineV, { left: `${(i + 1) * 12.5}%` }]} />
+            ))}
+          </View>
+
+          {/* Flight Path SVG */}
+          <Svg width={SCREEN_WIDTH} height={350} style={styles.flightSvg}>
+            <Defs>
+              <SvgLinearGradient id="flightGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor="#06b6d4" stopOpacity="0.8" />
+                <Stop offset="100%" stopColor="#ec4899" stopOpacity="0.8" />
+              </SvgLinearGradient>
+            </Defs>
+
+            {/* Flight path */}
+            <Path
+              d={flightPath}
+              stroke="url(#flightGradient)"
+              strokeWidth={3}
+              fill="none"
+              strokeDasharray="8,6"
+            />
+
+            {/* My location marker */}
+            <G>
+              <Circle cx={myMapPos.x} cy={myMapPos.y} r={20} fill="rgba(6, 182, 212, 0.15)" />
+              <Circle cx={myMapPos.x} cy={myMapPos.y} r={12} fill="#06b6d4" />
+              <Circle cx={myMapPos.x} cy={myMapPos.y} r={5} fill="white" />
+            </G>
+
+            {/* Partner location marker */}
+            <G>
+              <Circle cx={partnerMapPos.x} cy={partnerMapPos.y} r={20} fill="rgba(236, 72, 153, 0.15)" />
+              <Circle cx={partnerMapPos.x} cy={partnerMapPos.y} r={12} fill="#ec4899" />
+              <Circle cx={partnerMapPos.x} cy={partnerMapPos.y} r={5} fill="white" />
+            </G>
+          </Svg>
+
+          {/* Animated plane */}
+          <Animated.View style={[styles.plane, planeAnimatedStyle]}>
+            <Plane size={20} color="#ffffff" strokeWidth={2} />
+          </Animated.View>
+
+          {/* City labels */}
+          <View style={[styles.cityLabel, { left: myMapPos.x - 50, top: myMapPos.y + 30 }]}>
+            <Text style={styles.cityLabelText}>{myLocation?.name}</Text>
+          </View>
+          <View style={[styles.cityLabel, { left: partnerMapPos.x - 50, top: partnerMapPos.y + 30 }]}>
+            <Text style={styles.cityLabelText}>{partnerLocation?.name}</Text>
+          </View>
+        </View>
+
+        {/* Connection Info Card - Moved below map */}
+        <View style={styles.infoCard}>
+          <BlurView intensity={80} tint="dark" style={styles.infoBlur}>
+            <View style={styles.infoContent}>
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <MapPin size={14} color="#94a3b8" />
+                  <Text style={styles.infoLabel}>Distance</Text>
+                </View>
+                <Text style={styles.infoValue}>{Math.round(distance).toLocaleString()} km</Text>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <Plane size={14} color="#94a3b8" />
+                  <Text style={styles.infoLabel}>Flight Time</Text>
+                </View>
+                <Text style={styles.infoValue}>
+                  ~{flightHours}h {flightMinutes > 0 ? `${flightMinutes}m` : ''}
+                </Text>
+              </View>
             </View>
+          </BlurView>
+        </View>
 
-            {/* The ScrollView now has a parent with a fixed height and can use flex: 1 */}
-            <ScrollView
-              style={styles.content}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={true}
-            >
-              {/* DST Transition Warning */}
-              {hasUpcomingTransition && (
-                <View style={styles.warningBanner}>
-                  <AlertCircle size={20} color="#fb923c" />
-                  <View style={styles.warningTextContainer}>
-                    <Text style={styles.warningTitle}>Time Change Alert</Text>
-                    {myDSTInfo?.transitionInfo && (
-                      <Text style={styles.warningText}>
-                        Your location: {myDSTInfo.transitionInfo.warningMessage}
-                      </Text>
-                    )}
-                    {partnerDSTInfo?.transitionInfo && (
-                      <Text style={styles.warningText}>
-                        Partner's location: {partnerDSTInfo.transitionInfo.warningMessage}
-                      </Text>
-                    )}
-                  </View>
-                </View>
+        {/* Location Cards */}
+        <View style={styles.locationsContainer}>
+          {/* My Location */}
+          <TouchableOpacity
+            style={styles.locationCard}
+            onPress={() => setEditing('my')}
+            activeOpacity={0.8}
+          >
+            <BlurView intensity={60} tint="dark" style={styles.locationBlur}>
+              <View style={styles.locationHeader}>
+                <View style={[styles.locationDot, { backgroundColor: '#06b6d4' }]} />
+                <Text style={styles.locationLabel}>You</Text>
+                <Edit3 size={12} color="rgba(255, 255, 255, 0.4)" />
+              </View>
+              {editing === 'my' ? (
+                <TextInput
+                  style={styles.locationInput}
+                  value={myNickname}
+                  onChangeText={setMyNickname}
+                  onBlur={() => handleSave('my')}
+                  autoFocus
+                  maxLength={20}
+                  placeholder={myLocation?.name}
+                  placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                />
+              ) : (
+                <Text style={styles.locationName} numberOfLines={1}>
+                  {myNickname || myLocation?.name || 'Not set'}
+                </Text>
               )}
+              <Text style={styles.locationCity}>{myLocation?.name}</Text>
+            </BlurView>
+          </TouchableOpacity>
 
-              {/* Custom Nicknames Section */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Edit2 size={18} color="#94a3b8" />
-                  <Text style={styles.sectionTitle}>Custom Names</Text>
-                </View>
-                <Text style={styles.sectionDescription}>
-                  Personalize how you see each location (e.g., "My Love", "Mom", "Best Friend")
+          {/* Partner Location */}
+          <TouchableOpacity
+            style={styles.locationCard}
+            onPress={() => setEditing('partner')}
+            activeOpacity={0.8}
+          >
+            <BlurView intensity={60} tint="dark" style={styles.locationBlur}>
+              <View style={styles.locationHeader}>
+                <View style={[styles.locationDot, { backgroundColor: '#ec4899' }]} />
+                <Text style={styles.locationLabel}>Partner</Text>
+                <Edit3 size={12} color="rgba(255, 255, 255, 0.4)" />
+              </View>
+              {editing === 'partner' ? (
+                <TextInput
+                  style={styles.locationInput}
+                  value={partnerNickname}
+                  onChangeText={setPartnerNickname}
+                  onBlur={() => handleSave('partner')}
+                  autoFocus
+                  maxLength={20}
+                  placeholder={partnerLocation?.name}
+                  placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                />
+              ) : (
+                <Text style={styles.locationName} numberOfLines={1}>
+                  {partnerNickname || partnerLocation?.name || 'Not set'}
+                </Text>
+              )}
+              <Text style={styles.locationCity}>{partnerLocation?.name}</Text>
+            </BlurView>
+          </TouchableOpacity>
+        </View>
+
+        {/* Reset Connection Button */}
+        <View style={styles.bottomActions}>
+          <TouchableOpacity
+            onPress={() => setShowResetConfirm(true)}
+            style={styles.resetButton}
+          >
+            <BlurView intensity={30} tint="dark" style={styles.resetButtonBlur}>
+              <Text style={styles.resetButtonText}>Break Connection</Text>
+              <Text style={styles.resetButtonHint}>Reset and start over</Text>
+            </BlurView>
+          </TouchableOpacity>
+        </View>
+
+        {/* Reset Confirmation Modal */}
+        {showResetConfirm && (
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(200)}
+            style={styles.resetOverlay}
+          >
+            <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill}>
+              <View style={styles.resetModal}>
+                <Text style={styles.resetTitle}>Break Connection?</Text>
+                <Text style={styles.resetMessage}>
+                  This will disconnect both locations and return you to the beginning.
+                </Text>
+                <Text style={styles.resetInstruction}>
+                  Hold the button below to confirm
                 </Text>
 
-                {/* My Nickname */}
-                <View style={styles.nicknameCard}>
-                  <View style={styles.nicknameHeader}>
-                    <Text style={styles.nicknameLabel}>Your Location Name</Text>
-                    <View style={[styles.locationBadge, styles.myBadge]}>
-                      <Text style={styles.badgeText}>Me</Text>
-                    </View>
-                  </View>
-                  {isEditingMy ? (
-                    <TextInput
-                      style={styles.nicknameInput}
-                      value={myNickname}
-                      onChangeText={setMyNickname}
-                      placeholder="e.g., Home, My Place"
-                      placeholderTextColor="#64748b"
-                      autoFocus
-                    />
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.nicknameDisplay}
-                      onPress={() => setIsEditingMy(true)}
-                    >
-                      <Text style={styles.nicknameText}>
-                        {myNickname || myLocation?.name || 'Not set'}
-                      </Text>
-                      <Edit2 size={16} color="#94a3b8" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Partner Nickname */}
-                <View style={styles.nicknameCard}>
-                  <View style={styles.nicknameHeader}>
-                    <Text style={styles.nicknameLabel}>Partner's Location Name</Text>
-                    <View style={[styles.locationBadge, styles.partnerBadge]}>
-                      <Text style={styles.badgeText}>Partner</Text>
-                    </View>
-                  </View>
-                  {isEditingPartner ? (
-                    <TextInput
-                      style={styles.nicknameInput}
-                      value={partnerNickname}
-                      onChangeText={setPartnerNickname}
-                      placeholder="e.g., My Love, Mom, Best Friend"
-                      placeholderTextColor="#64748b"
-                      autoFocus
-                    />
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.nicknameDisplay}
-                      onPress={() => setIsEditingPartner(true)}
-                    >
-                      <Text style={styles.nicknameText}>
-                        {partnerNickname || partnerLocation?.name || 'Not set'}
-                      </Text>
-                      <Edit2 size={16} color="#94a3b8" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {(isEditingMy || isEditingPartner) && (
-                  <TouchableOpacity style={styles.saveButton} onPress={handleSaveNicknames}>
-                    <Save size={16} color="white" />
-                    <Text style={styles.saveButtonText}>Save Changes</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {/* Location Information */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <MapPin size={18} color="#94a3b8" />
-                  <Text style={styles.sectionTitle}>Locations</Text>
-                </View>
-
-                {/* My Location */}
-                {myLocation && (
-                  <View style={styles.locationCard}>
-                    <View style={styles.locationHeader}>
-                      <Text style={styles.locationLabel}>Your Location</Text>
-                      <View style={[styles.locationBadge, styles.myBadge]}>
-                        <Text style={styles.badgeText}>Me</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.locationName}>{myLocation.name}</Text>
-                    <Text style={styles.locationCoords}>
-                      {myLocation.latitude.toFixed(4)}°, {myLocation.longitude.toFixed(4)}°
+                <TouchableOpacity
+                  style={styles.holdButton}
+                  onPressIn={handleResetHold}
+                  onPressOut={() => setResetProgress(0)}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.holdButtonInner}>
+                    <View style={[styles.holdProgress, { width: `${resetProgress}%` }]} />
+                    <Text style={styles.holdButtonText}>
+                      {resetProgress > 0 ? 'Hold to Break...' : 'Hold to Confirm'}
                     </Text>
                   </View>
-                )}
-
-                {/* Partner Location */}
-                {partnerLocation && (
-                  <View style={styles.locationCard}>
-                    <View style={styles.locationHeader}>
-                      <Text style={styles.locationLabel}>Partner's Location</Text>
-                      <View style={[styles.locationBadge, styles.partnerBadge]}>
-                        <Text style={styles.badgeText}>Partner</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.locationName}>{partnerLocation.name}</Text>
-                    <Text style={styles.locationCoords}>
-                      {partnerLocation.latitude.toFixed(4)}°, {partnerLocation.longitude.toFixed(4)}°
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Time Zone & DST Details */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Clock size={18} color="#94a3b8" />
-                  <Text style={styles.sectionTitle}>Time Zone & DST Status</Text>
-                </View>
-
-                {myWeather && myDSTInfo && (
-                  <View style={styles.timezoneCard}>
-                    <Text style={styles.timezoneLabel}>Your Timezone</Text>
-                    <Text style={styles.timezoneName}>{myWeather.timezone}</Text>
-                    <View style={styles.dstInfo}>
-                      <Clock size={14} color="#64748b" />
-                      <Text style={styles.dstText}>{formatUTCOffset(myDSTInfo)}</Text>
-                    </View>
-                  </View>
-                )}
-
-                {partnerWeather && partnerDSTInfo && (
-                  <View style={styles.timezoneCard}>
-                    <Text style={styles.timezoneLabel}>Partner's Timezone</Text>
-                    <Text style={styles.timezoneName}>{partnerWeather.timezone}</Text>
-                    <View style={styles.dstInfo}>
-                      <Clock size={14} color="#64748b" />
-                      <Text style={styles.dstText}>{formatUTCOffset(partnerDSTInfo)}</Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-
-              {/* Actions */}
-              <View style={styles.actions}>
-                <TouchableOpacity style={styles.resetButton} onPress={onReset}>
-                  <Text style={styles.resetButtonText}>Reset Locations</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                  <Text style={styles.cancelButtonText}>Close</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowResetConfirm(false);
+                    setResetProgress(0);
+                  }}
+                  style={styles.cancelResetButton}
+                >
+                  <Text style={styles.cancelResetText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
-            </ScrollView>
-          </View>
-        </Pressable>
-      </KeyboardAvoidingView>
+            </BlurView>
+          </Animated.View>
+        )}
+
+        {/* Close button */}
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <BlurView intensity={30} tint="dark" style={styles.closeButtonBlur}>
+            <X size={24} color="white" />
+          </BlurView>
+        </TouchableOpacity>
+      </View>
     </Modal>
   );
 }
 
-
 const styles = StyleSheet.create({
-  keyboardAvoidingView: {
+  container: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    justifyContent: 'flex-end', // Pushes modal sheet to the bottom
-  },
-  modalSheet: { // The container with a bounded height
-    height: '95%',
-    width: '100%',
-    backgroundColor: '#1e293b',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    flexDirection: 'column',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  titleContainer: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(148, 163, 184, 0.2)',
+    zIndex: 10,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  closeButton: {
-    padding: 8,
-    borderRadius: 12,
-    backgroundColor: 'rgba(148, 163, 184, 0.2)',
-  },
-  content: {
-    flex: 1, // This makes the ScrollView fill the rest of the modalSheet
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 120,
-  },
-
-  // Warning Banner
-  warningBanner: {
-    marginBottom: 20,
-    borderRadius: 16,
-    backgroundColor: 'rgba(251, 146, 60, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(251, 146, 60, 0.3)',
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  warningTextContainer: {
-    flex: 1,
-  },
-  warningTitle: {
-    fontSize: 16,
     fontWeight: '700',
-    color: '#fb923c',
-    marginBottom: 6,
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#fbbf24',
-    lineHeight: 20,
+    color: 'white',
     marginBottom: 4,
   },
-
-  // Sections
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#94a3b8',
-  },
-  sectionDescription: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 12,
-    lineHeight: 18,
-  },
-
-  // Nickname Cards
-  nicknameCard: {
-    backgroundColor: 'rgba(51, 65, 85, 0.4)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.2)',
-  },
-  nicknameHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  nicknameLabel: {
+  subtitle: {
     fontSize: 12,
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontWeight: '400',
   },
-  nicknameInput: {
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-    borderWidth: 1,
-    borderColor: '#06b6d4',
-    borderRadius: 12,
-    padding: 12,
-    color: 'white',
-    fontSize: 16,
+  mapBackground: {
+    position: 'absolute',
+    top: 130,
+    left: 0,
+    right: 0,
+    height: 350,
+    backgroundColor: 'rgba(15, 23, 42, 0.3)',
+    borderRadius: 20,
+    marginHorizontal: 10,
+    overflow: 'hidden',
   },
-  nicknameDisplay: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  mapGrid: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gridLineH: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(100, 116, 139, 0.15)',
+  },
+  gridLineV: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: 'rgba(100, 116, 139, 0.15)',
+  },
+  flightSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  plane: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+  },
+  cityLabel: {
+    position: 'absolute',
+    width: 100,
     alignItems: 'center',
-    paddingVertical: 8,
   },
-  nicknameText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-  },
-  saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#06b6d4',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  // Location Cards
-  locationCard: {
-    backgroundColor: 'rgba(51, 65, 85, 0.4)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.2)',
-  },
-  locationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  locationLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  locationBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  myBadge: {
-    backgroundColor: '#06b6d4',
-  },
-  partnerBadge: {
-    backgroundColor: '#ec4899',
-  },
-  badgeText: {
+  cityLabelText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: 'white',
-  },
-  locationName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: 'white',
-    marginBottom: 4,
-  },
-  locationCoords: {
-    fontSize: 13,
-    color: '#64748b',
-  },
-
-  // Timezone Cards
-  timezoneCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    borderLeftWidth: 3,
-    borderLeftColor: '#06b6d4',
-  },
-  timezoneLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginBottom: 4,
-  },
-  timezoneName: {
-    fontSize: 16,
     fontWeight: '600',
-    color: 'white',
-    marginBottom: 8,
+    color: 'rgba(255, 255, 255, 0.6)',
+    textAlign: 'center',
   },
-  dstInfo: {
+  infoCard: {
+    position: 'absolute',
+    top: 500,
+    left: 20,
+    right: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    zIndex: 5,
+  },
+  infoBlur: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  infoContent: {
+    padding: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 4,
   },
-  dstText: {
-    fontSize: 14,
-    color: '#10b981',
-    fontWeight: '600',
+  infoLabel: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  timezoneDetail: {
-    fontSize: 13,
-    color: '#64748b',
-    marginTop: 4,
+  infoValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
   },
-
-  // Actions
-  actions: {
-    marginTop: 8,
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(148, 163, 184, 0.2)',
+    marginVertical: 12,
+  },
+  locationsContainer: {
+    position: 'absolute',
+    top: 600,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
+    zIndex: 5,
   },
-  resetButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    borderWidth: 1,
-    borderColor: '#ef4444',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+  locationCard: {
+    flex: 1,
     borderRadius: 16,
-    alignItems: 'center',
+    overflow: 'hidden',
   },
-  resetButtonText: {
-    color: '#ef4444',
+  locationBlur: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    padding: 16,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  locationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  locationLabel: {
+    flex: 1,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  locationName: {
     fontSize: 16,
     fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 2,
   },
-  cancelButton: {
-    backgroundColor: 'rgba(148, 163, 184, 0.2)',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+  locationInput: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 2,
+    padding: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: '#06b6d4',
+  },
+  locationCity: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.4)',
+  },
+  bottomActions: {
+    position: 'absolute',
+    bottom: 50,
+    left: 20,
+    right: 20,
+    zIndex: 5,
+  },
+  resetButton: {
     borderRadius: 16,
+    overflow: 'hidden',
+  },
+  resetButtonBlur: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  resetButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ef4444',
+    marginBottom: 2,
+  },
+  resetButtonHint: {
+    fontSize: 11,
+    color: 'rgba(239, 68, 68, 0.6)',
+  },
+  resetOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  resetModal: {
+    width: SCREEN_WIDTH - 60,
+    padding: 30,
     alignItems: 'center',
   },
-  cancelButtonText: {
-    color: '#94a3b8',
+  resetTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 12,
+  },
+  resetMessage: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  resetInstruction: {
+    fontSize: 13,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  holdButton: {
+    width: '100%',
+    height: 56,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  holdButtonInner: {
+    flex: 1,
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderWidth: 2,
+    borderColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  holdProgress: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(239, 68, 68, 0.4)',
+  },
+  holdButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#ef4444',
+    zIndex: 1,
+  },
+  cancelResetButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  cancelResetText: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: '500',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    zIndex: 10,
+  },
+  closeButtonBlur: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
 });

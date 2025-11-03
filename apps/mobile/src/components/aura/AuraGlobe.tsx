@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LocationData, WeatherData, getSemanticTimeOfDay } from '@aura/shared';
 import { getWeatherAtmosphere } from '../../utils/weatherUtils';
@@ -11,6 +11,13 @@ interface AuraGlobeProps {
   weather: WeatherData | null;
   position: 'top' | 'bottom';
   distance?: number | null;
+  // v2.5.0: Personalization
+  profile?: {
+    name: string;
+    emoji?: string;
+    statusMessage?: string;
+  };
+  onEditStatus?: () => void;
 }
 
 /**
@@ -22,6 +29,8 @@ const AuraGlobe: React.FC<AuraGlobeProps> = ({
   weather,
   position,
   distance = null,
+  profile, // v2.5.0
+  onEditStatus, // v2.5.0
 }) => {
   const isTop = position === 'top';
 
@@ -82,8 +91,18 @@ const AuraGlobe: React.FC<AuraGlobeProps> = ({
       ]}
     >
       <View style={styles.content}>
+        {/* v2.5.0: Name + Emoji Header */}
+        {profile && (
+          <View style={styles.profileHeader}>
+            {profile.emoji && <Text style={styles.profileEmoji}>{profile.emoji}</Text>}
+            <Text style={styles.profileName}>{profile.name}</Text>
+          </View>
+        )}
+
         {/* Location name */}
-        <Text style={styles.locationName}>{location?.name || '...'}</Text>
+        <Text style={styles.locationName}>
+          {profile ? `in ${location?.name || '...'}` : location?.name || '...'}
+        </Text>
 
         {/* Clock */}
         {weather ? (
@@ -142,6 +161,20 @@ const AuraGlobe: React.FC<AuraGlobeProps> = ({
             </View>
           </View>
         )}
+
+        {/* v2.5.0: Status Message */}
+        {profile?.statusMessage && (
+          <TouchableOpacity
+            style={styles.statusContainer}
+            onPress={onEditStatus}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.statusMessage}>"{profile.statusMessage}"</Text>
+            {onEditStatus && (
+              <Text style={styles.statusHint}>Tap to edit</Text>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
     </Animated.View>
   );
@@ -168,10 +201,28 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     padding: 16,
   },
-  locationName: {
-    fontSize: 28,
-    fontWeight: 'bold',
+  // v2.5.0: Profile styles
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  profileEmoji: {
+    fontSize: 32,
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: '600',
     color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  locationName: {
+    fontSize: 20,
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.9)',
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
@@ -260,6 +311,32 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+  },
+  // v2.5.0: Status message styles
+  statusContainer: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  statusMessage: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  statusHint: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.5)',
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
 

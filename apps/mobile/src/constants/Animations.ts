@@ -2,35 +2,35 @@
 // Optimized for mobile performance while maintaining visual fidelity
 
 export const ANIMATION_DURATIONS = {
-  // Intro animations
-  CONNECTION_INTRO: 8000, // Total intro duration (extended for world map sequence)
-  CONNECTION_FLASH: 1500, // Flash animation duration
-  MARKER_APPEAR: 800, // Marker pop-in duration
-  FADE_IN: 800, // Basic fade in
-  FADE_IN_UP: 800, // Fade in with upward movement
+  // Intro animations - balanced for visibility
+  CONNECTION_INTRO: 6300, // Map connection animation - complete journey with buffer
+  CONNECTION_FLASH: 1000, // Flash effect - visible but not slow
+  MARKER_APPEAR: 600, // Marker pop-in - smooth appearance
+  FADE_IN: 500, // General fade in
+  FADE_IN_UP: 500, // Fade with movement
 
   // Celestial animations
   CELESTIAL_UPDATE: 1000, // Update interval for sun/moon position
 
   // Particle animations
-  PARTICLE_DRIFT: 20000, // Individual particle drift duration
+  PARTICLE_DRIFT: 15000, // Reduced from 20000ms - faster particle movement
 
   // UI animations
-  PULSE: 2500, // Pulse animation for interactive elements
-  BOBBLE: 8000, // Vertical bobbing motion
+  PULSE: 2000, // Reduced from 2500ms - quicker pulse
+  BOBBLE: 6000, // Reduced from 8000ms - faster bobbing
 
   // Transition animations
-  GRADIENT_TRANSITION: 2000, // Weather gradient transition
+  GRADIENT_TRANSITION: 1500, // Reduced from 2000ms - smoother transitions
 
   // SVG animations
-  DRAW_RING: 2000, // Logo ring drawing animation
-  FLOW: 60000, // Flowing line animation
+  DRAW_RING: 1500, // Reduced from 2000ms - faster ring drawing
+  FLOW: 45000, // Reduced from 60000ms - faster flow animation
 } as const;
 
 export const ANIMATION_DELAYS = {
-  INTRO_TEXT: 500, // Delay before showing intro text
-  MARKER_STAGGER: 200, // Stagger between marker appearances
-  CONNECTION_FLASH: 1500, // Delay before flash animation
+  INTRO_TEXT: 400, // Text appearance delay - more visible
+  MARKER_STAGGER: 200, // Stagger between markers - clear sequence
+  CONNECTION_FLASH: 1200, // Flash trigger delay - gives time to see markers
 } as const;
 
 export const EASING = {
@@ -73,5 +73,5 @@ export const STARRY_CONFIG = {
   STAR_COUNT: 50, // Total stars in background
   BASE_COLOR: '#1e293b', // slate-800
   CONNECTED_COLOR: '#312e81', // indigo-900
-  ANIMATION_DURATION: 200000, // 200 seconds
+  ANIMATION_DURATION: 80000, // Reduced from 200s to 80s - faster twinkling
 } as const;

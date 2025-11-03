@@ -22,7 +22,7 @@ import {
   G,
 } from 'react-native-svg';
 import { generateStars } from '../../utils/animationUtils';
-import { STARRY_CONFIG, MARKER_CONFIG } from '../../constants/Animations';
+import { STARRY_CONFIG, MARKER_CONFIG, ANIMATION_DURATIONS } from '../../constants/Animations';
 import { useLocationStore } from '../../stores/useLocationStore';
 import MinimalistWorldMap from './MinimalistWorldMap';
 
@@ -83,9 +83,9 @@ const ConnectionIntroRedesign: React.FC = () => {
     : { x: 260, y: 120 };
 
   useEffect(() => {
-    // 10 second journey
+    // Journey duration matches ANIMATION_DURATIONS.CONNECTION_INTRO
     masterProgress.value = withTiming(1, {
-      duration: 10000,
+      duration: ANIMATION_DURATIONS.CONNECTION_INTRO,
       easing: Easing.inOut(Easing.cubic),
     });
   }, []);
@@ -95,8 +95,8 @@ const ConnectionIntroRedesign: React.FC = () => {
     const progress = masterProgress.value;
     const appearProgress = interpolate(progress, [0, 0.2], [0, 1], 'clamp');
 
-    // Fade out at end
-    const fadeOut = interpolate(progress, [0.8, 1], [1, 0], 'clamp');
+    // Fade out at very end - quick transition
+    const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = appearProgress * fadeOut;
     const scale = interpolate(appearProgress, [0, 1], [0.3, 1], 'clamp');
@@ -110,7 +110,7 @@ const ConnectionIntroRedesign: React.FC = () => {
   const rightGlobeStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const appearProgress = interpolate(progress, [0.05, 0.25], [0, 1], 'clamp');
-    const fadeOut = interpolate(progress, [0.8, 1], [1, 0], 'clamp');
+    const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = appearProgress * fadeOut;
     const scale = interpolate(appearProgress, [0, 1], [0.3, 1], 'clamp');
@@ -146,7 +146,7 @@ const ConnectionIntroRedesign: React.FC = () => {
   const worldMapStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const mapProgress = interpolate(progress, [0.4, 0.6], [0, 1], 'clamp');
-    const fadeOut = interpolate(progress, [0.8, 1], [1, 0], 'clamp');
+    const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = mapProgress * 0.6 * fadeOut;
     const scale = interpolate(mapProgress, [0, 1], [0.7, 1], 'clamp');
@@ -161,7 +161,7 @@ const ConnectionIntroRedesign: React.FC = () => {
   const cityMarkersProps = useAnimatedProps(() => {
     const progress = masterProgress.value;
     const markerProgress = interpolate(progress, [0.5, 0.65], [0, 1], 'clamp');
-    const fadeOut = interpolate(progress, [0.8, 1], [1, 0], 'clamp');
+    const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     return {
       opacity: markerProgress * fadeOut,
@@ -184,7 +184,7 @@ const ConnectionIntroRedesign: React.FC = () => {
   const heartlineStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const lineProgress = interpolate(progress, [0.6, 0.8], [0, 1], 'clamp');
-    const fadeOut = interpolate(progress, [0.85, 1], [1, 0], 'clamp');
+    const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     return {
       opacity: lineProgress * fadeOut,
@@ -240,7 +240,7 @@ const ConnectionIntroRedesign: React.FC = () => {
   const titleStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const textProgress = interpolate(progress, [0.3, 0.5], [0, 1], 'clamp');
-    const fadeOut = interpolate(progress, [0.75, 0.9], [1, 0], 'clamp');
+    const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = textProgress * fadeOut;
     const translateY = interpolate(textProgress, [0, 1], [20, 0], 'clamp');
@@ -254,7 +254,7 @@ const ConnectionIntroRedesign: React.FC = () => {
   const subtitleStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const textProgress = interpolate(progress, [0.5, 0.7], [0, 1], 'clamp');
-    const fadeOut = interpolate(progress, [0.75, 0.9], [1, 0], 'clamp');
+    const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = textProgress * fadeOut;
     const translateY = interpolate(textProgress, [0, 1], [20, 0], 'clamp');
@@ -269,7 +269,7 @@ const ConnectionIntroRedesign: React.FC = () => {
   const starsStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     return {
-      opacity: interpolate(progress, [0, 0.4, 0.9], [0.5, 0.2, 0], 'clamp'),
+      opacity: interpolate(progress, [0, 0.4, 0.95], [0.5, 0.2, 0], 'clamp'),
     };
   });
 
