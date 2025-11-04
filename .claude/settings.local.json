@@ -21,7 +21,10 @@
       "Bash(lsof:*)",
       "Bash(xargs kill -9)",
       "Bash(find:*)",
-      "Bash(npx expo start:*)"
+      "Bash(npx expo start:*)",
+      "Bash(rm:*)",
+      "Bash(node scripts/generate-icons.js:*)",
+      "Bash(npm pkg set:*)"
     ],
     "deny": [],
     "ask": []

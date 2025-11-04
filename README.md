@@ -1,14 +1,55 @@
-# Aura 🔮
+<div align="center">
+
+<img src="./apps/mobile/assets/AuraLogo.svg" alt="Aura Logo" width="200"/>
+
+# Aura
 
 **Feel your atmosphere, instantly.**
 
+*A digital sanctuary for long-distance couples*
+
+[![Version](https://img.shields.io/badge/version-2.5.0-blue)](https://github.com/your-username/aura/releases)
+[![Expo SDK](https://img.shields.io/badge/Expo-SDK%2054-000020?logo=expo)](https://expo.dev/)
+[![React Native](https://img.shields.io/badge/React%20Native-0.76-61DAFB?logo=react)](https://reactnative.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE.txt)
+
+</div>
+
 ---
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/user-attachments/assets/15ba3cde-f1b2-48f8-80f4-5f26eb612053" alt="Aura Logo and Slogan" width="700">
-</p>
+## 📖 Table of Contents
 
-Aura is a digital sanctuary for long-distance couples, designed to bridge the gap by creating a shared, tangible atmosphere. It translates the real-time local weather and time of two separate individuals into a single, beautifully blended visual experience, allowing you to feel your partner's environment as if it were your own.
+- [About Aura](#about-aura)
+- [The Story](#the-story-of-aura)
+- [Features](#-features)
+- [Visual Showcase](#-visual-showcase)
+- [Quick Start](#-quick-start)
+- [Technology Stack](#-technology-stack)
+- [Project Structure](#-project-structure)
+- [API Integration](#-api-integration)
+- [Deployment](#-deployment)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+## About Aura
+
+Aura is a **digital sanctuary for long-distance couples**, designed to bridge the gap by creating a shared, tangible atmosphere. It translates the real-time local weather and time of two separate individuals into a single, beautifully blended visual experience, allowing you to feel your partner's environment as if it were your own.
+
+<div align="center">
+
+### 🌍 ✦ 🌏
+
+**Transform distance into connection**
+
+From Taipei to Toronto. From Tokyo to New York. From Paris to Perth.
+*One shared sky. One living heartbeat. One atmosphere.*
+
+</div>
+
+---
 
 ## The Story of Aura
 
@@ -75,6 +116,71 @@ Our mission is to transform the two most fundamental environmental factors, **ti
 
 #### Design Philosophy
 Version 2.5.0 **transforms Aura from a weather tool to an emotional connection platform**. Every feature is designed to deepen intimacy and create meaningful touchpoints throughout the day.
+
+---
+
+## 🎨 Visual Showcase
+
+<div align="center">
+
+### Core Experience Flow
+
+```mermaid
+graph LR
+    A[Intro Screen<br/>✦ Night to Dawn ✦] --> B[Couple Setup<br/>💑 Personalize]
+    B --> C[Location Input<br/>🌍 Your Cities]
+    C --> D[Connection Animation<br/>✨ Bridging Worlds]
+    D --> E[Blended Sky<br/>🌅 Living Together]
+
+    style A fill:#1e1b4b,stroke:#60A5FA,color:#fff
+    style B fill:#1e1b4b,stroke:#FBCFE8,color:#fff
+    style C fill:#1e1b4b,stroke:#06b6d4,color:#fff
+    style D fill:#1e1b4b,stroke:#C7D2FE,color:#fff
+    style E fill:#1e1b4b,stroke:#FDE68A,color:#fff
+```
+
+### Key Features at a Glance
+
+<table>
+<tr>
+<td align="center" width="33%">
+<br/>
+<img src="./apps/mobile/assets/icon.png" width="120" alt="Blended Sky"/>
+<h3>🌈 Blended Sky</h3>
+<p><i>Your worlds merge into one shared atmosphere with real-time weather and celestial tracking</i></p>
+</td>
+<td align="center" width="33%">
+<br/>
+<img src="./apps/mobile/assets/icon.png" width="120" alt="Living Heartline"/>
+<h3>💫 Living Heartline</h3>
+<p><i>Breathing connection with bidirectional energy flow across any distance</i></p>
+</td>
+<td align="center" width="33%">
+<br/>
+<img src="./apps/mobile/assets/icon.png" width="120" alt="Personalization"/>
+<h3>💑 Deep Personalization</h3>
+<p><i>Couple profiles, milestones, status messages, and shared schedules</i></p>
+</td>
+</tr>
+</table>
+
+### The Aura Logo: A Visual Metaphor
+
+<div align="center">
+<img src="./apps/mobile/assets/AuraLogo.svg" alt="Aura Logo Explained" width="300"/>
+</div>
+
+The Aura logo embodies our core philosophy:
+
+- **🌅 Gradient Sphere**: The journey from Night (separation) to Dawn (connection)
+  - Yellow (#FDE68A) → Pink (#FBCFE8) → Purple (#C7D2FE) → Blue (#60A5FA)
+- **☀️ Glowing Center**: The warmth of human connection
+- **🔄 Orbital Rings**: The continuous cycle of time across time zones
+- **✨ Breathing Glow**: The shared breath across the distance
+
+Every color, every animation, every design choice tells the story of **two worlds becoming one**.
+
+</div>
 
 ---
 
@@ -150,142 +256,434 @@ Aura-Your-Ambiance-Share-APP/
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-Follow these instructions to set up and run Aura on your local machine for development and testing purposes.
+<div align="center">
 
-### Prerequisites
+### 3 Steps to Experience Aura
 
-*   [Node.js](https://nodejs.org/) (v18 or later recommended)
-*   A package manager like `npm` or `yarn`
+</div>
 
-### Installation & Setup
+<table>
+<tr>
+<td width="33%" align="center">
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/aura.git
-    cd Aura-Your-Ambiance-Share-APP
-    ```
+### 📥 1. Clone & Install
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-    This installs dependencies for all workspaces (web, mobile, and shared).
+```bash
+git clone https://github.com/your-username/aura.git
+cd Aura-Your-Ambiance-Share-APP
+npm install
+```
 
-3.  **Run the applications:**
+<sub>All workspaces configured automatically</sub>
 
-    A set of `npm` scripts are available at the root of the monorepo to manage the applications.
+</td>
+<td width="33%" align="center">
 
-    ### Mobile App (`apps/mobile`)
-    ```bash
-    # Start the development server
-    npm run mobile
+### 📱 2. Choose Platform
 
-    # Then, in the Metro Bundler terminal:
-    # - Press `i` to open the iOS simulator
-    # - Press `a` to open the Android emulator
-    # - Scan the QR code with the Expo Go app on your phone
+**Mobile** (Recommended)
+```bash
+npm run mobile
+```
+<sub>Press `i` for iOS, `a` for Android</sub>
 
-    # To start with a clean cache (recommended after package changes)
-    npm run mobile -- --clear
-    ```
+**Web**
+```bash
+npm run web
+```
+<sub>Opens at localhost:5173</sub>
 
-    ### Web App (`apps/web`)
-    ```bash
-    # Start the development server
-    npm run web
-    ```
-    The application will be available at `http://localhost:5173`.
+</td>
+<td width="33%" align="center">
 
-## 🌐 API Integration Deep Dive
+### 🌍 3. Set Your Locations
 
-### 1. OpenStreetMap Nominatim API
+1. Enter your city
+2. Enter partner's city
+3. Watch worlds collide ✨
 
-The Nominatim API provides free geolocation services without requiring an API key, making it perfect for Aura's location setup.
+<sub>No API keys needed!</sub>
 
-*   **How it's used:**
-    *   `getCoordinatesForCity`: Takes a user-input city name (e.g., "paris", "NYC") and queries Nominatim to return the precise latitude, longitude, and the official city name. This handles various city name formats gracefully.
-    *   `getCityForCoordinates`: Used for the "Use My Location" feature. After the browser provides coordinates, we use Nominatim's reverse geocoding to return the name of the city at that location.
-*   **API Features Utilized:**
-    *   **Search API**: Converts city names to coordinates with address details
-    *   **Reverse Geocoding**: Converts coordinates to city names
-    *   **Rate Limiting**: Automatic 1-second delay between requests to respect Nominatim's usage policy
-*   **⚠️ Important Considerations:**
-    *   **No API Key Required:** Completely free to use, no registration needed
-    *   **Rate Limit:** 1 request per second (automatically handled by the service)
-    *   **User-Agent Required:** Must include a User-Agent header (already configured as "Aura-App/1.0")
-    *   **Attribution:** Please include attribution to OpenStreetMap in your app's "About" section as per their terms of service
-    *   **Accuracy:** Very reliable for major cities and locations. The app includes a confirmation step ("Did you mean...?") to handle ambiguous names.
-
-### 2. Open-Meteo API
-
-Open-Meteo is a fantastic open-source weather forecast API. It's fast, reliable, and doesn't require an API key for its free-to-use models, making it perfect for projects like Aura.
-
-*   **How it's used:**
-    *   We make a single API call per location to fetch all the necessary data. The coordinates obtained from the Nominatim API are passed directly to Open-Meteo.
-*   **API Features Utilized:**
-    *   `current`: `temperature_2m`, `is_day`, `weather_code` (a numerical code we map to icons and descriptions).
-    *   `daily`: `sunrise`, `sunset` times for the celestial tracking feature.
-    *   `timezone`: Essential for accurate local time display and calculating the time difference.
-*   **API Features NOT Utilized (Potential for future expansion):**
-    *   **Hourly Forecasts:** Could be used to create a more detailed 24-hour timeline in the "Time Bridge."
-    *   **Air Quality, UV Index, Precipitation Probability:** Could add more layers to the "digital atmosphere," providing richer environmental context.
-*   **⚠️ Important Considerations:**
-    *   **No API Key Needed:** The basic forecast endpoint is free and open.
-    *   **Attribution:** It's good practice to attribute Open-Meteo in your app's "About" section as per their terms of service.
-
-## ☁️ Deployment
-
-### Web App
-This is a static React application. You can deploy it to any static site hosting service.
-
-1.  **Build the application:**
-    ```bash
-    npm run build:web
-    ```
-    This creates a `dist` directory in `apps/web/` with optimized, static files.
-
-2.  **Deploy:** Upload the build folder to services like:
-    *   [Vercel](https://vercel.com/)
-    *   [Netlify](https://www.netlify.com/)
-    *   [GitHub Pages](https://pages.github.com/)
-
-### Mobile App
-For iOS App Store and Google Play Store deployment:
-
-1.  **iOS:** Requires macOS with Xcode. Use EAS Build:
-    ```bash
-    cd apps/mobile
-    npx eas build --platform ios
-    ```
-
-2.  **Android:**
-    ```bash
-    cd apps/mobile
-    npx eas build --platform android
-    ```
-
-**No environment variables needed!** Both apps use free, public APIs only.
-
-## 🤝 Contributing
-
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
-
-## 📜 License
-
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+</td>
+</tr>
+</table>
 
 ---
 
-<p align="center">
-  Made with ❤️ to connect hearts across the distance.
-</p>
+### 💻 Detailed Setup Instructions
+
+<details>
+<summary><b>📋 Prerequisites</b></summary>
+
+- **Node.js** v18 or later ([Download](https://nodejs.org/))
+- **npm** v9 or later (comes with Node.js)
+- **Expo Go** app on your phone for mobile testing ([iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent))
+
+**Optional for native builds:**
+- Xcode (for iOS builds on macOS)
+- Android Studio (for Android builds)
+
+</details>
+
+<details>
+<summary><b>📱 Running Mobile App</b></summary>
+
+```bash
+# Standard start
+npm run mobile
+
+# With clean cache (recommended after installing packages)
+npm run mobile -- --clear
+
+# Type checking
+npm run type-check
+```
+
+**In the Metro Bundler terminal:**
+- Press **`i`** → Open iOS simulator
+- Press **`a`** → Open Android emulator
+- **Scan QR code** → Test on your physical device via Expo Go
+
+**Troubleshooting:**
+- If animations don't play: `npm run mobile -- --clear`
+- If you see type errors: `cd apps/mobile && npx expo-doctor`
+
+</details>
+
+<details>
+<summary><b>🌐 Running Web App</b></summary>
+
+```bash
+# Start development server
+npm run web
+
+# Build for production
+npm run build:web
+```
+
+The app will be available at **http://localhost:5173**
+
+</details>
+
+<details>
+<summary><b>🔧 Available Commands</b></summary>
+
+| Command | Description |
+|---------|-------------|
+| `npm run mobile` | Start mobile development server |
+| `npm run web` | Start web development server |
+| `npm run type-check` | Type check all workspaces |
+| `npm run generate-icons` | Regenerate app icons from SVG |
+| `npm run clean` | Clean all node_modules and caches |
+
+</details>
+
+---
+
+## 🌐 API Integration
+
+<div align="center">
+
+### Zero Configuration Required ✨
+
+**Both APIs are completely free, no keys needed**
+
+</div>
+
+```mermaid
+graph TB
+    subgraph User Input
+        A[City Name<br/>"Tokyo"]
+    end
+
+    subgraph Geocoding
+        B[OpenStreetMap<br/>Nominatim API]
+        B -->|Lat/Lon| C[35.6762, 139.6503]
+    end
+
+    subgraph Weather Data
+        D[Open-Meteo<br/>Weather API]
+        C -->|Coordinates| D
+        D -->|Weather Data| E[Temperature<br/>Conditions<br/>Sunrise/Sunset<br/>Timezone]
+    end
+
+    subgraph Aura Display
+        E --> F[Blended Sky<br/>Visualization]
+    end
+
+    A --> B
+
+    style B fill:#22c55e,stroke:#16a34a,color:#fff
+    style D fill:#3b82f6,stroke:#2563eb,color:#fff
+    style F fill:#ec4899,stroke:#db2777,color:#fff
+```
+
+<details>
+<summary><b>🗺️ OpenStreetMap Nominatim API</b></summary>
+
+**Purpose:** Convert city names to coordinates (geocoding) and vice versa (reverse geocoding)
+
+**Features Used:**
+- ✅ Search API: "Tokyo" → `{lat: 35.6762, lon: 139.6503, name: "Tokyo"}`
+- ✅ Reverse Geocoding: Coordinates → City name
+- ✅ Automatic rate limiting (1 request/second)
+- ✅ Fuzzy matching for city names
+
+**Configuration:**
+```typescript
+// No API key needed!
+const response = await fetch(
+  `https://nominatim.openstreetmap.org/search?` +
+  `city=${cityName}&format=json`,
+  { headers: { 'User-Agent': 'Aura-App/2.5.0' } }
+);
+```
+
+**Important Notes:**
+- 🆓 Completely free, no registration
+- ⏱️ Rate limited to 1 req/sec (auto-handled)
+- 📝 Attribution required (included in app)
+
+</details>
+
+<details>
+<summary><b>☁️ Open-Meteo Weather API</b></summary>
+
+**Purpose:** Fetch real-time weather, forecasts, and timezone data
+
+**Features Used:**
+- ✅ Current weather: temperature, conditions, day/night status
+- ✅ Daily data: sunrise, sunset times
+- ✅ IANA timezone: accurate local time
+- ✅ Weather codes: mapped to beautiful icons and animations
+
+**Example Response:**
+```json
+{
+  "current": {
+    "temperature_2m": 22.5,
+    "is_day": 1,
+    "weather_code": 3
+  },
+  "daily": {
+    "sunrise": ["2025-01-15T06:42"],
+    "sunset": ["2025-01-15T16:55"]
+  },
+  "timezone": "Asia/Tokyo"
+}
+```
+
+**Weather Code Mapping:**
+- `0-3`: Clear/Partly cloudy → Particle effects
+- `51-67`: Rain → Realistic raindrop animations
+- `71-77`: Snow → Gentle snowfall
+- `95-99`: Thunderstorm → Lightning effects
+
+**Potential Expansions:**
+- Hourly forecasts for detailed timelines
+- Air quality, UV index, precipitation probability
+
+</details>
+
+---
+
+## ☁️ Deployment
+
+<div align="center">
+
+### Ready to Share Aura with the World? 🚀
+
+</div>
+
+<table>
+<tr>
+<td width="50%">
+
+### 🌐 Web App
+
+**Static deployment** - works on any hosting platform
+
+```bash
+# Build optimized static files
+npm run build:web
+```
+
+**Deploy to:**
+- ▲ [Vercel](https://vercel.com/) - Recommended
+- 🌿 [Netlify](https://www.netlify.com/)
+- 📄 [GitHub Pages](https://pages.github.com/)
+- 🔥 [Firebase Hosting](https://firebase.google.com/docs/hosting)
+
+**Build output:** `apps/web/dist/`
+
+</td>
+<td width="50%">
+
+### 📱 Mobile App
+
+**Native builds** via Expo Application Services (EAS)
+
+```bash
+# iOS (requires macOS + Xcode)
+cd apps/mobile
+npx eas build --platform ios
+
+# Android
+cd apps/mobile
+npx eas build --platform android
+```
+
+**Submit to stores:**
+```bash
+# iOS App Store
+npx eas submit --platform ios
+
+# Google Play Store
+npx eas submit --platform android
+```
+
+</td>
+</tr>
+</table>
+
+<div align="center">
+
+### 🎉 No Environment Variables Required!
+
+All APIs are public and free - just build and deploy!
+
+</div>
+
+---
+
+## 🤝 Contributing
+
+<div align="center">
+
+**We welcome contributions from developers, designers, and dreamers!**
+
+Aura is built with ❤️ by people who believe in the power of connection.
+
+</div>
+
+### Ways to Contribute
+
+<table>
+<tr>
+<td width="33%" align="center">
+
+### 🐛 Report Bugs
+
+Found an issue?
+[Open a bug report](https://github.com/your-username/aura/issues/new?labels=bug)
+
+</td>
+<td width="33%" align="center">
+
+### 💡 Suggest Features
+
+Have an idea?
+[Submit an enhancement](https://github.com/your-username/aura/issues/new?labels=enhancement)
+
+</td>
+<td width="33%" align="center">
+
+### 🔧 Submit Code
+
+Ready to contribute?
+[Read the guidelines](./CONTRIBUTING.md)
+
+</td>
+</tr>
+</table>
+
+### Development Workflow
+
+```bash
+# 1. Fork and clone
+git clone https://github.com/your-username/aura.git
+
+# 2. Create feature branch
+git checkout -b feature/amazing-feature
+
+# 3. Make your changes
+npm run type-check  # Ensure types are correct
+npm run mobile      # Test on mobile
+
+# 4. Commit with meaningful message
+git commit -m "Add amazing feature that improves X"
+
+# 5. Push and create PR
+git push origin feature/amazing-feature
+```
+
+### Areas We'd Love Help With
+
+- 🎨 **Design**: UI/UX improvements, animations, visual effects
+- 📱 **Features**: Weather reminders, shared calendars, photo sharing
+- 🌍 **Internationalization**: Translations for different languages
+- 📝 **Documentation**: Tutorials, guides, API documentation
+- 🧪 **Testing**: Unit tests, integration tests, E2E tests
+- ♿ **Accessibility**: Screen reader support, color contrast improvements
+
+---
+
+## 📜 License
+
+<div align="center">
+
+**MIT License** - Free to use, modify, and distribute
+
+See [LICENSE.txt](./LICENSE.txt) for full details
+
+</div>
+
+---
+
+## 🙏 Acknowledgments
+
+<div align="center">
+
+**Built with these amazing open-source projects:**
+
+</div>
+
+- 🌍 [OpenStreetMap](https://www.openstreetmap.org/) & [Nominatim](https://nominatim.org/) - Geocoding services
+- ☁️ [Open-Meteo](https://open-meteo.com/) - Weather data API
+- ⚛️ [React](https://react.dev/) & [React Native](https://reactnative.dev/) - UI frameworks
+- 📱 [Expo](https://expo.dev/) - Mobile development platform
+- 🎨 [Reanimated](https://docs.swmansion.com/react-native-reanimated/) - Smooth animations
+- 💾 [Zustand](https://zustand-demo.pmnd.rs/) - State management
+
+---
+
+<div align="center">
+
+## 💝 Made with Love
+
+<img src="./apps/mobile/assets/AuraLogo.svg" alt="Aura Logo" width="120"/>
+
+### Connecting Hearts Across the Distance
+
+*From the first "hello" across continents*
+*To the longing "goodnight" in different time zones*
+*Aura keeps your love alive in every sunrise, every rainfall, every shared moment*
+
+**Built for everyone who's ever looked at the sky and thought of someone far away.**
+
+---
+
+### 🌟 If Aura helps you feel closer, give it a star! 🌟
+
+[![Star on GitHub](https://img.shields.io/github/stars/your-username/aura?style=social)](https://github.com/your-username/aura)
+
+---
+
+*Questions? Feedback? Found a bug?*
+**Open an [issue](https://github.com/your-username/aura/issues) or reach out!**
+
+Made with ❤️ and ☕ by developers in long-distance relationships
+
+</div>
