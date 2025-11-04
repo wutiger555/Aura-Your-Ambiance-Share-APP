@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LocationData, CoupleProfile } from '@aura/shared';
+import { LocationData, CoupleProfile, DailySchedule } from '@aura/shared';
 
 interface LocationStore {
   myLocation: LocationData | null;
   partnerLocation: LocationData | null;
   coupleProfile: CoupleProfile | null; // v2.5.0: Couple personalization
+  mySchedule: DailySchedule | null; // v2.4.0: Daily rhythm tracking
+  partnerSchedule: DailySchedule | null; // v2.4.0: Daily rhythm tracking
   hasSetup: boolean;
   setMyLocation: (location: LocationData) => void;
   setPartnerLocation: (location: LocationData) => void;
@@ -18,6 +20,7 @@ interface LocationStore {
     lastMetDate?: string;
   }) => void;
   updateNicknames: (myNickname: string, partnerNickname: string) => void;
+  setSchedules: (mySchedule: DailySchedule, partnerSchedule: DailySchedule) => void; // v2.4.0
   clearLocations: () => void;
 }
 
@@ -27,6 +30,8 @@ export const useLocationStore = create<LocationStore>()(
       myLocation: null,
       partnerLocation: null,
       coupleProfile: null, // v2.5.0
+      mySchedule: null, // v2.4.0
+      partnerSchedule: null, // v2.4.0
       hasSetup: false,
       setMyLocation: (location) => {
         console.log('[LocationStore] Setting myLocation:', location.name);
@@ -84,10 +89,17 @@ export const useLocationStore = create<LocationStore>()(
             ? { ...state.partnerLocation, nickname: partnerNickname }
             : null,
         })),
+      // v2.4.0: Set daily schedules
+      setSchedules: (mySchedule, partnerSchedule) => {
+        console.log('[LocationStore] Setting schedules');
+        set({ mySchedule, partnerSchedule });
+      },
       clearLocations: () => set({
         myLocation: null,
         partnerLocation: null,
         coupleProfile: null, // v2.5.0: Also clear profile
+        mySchedule: null, // v2.4.0: Clear schedules
+        partnerSchedule: null, // v2.4.0: Clear schedules
         hasSetup: false
       }),
     }),

@@ -8,6 +8,7 @@ import {
   TextInput,
   Dimensions,
   Image,
+  ScrollView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Animated, {
@@ -19,10 +20,20 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { X, Edit3, MapPin, Plane } from 'lucide-react-native';
+import { X, Edit3, MapPin, Plane, Clock, Leaf, Calendar } from 'lucide-react-native';
 import Svg, { Path, Circle, Defs, LinearGradient as SvgLinearGradient, Stop, G } from 'react-native-svg';
-import { LocationData, WeatherData } from '@aura/shared';
+import {
+  LocationData,
+  WeatherData,
+  DailySchedule,
+  findNearestAirport,
+  hasDirectFlights,
+  calculateCO2Emissions,
+  suggestBestCallTime,
+  suggestBestCallTimeWithSchedules,
+} from '@aura/shared';
 import { LinearGradient } from 'expo-linear-gradient';
+import DailyRhythmEditor from './aura/DailyRhythmEditor';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -34,7 +45,10 @@ interface SettingsProps {
   partnerLocation: LocationData | null;
   myWeather: WeatherData | null;
   partnerWeather: WeatherData | null;
+  mySchedule: DailySchedule | null; // v2.4.0
+  partnerSchedule: DailySchedule | null; // v2.4.0
   onUpdateNicknames?: (myNickname: string, partnerNickname: string) => void;
+  onUpdateSchedules?: (mySchedule: DailySchedule, partnerSchedule: DailySchedule) => void; // v2.4.0
 }
 
 type EditingLocation = 'my' | 'partner' | null;
@@ -55,13 +69,24 @@ export default function Settings({
   partnerLocation,
   myWeather,
   partnerWeather,
+  mySchedule,
+  partnerSchedule,
   onUpdateNicknames,
+  onUpdateSchedules,
 }: SettingsProps) {
   const [editing, setEditing] = useState<EditingLocation>(null);
   const [myNickname, setMyNickname] = useState(myLocation?.nickname || '');
   const [partnerNickname, setPartnerNickname] = useState(partnerLocation?.nickname || '');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetProgress, setResetProgress] = useState(0);
+  const [showRhythmEditor, setShowRhythmEditor] = useState(false); // v2.4.0
+
+  // v2.4.0: Default schedules if not set
+  const defaultSchedule: DailySchedule = {
+    sleep: { start: 23, end: 7 },
+    work: { start: 9, end: 18 },
+    busy: [],
+  };
 
   // Plane animation
   const planePosition = useSharedValue(0);
@@ -82,10 +107,10 @@ export default function Settings({
 
   // Convert lat/long to screen coordinates (simplified for better visibility)
   const latLongToMapCoords = (lat: number, long: number) => {
-    const mapWidth = SCREEN_WIDTH * 0.8;
+    const mapWidth = SCREEN_WIDTH - 40; // Account for marginHorizontal: 20 on both sides
     const mapHeight = 200;
-    const centerX = SCREEN_WIDTH * 0.5;
-    const centerY = 230; // Fixed position
+    const centerX = mapWidth * 0.5;
+    const centerY = 175; // Center of 350px height map
 
     // Simplified projection
     const x = centerX + ((long / 180) * (mapWidth / 2));
@@ -98,11 +123,11 @@ export default function Settings({
 
   const myMapPos = myLocation
     ? latLongToMapCoords(myLocation.latitude, myLocation.longitude)
-    : { x: SCREEN_WIDTH * 0.25, y: 230 };
+    : { x: (SCREEN_WIDTH - 40) * 0.25, y: 175 };
 
   const partnerMapPos = partnerLocation
     ? latLongToMapCoords(partnerLocation.latitude, partnerLocation.longitude)
-    : { x: SCREEN_WIDTH * 0.75, y: 230 };
+    : { x: (SCREEN_WIDTH - 40) * 0.75, y: 175 };
 
   // Calculate distance and flight time
   const calculateDistance = () => {
@@ -125,6 +150,21 @@ export default function Settings({
   const flightHours = Math.floor(distance / 800); // Average flight speed ~800 km/h
   const flightMinutes = Math.round((distance / 800 - flightHours) * 60);
 
+  // Find nearest airports
+  const myAirport = myLocation ? findNearestAirport(myLocation.latitude, myLocation.longitude) : null;
+  const partnerAirport = partnerLocation ? findNearestAirport(partnerLocation.latitude, partnerLocation.longitude) : null;
+
+  // Calculate additional flight info
+  const directFlight = myAirport && partnerAirport ? hasDirectFlights(myAirport, partnerAirport) : false;
+  const co2Emissions = calculateCO2Emissions(distance);
+
+  // v2.4.0: Use schedule-aware best call time if schedules are set
+  const bestCallTime = myWeather && partnerWeather
+    ? (mySchedule && partnerSchedule
+        ? suggestBestCallTimeWithSchedules(myWeather.timezone, partnerWeather.timezone, mySchedule, partnerSchedule)
+        : suggestBestCallTime(myWeather.timezone, partnerWeather.timezone))
+    : null;
+
   // Bezier curve for flight path
   const midX = (myMapPos.x + partnerMapPos.x) / 2;
   const midY = Math.min(myMapPos.y, partnerMapPos.y) - 80; // Arc upwards
@@ -138,6 +178,14 @@ export default function Settings({
       );
     }
     setEditing(null);
+  };
+
+  // v2.4.0: Handle schedule save
+  const handleScheduleSave = (newMySchedule: DailySchedule, newPartnerSchedule: DailySchedule) => {
+    if (onUpdateSchedules) {
+      onUpdateSchedules(newMySchedule, newPartnerSchedule);
+    }
+    setShowRhythmEditor(false);
   };
 
   const handleResetHold = () => {
@@ -184,22 +232,24 @@ export default function Settings({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.container}>
-        {/* Background gradient */}
-        <LinearGradient
-          colors={['#0a0118', '#1a1230', '#1e1b4b', '#1e293b']}
-          locations={[0, 0.3, 0.6, 1]}
-          style={StyleSheet.absoluteFill}
-        />
+      <LinearGradient
+        colors={['#0a0118', '#1a1230', '#1e1b4b', '#1e293b']}
+        locations={[0, 0.3, 0.6, 1]}
+        style={styles.container}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Title */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Your Connection</Text>
+            <Text style={styles.subtitle}>Tap location names to edit</Text>
+          </View>
 
-        {/* Title */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Your Connection</Text>
-          <Text style={styles.subtitle}>Tap location names to edit</Text>
-        </View>
-
-        {/* Map Background - Stylized world map pattern */}
-        <View style={styles.mapBackground}>
+          {/* Map Background - Stylized world map pattern */}
+          <View style={styles.mapBackground}>
           {/* Grid lines to simulate map */}
           <View style={styles.mapGrid}>
             {[...Array(6)].map((_, i) => (
@@ -211,7 +261,7 @@ export default function Settings({
           </View>
 
           {/* Flight Path SVG */}
-          <Svg width={SCREEN_WIDTH} height={350} style={styles.flightSvg}>
+          <Svg width={SCREEN_WIDTH - 40} height={350} style={styles.flightSvg}>
             <Defs>
               <SvgLinearGradient id="flightGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                 <Stop offset="0%" stopColor="#06b6d4" stopOpacity="0.8" />
@@ -257,10 +307,28 @@ export default function Settings({
           </View>
         </View>
 
-        {/* Connection Info Card - Moved below map */}
+        {/* Connection Info Card - Enhanced with airport info */}
         <View style={styles.infoCard}>
           <BlurView intensity={80} tint="dark" style={styles.infoBlur}>
             <View style={styles.infoContent}>
+              {/* Airport Route */}
+              {myAirport && partnerAirport && (
+                <>
+                  <View style={styles.airportRoute}>
+                    <Text style={styles.airportCode}>{myAirport.iata}</Text>
+                    <View style={styles.routeArrow}>
+                      <Plane size={14} color="#94a3b8" />
+                    </View>
+                    <Text style={styles.airportCode}>{partnerAirport.iata}</Text>
+                  </View>
+                  <Text style={styles.flightType}>
+                    {directFlight ? '✓ Direct flights available' : '⚠ Requires connection'}
+                  </Text>
+                  <View style={styles.divider} />
+                </>
+              )}
+
+              {/* Distance & Flight Time */}
               <View style={styles.infoRow}>
                 <View style={styles.infoItem}>
                   <MapPin size={14} color="#94a3b8" />
@@ -279,6 +347,30 @@ export default function Settings({
                 <Text style={styles.infoValue}>
                   ~{flightHours}h {flightMinutes > 0 ? `${flightMinutes}m` : ''}
                 </Text>
+              </View>
+
+              {/* Best Call Time */}
+              {bestCallTime && (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.infoRow}>
+                    <View style={styles.infoItem}>
+                      <Clock size={14} color="#94a3b8" />
+                      <Text style={styles.infoLabel}>Best to call</Text>
+                    </View>
+                    <Text style={styles.infoValueSmall}>{bestCallTime}</Text>
+                  </View>
+                </>
+              )}
+
+              {/* CO2 Emissions */}
+              <View style={styles.divider} />
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <Leaf size={14} color="#94a3b8" />
+                  <Text style={styles.infoLabel}>CO₂ Impact</Text>
+                </View>
+                <Text style={styles.infoValueSmall}>~{co2Emissions.toLocaleString()} kg</Text>
               </View>
             </View>
           </BlurView>
@@ -351,18 +443,32 @@ export default function Settings({
           </TouchableOpacity>
         </View>
 
+        {/* Daily Rhythm Button - v2.4.0 */}
+        <TouchableOpacity
+          style={styles.rhythmButton}
+          onPress={() => setShowRhythmEditor(true)}
+          activeOpacity={0.8}
+        >
+          <BlurView intensity={60} tint="dark" style={styles.rhythmButtonBlur}>
+            <View style={styles.rhythmButtonContent}>
+              <Calendar size={18} color="#a78bfa" />
+              <Text style={styles.rhythmButtonText}>Set Daily Rhythms</Text>
+              <Text style={styles.rhythmButtonHint}>Find your best time to connect</Text>
+            </View>
+          </BlurView>
+        </TouchableOpacity>
+
         {/* Reset Connection Button */}
-        <View style={styles.bottomActions}>
-          <TouchableOpacity
-            onPress={() => setShowResetConfirm(true)}
-            style={styles.resetButton}
-          >
-            <BlurView intensity={30} tint="dark" style={styles.resetButtonBlur}>
-              <Text style={styles.resetButtonText}>Break Connection</Text>
-              <Text style={styles.resetButtonHint}>Reset and start over</Text>
-            </BlurView>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={() => setShowResetConfirm(true)}
+          style={styles.resetButton}
+        >
+          <BlurView intensity={30} tint="dark" style={styles.resetButtonBlur}>
+            <Text style={styles.resetButtonText}>Break Connection</Text>
+            <Text style={styles.resetButtonHint}>Reset and start over</Text>
+          </BlurView>
+        </TouchableOpacity>
+      </ScrollView>
 
         {/* Reset Confirmation Modal */}
         {showResetConfirm && (
@@ -409,13 +515,24 @@ export default function Settings({
           </Animated.View>
         )}
 
+        {/* Daily Rhythm Editor - v2.4.0 */}
+        <DailyRhythmEditor
+          visible={showRhythmEditor}
+          onClose={() => setShowRhythmEditor(false)}
+          mySchedule={mySchedule || defaultSchedule}
+          partnerSchedule={partnerSchedule || defaultSchedule}
+          onSave={handleScheduleSave}
+          myName={myNickname || myLocation?.name || 'You'}
+          partnerName={partnerNickname || partnerLocation?.name || 'Partner'}
+        />
+
         {/* Close button */}
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
           <BlurView intensity={30} tint="dark" style={styles.closeButtonBlur}>
             <X size={24} color="white" />
           </BlurView>
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
     </Modal>
   );
 }
@@ -423,15 +540,18 @@ export default function Settings({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 70,
+    paddingBottom: 100,
   },
   titleContainer: {
-    position: 'absolute',
-    top: 70,
-    left: 0,
-    right: 0,
     alignItems: 'center',
-    zIndex: 10,
+    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 28,
@@ -445,14 +565,11 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   mapBackground: {
-    position: 'absolute',
-    top: 130,
-    left: 0,
-    right: 0,
     height: 350,
-    backgroundColor: 'rgba(15, 23, 42, 0.3)',
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
     borderRadius: 20,
-    marginHorizontal: 10,
+    marginHorizontal: 20,
+    marginBottom: 20,
     overflow: 'hidden',
   },
   mapGrid: {
@@ -494,13 +611,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   infoCard: {
-    position: 'absolute',
-    top: 500,
-    left: 20,
-    right: 20,
+    marginHorizontal: 20,
+    marginBottom: 20,
     borderRadius: 16,
     overflow: 'hidden',
-    zIndex: 5,
   },
   infoBlur: {
     borderRadius: 16,
@@ -532,19 +646,43 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#ffffff',
   },
+  infoValueSmall: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  airportRoute: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  airportCode: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#06b6d4',
+    letterSpacing: 1,
+  },
+  routeArrow: {
+    paddingHorizontal: 8,
+  },
+  flightType: {
+    fontSize: 12,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
   divider: {
     height: 1,
     backgroundColor: 'rgba(148, 163, 184, 0.2)',
     marginVertical: 12,
   },
   locationsContainer: {
-    position: 'absolute',
-    top: 600,
-    left: 20,
-    right: 20,
+    marginHorizontal: 20,
+    marginBottom: 20,
     flexDirection: 'row',
     gap: 12,
-    zIndex: 5,
   },
   locationCard: {
     flex: 1,
@@ -595,14 +733,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.4)',
   },
-  bottomActions: {
-    position: 'absolute',
-    bottom: 50,
-    left: 20,
-    right: 20,
-    zIndex: 5,
+  // v2.4.0: Daily Rhythm Button
+  rhythmButton: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  rhythmButtonBlur: {
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.3)',
+  },
+  rhythmButtonContent: {
+    alignItems: 'center',
+  },
+  rhythmButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#a78bfa',
+    marginTop: 6,
+    marginBottom: 2,
+  },
+  rhythmButtonHint: {
+    fontSize: 11,
+    color: 'rgba(167, 139, 250, 0.6)',
   },
   resetButton: {
+    marginHorizontal: 20,
+    marginBottom: 20,
     borderRadius: 16,
     overflow: 'hidden',
   },

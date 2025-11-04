@@ -8,6 +8,110 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.5.0] - 2025-11-04 (Enhanced Personalization & UX)
+
+### Added - UI/UX Improvements
+
+#### Connection Widget Redesign
+- **Compact Heart Button**: Redesigned ConnectionWidget from horizontal card to 64x64 circular button
+  - Moved to bottom-right corner (replacing unused message button)
+  - Features breathing heart icon animation
+  - Eliminates content blocking at top of screen
+  - More intuitive entry point for "Your Connection" settings
+
+#### Daily Rhythm Editor Overhaul
+- **Dual Timeline View**: Complete redesign for better schedule comparison
+  - Side-by-side schedule cards for both people
+  - Removed redundant person selection tabs
+  - **Custom Time Editing**: Tap any time field to edit hours directly (0-23)
+  - Real-time editable sleep and work schedules
+  - Quick template selection (Student, Office, Night Owl, Early Bird, Flexible)
+- **Enhanced Visual Comparison**:
+  - Three-row timeline showing:
+    1. Your activity timeline (cyan)
+    2. Partner's activity timeline (pink)
+    3. **Overlapping free time** (green highlighting)
+  - Clear hour labels (0:00, 6:00, 12:00, 18:00, 24:00)
+  - Subtitle explaining: "Green areas show when both of you are free to connect"
+- **Best Times Section**:
+  - "💚 Best Times for Video Calls & Chatting" with green theme
+  - Shows all overlapping free periods with duration
+  - No-overlap warning if schedules don't align
+
+#### Personalization System (Phase 1-4 Complete)
+- **Couple Profile Setup**: New `CoupleSetupScreen` after intro
+  - Collects names for both people
+  - Optional emoji selection (🌸, 🌙, etc.)
+  - Relationship start date for milestone tracking
+  - Optional next meeting date
+- **Personalized AuraGlobe Display**:
+  - Shows name + emoji instead of just location
+  - Editable status messages (e.g., "我這邊天氣很好～")
+  - Tap to edit status with quick suggestions
+- **Relationship Milestones**:
+  - "Together for X days" counter
+  - "Next reunion in X days" countdown
+  - Automatic calculation from profile dates
+- **Weather Reminders**:
+  - Context-aware notifications based on partner's weather
+  - Rain alerts: "☔ Ta 那邊在下雨，記得提醒帶傘"
+  - Temperature warnings for extreme cold (<5°C) or heat (>35°C)
+  - Thunderstorm alerts with emotional support suggestion
+  - Sunrise/sunset timing reminders
+- **Message System** (Local Storage):
+  - Daily message center for leaving notes
+  - Message history with timestamps
+  - Quick message templates
+  - Emoji decoration support
+
+### Changed
+
+#### Component Architecture
+- **ConnectionWidget**: Simplified props (removed city/distance display in compact form)
+- **DailyRhythmEditor**:
+  - Split into dual-column layout
+  - Replaced single-person editing with simultaneous comparison view
+  - Added TimeEditField component for in-place hour editing
+- **App.tsx**:
+  - Removed message/memo button (replaced by ConnectionWidget)
+  - Added CoupleSetupScreen to setup flow
+  - Integrated new personalization modals (StatusEditModal, MilestoneEditModal)
+
+#### Data Architecture
+- **Extended LocationData** with personalization fields:
+  - `nickname`, `statusMessage` (editable by user)
+- **New CoupleProfile** type for relationship data:
+  - Names, emojis, relationship dates
+- **New Message** type for local note system
+- **DailySchedule** type moved to shared package
+
+### Fixed
+- Settings modal scrolling and layout issues (converted to ScrollView with relative positioning)
+- Map background SVG width calculation (account for margins)
+- ConnectionWidget no longer blocks upper location displays
+
+### Documentation
+- **PERSONALIZATION_ENHANCEMENT.md**: Comprehensive 6-phase implementation plan
+- Updated CLAUDE.md with v2.5.0 component architecture
+- Documented dual timeline design philosophy
+
+### Design Philosophy - v2.5.0
+
+This release transforms Aura from a **weather tool** to an **emotional connection platform**:
+
+- **Before**: Anonymous "Location A" and "Location B" with cold data
+- **After**: "🌸 Tzu-Hui in Taipei" and "🌙 Alex in New York" with warmth and personality
+
+Key principles:
+- **Identity Personalization**: Names and emojis create emotional attachment
+- **Relationship Symbolization**: Milestones make the app a witness to your journey
+- **Contextual Awareness**: Weather reminders show care and attention
+- **Dual-Column Comparison**: Schedule editor enables practical coordination
+
+The goal: Every time you open Aura, you don't just see "weather" — you feel "Ta is there."
+
+---
+
 ## [2.4.0] - 2025-11-02 (Bridging Worlds)
 
 ### Added - Enhanced Visual Experience & Storytelling

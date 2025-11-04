@@ -30,6 +30,54 @@ Our mission is to transform the two most fundamental environmental factors, **ti
 *   **Connection Data:** Subtly displays the physical distance and time zone difference, grounding the digital connection in real-world context.
 *   **Elegant & Minimalist UI:** A focus on a beautiful, immersive experience rather than cluttered social features.
 
+### New in v2.5.0 (Enhanced Personalization & UX)
+
+#### Personalization System
+*   **Couple Setup Flow:** First-time users now create a personalized profile:
+    *   Choose names and emoji avatars for both partners
+    *   Set relationship milestones (relationship start date, next meeting, last met)
+    *   Personalized greeting: "Welcome, {Name} & {Name}!"
+*   **Status Messages:** Add custom status messages to each location globe (e.g., "Working late tonight", "Miss you ❤️")
+    *   Tap the edit icon on any globe to update your status
+    *   See your partner's status in real-time
+*   **Relationship Timeline:** Visual countdown/counter displaying:
+    *   Days together since relationship started
+    *   Days until next meeting (with encouraging messages)
+    *   Days since you last met
+*   **Weather Reminders:** Smart contextual cards based on partner's weather:
+    *   "Your partner might need an umbrella today ☔"
+    *   "It's freezing where {Name} is! 🥶"
+    *   Temperature difference alerts when conditions vary significantly
+*   **Message Center:** Leave persistent messages with emoji decorations for your partner to discover
+
+#### Connection Widget Redesign
+*   **Compact Heart Button:** Completely redesigned from horizontal card to elegant 64×64 circular button
+    *   Moved to bottom-right corner for better visibility
+    *   Features breathing heart icon animation (#ec4899 pink)
+    *   No longer blocks location displays at the top
+    *   One-tap access to "Your Connection" settings
+
+#### Daily Rhythm Editor Overhaul
+*   **Dual Timeline View:** Side-by-side schedule comparison for both partners
+    *   Removed redundant person selection tabs
+    *   See both schedules simultaneously for easy comparison
+*   **Custom Time Editing:** Tap any time field to set exact hours (0-23)
+    *   Edit sleep schedules, work hours, or school times
+    *   No longer limited to preset templates
+*   **Visual Overlap Detection:** Three-row timeline showing:
+    1. Your activity timeline (cyan markers)
+    2. Partner's activity timeline (pink markers)
+    3. **Overlapping free time** (green highlighting)
+*   **💚 Best Times for Video Calls & Chatting:** Automatically identifies and displays shared free time windows
+    *   Shows exact time ranges when both are available
+    *   Duration display for each overlap period
+    *   Helpful when no overlaps exist with adjustment suggestions
+
+#### Design Philosophy
+Version 2.5.0 **transforms Aura from a weather tool to an emotional connection platform**. Every feature is designed to deepen intimacy and create meaningful touchpoints throughout the day.
+
+---
+
 ### New in v2.4.0 (Bridging Worlds)
 
 #### Dynamic Weather Effects

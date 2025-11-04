@@ -62,31 +62,51 @@ cd apps/mobile && npx expo-doctor
 
 ## Application Flow & State Management
 
-### Setup Flow State Machine (`App.tsx`)
+### Setup Flow State Machine (`App.tsx`) - v2.5.0
 
 The app follows a sequential setup flow controlled by `setupStep`:
 
 1. **`'intro'`**: Immersive `IntroScreenRedesign` (8-second narrative journey)
    - 4-act structure: Two globes appear → Aura Logo emerges → Energy lines connect → Heartline preview
    - Narrative: "Two people." → "Different skies." → "One shared atmosphere."
-2. **`'inputMy'`**: User inputs their location in `LocationInputScreen` (cyan marker with pulse)
-3. **`'inputPartner'`**: User inputs partner's location (pink marker)
-4. **`'connecting'`**: Full-screen `ConnectionIntroRedesign` animation (10 seconds)
+2. **`'coupleSetup'`**: NEW - `CoupleSetupScreen` collects relationship information
+   - Couple names (e.g., "Tzu-Hui" and "Alex")
+   - Optional emojis (e.g., 🌸 and 🌙)
+   - Optional relationship start date
+   - Optional next meeting date
+3. **`'inputMy'`**: User inputs their location in `LocationInputScreen` (cyan marker with pulse)
+4. **`'inputPartner'`**: User inputs partner's location (pink marker)
+5. **`'connecting'`**: Full-screen `ConnectionIntroRedesign` animation (10 seconds)
    - 5-act structure: Globes pulse → Breathe → Map emerges → Heartline forms → Fade to main
    - Shows actual city names: "{City} ✦ {City}"
-5. **`'done'`**: Main blended sky experience with living Heartline and weather effects
+6. **`'done'`**: Main blended sky experience with personalized displays and living Heartline
 
 ### Zustand State Stores
 
 **`useLocationStore`** (persisted to AsyncStorage):
 - Stores `myLocation` and `partnerLocation` (type: `LocationData`)
+- **v2.5.0**: Stores `coupleProfile` (type: `CoupleProfile`)
+- **v2.5.0**: Stores `mySchedule` and `partnerSchedule` (type: `DailySchedule`)
 - Sets `hasSetup: true` only when both locations are present
-- Provides `updateNicknames()` and `clearLocations()` methods
+- Methods:
+  - `setCoupleProfile()` - Store couple personalization
+  - `updateStatusMessage()` - Update location status messages
+  - `updateMilestoneDates()` - Update relationship dates
+  - `updateNicknames()` - Update location nicknames
+  - `setSchedules()` - Store daily schedules
+  - `clearLocations()` - Reset all data
 
 **`useWeatherStore`** (in-memory only):
 - Stores `myWeather` and `partnerWeather` (type: `WeatherData`)
 - Manages `isLoading` and `error` states
 - Weather data is fetched fresh when app reaches `'done'` state
+
+**`useMessageStore`** (v2.5.0, persisted to AsyncStorage):
+- Stores array of `Message` objects
+- Methods:
+  - `addMessage()` - Add new message with timestamp
+  - `deleteMessage()` - Remove message by ID
+- Used for local note/message system
 
 ### Key Data Types (`packages/shared/types/index.ts`)
 
@@ -96,6 +116,31 @@ LocationData {
   latitude: number;
   longitude: number;
   nickname?: string;
+  statusMessage?: string; // v2.5.0: Editable status
+}
+
+CoupleProfile { // v2.5.0: NEW
+  myName: string;
+  partnerName: string;
+  myEmoji?: string;
+  partnerEmoji?: string;
+  relationshipStart?: string; // ISO date
+  nextMeetingDate?: string;   // ISO date
+  lastMetDate?: string;        // ISO date
+}
+
+DailySchedule { // v2.4.0
+  sleep: { start: number; end: number }; // 0-24 hours
+  work: { start: number; end: number } | null;
+  busy: { start: number; end: number }[];
+}
+
+Message { // v2.5.0: NEW
+  id: string;
+  content: string;
+  createdAt: string; // ISO datetime
+  isFromMe: boolean;
+  emoji?: string;
 }
 
 WeatherData {
@@ -146,7 +191,12 @@ Defined in `apps/mobile/src/constants/Animations.ts`:
     - `ThunderstormEffect`: Lightning flashes with random intervals (5-15s)
 
 **Location Display:**
-- `AuraGlobe`: Displays location info with weather icons, temperature, and sunrise/sunset (one at top, one at bottom)
+- `AuraGlobe` (v2.5.0 enhanced): Displays location info with personalization
+  - Shows name + emoji (e.g., "🌸 Tzu-Hui")
+  - Weather icons, temperature, time
+  - Editable status messages (tap to edit)
+  - Sunrise/sunset times
+  - One at top, one at bottom
 
 **Connection Visualization:**
 - `Heartline` (v2.4.0 - "Living Connection"): Central curved Bezier line showing:
@@ -159,6 +209,30 @@ Defined in `apps/mobile/src/constants/Animations.ts`:
   - Color-coded particles based on day/night status
   - Dynamic count: <1000km=4, <5000km=6, <10000km=8, 10000km+=10
 - `TimeBridge`: Modal with 24-hour timeline visualization comparing both locations' daily rhythms
+- **`ConnectionWidget`** (v2.5.0): Compact 64x64 circular heart button at bottom-right
+  - Breathing animation for visual appeal
+  - Entry point to "Your Connection" settings
+  - Replaces old message button
+
+**Personalization Components (v2.5.0):**
+- `CoupleSetupScreen`: Initial setup for collecting couple information
+  - Names, emojis, relationship dates
+  - Appears after intro, before location input
+- `RelationshipMilestone`: Shows relationship stats
+  - "Together for X days" counter
+  - "Next reunion in X days" countdown
+- `StatusEditModal`: Edit personal status messages
+- `MilestoneEditModal`: Edit relationship dates
+- `WeatherReminderCard`: Context-aware weather notifications
+- `MessageCenter`: Local message/note system
+
+**Daily Schedule (v2.4.0/v2.5.0 enhanced):**
+- `DailyRhythmEditor`: Schedule comparison and editing
+  - **Dual-column layout** (v2.5.0): Side-by-side schedule cards
+  - Editable time fields with Alert.prompt
+  - Quick template selection (Student, Office, Night Owl, Early Bird, Flexible)
+  - **Three-row timeline**: Your activities, partner's activities, overlapping free time (green)
+  - "Best Times for Video Calls & Chatting" section
 
 **Setup Flow:**
 - `IntroScreenRedesign` (v2.4.0): 8-second narrative journey with 4 acts:
@@ -166,6 +240,9 @@ Defined in `apps/mobile/src/constants/Animations.ts`:
   2. Aura Logo emerges with breathing glow
   3. Energy lines draw from globes to Logo
   4. Heartline preview forms
+- **`CoupleSetupScreen`** (v2.5.0): Collect couple information
+  - Names, emojis, relationship dates
+  - Optional fields don't block flow
 - `LocationInputScreen`: Handles city input with large pulsing marker (cyan/pink based on step)
 - `ConnectionIntroRedesign` (v2.4.0): 10-second transition with 5 acts:
   1. Globes pulse in and breathe together
@@ -175,7 +252,14 @@ Defined in `apps/mobile/src/constants/Animations.ts`:
   5. Smooth fade to main screen
 
 **Settings:**
-- `Settings`: Modal for viewing details, editing nicknames, and resetting locations (accessible via gear icon)
+- `Settings`: Comprehensive modal for managing connection
+  - Visual world map with flight path animation
+  - Distance, flight time, airport codes
+  - Best call time (schedule-aware if schedules set)
+  - CO₂ emissions estimate
+  - Location nickname editing
+  - Daily rhythm editor access
+  - Reset connection option
 
 ### Shared Package (`packages/shared/`)
 

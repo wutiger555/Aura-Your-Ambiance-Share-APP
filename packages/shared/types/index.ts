@@ -50,3 +50,10 @@ export interface Message {
   isFromMe: boolean; // true if from user, false if viewing as partner's message
   emoji?: string;    // Optional emoji decoration
 }
+
+// v2.4.0: Daily schedule for rhythm tracking
+export interface DailySchedule {
+  sleep: { start: number; end: number }; // 0-24 hours (24-hour format)
+  work: { start: number; end: number } | null; // Optional work hours
+  busy: { start: number; end: number }[]; // Additional busy periods
+}

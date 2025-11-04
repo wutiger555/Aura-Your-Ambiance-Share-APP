@@ -9,8 +9,6 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Settings as SettingsIcon, MessageCircle } from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useLocationStore } from './src/stores/useLocationStore';
 import { useWeatherStore } from './src/stores/useWeatherStore';
@@ -38,6 +36,7 @@ import RelationshipMilestone from './src/components/aura/RelationshipMilestone';
 import MilestoneEditModal from './src/components/aura/MilestoneEditModal'; // v2.5.0
 import WeatherReminderCard from './src/components/aura/WeatherReminderCard'; // v2.5.0
 import MessageCenter from './src/components/aura/MessageCenter'; // v2.5.0
+import ConnectionWidget from './src/components/aura/ConnectionWidget'; // v2.4.0
 import { ANIMATION_DURATIONS } from './src/constants/Animations';
 import { generateWeatherReminders, generateTemperatureDifferenceReminder } from './src/utils/weatherReminders'; // v2.5.0
 
@@ -48,6 +47,8 @@ export default function App() {
     myLocation,
     partnerLocation,
     coupleProfile, // v2.5.0
+    mySchedule, // v2.4.0
+    partnerSchedule, // v2.4.0
     hasSetup,
     setMyLocation,
     setPartnerLocation,
@@ -55,6 +56,7 @@ export default function App() {
     updateStatusMessage, // v2.5.0
     updateMilestoneDates, // v2.5.0
     updateNicknames,
+    setSchedules, // v2.4.0
     clearLocations,
   } = useLocationStore();
 
@@ -392,6 +394,11 @@ export default function App() {
         onShowDetails={() => setShowTimeBridge(true)}
       />
 
+      {/* Connection Widget - v2.4.0: Bottom-right floating button */}
+      <ConnectionWidget
+        onPress={() => setShowSettings(true)}
+      />
+
       {/* v2.5.0: Relationship Milestone */}
       {coupleProfile && (
         <RelationshipMilestone
@@ -407,30 +414,6 @@ export default function App() {
         <WeatherReminderCard reminders={weatherReminders} />
       )}
 
-      {/* Action Buttons (Bottom Right) */}
-      <SafeAreaView style={styles.actionButtonsContainer} edges={['bottom', 'right']}>
-        {/* v2.5.0: Message Button */}
-        <TouchableOpacity
-          onPress={() => setShowMessages(true)}
-          style={[styles.actionButton, styles.messageButton]}
-        >
-          <MessageCircle size={22} color="white" />
-          {messages.length > 0 && (
-            <View style={styles.messageBadge}>
-              <Text style={styles.messageBadgeText}>{messages.length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        {/* Settings Button */}
-        <TouchableOpacity
-          onPress={() => setShowSettings(!showSettings)}
-          style={styles.actionButton}
-        >
-          <SettingsIcon size={24} color="white" />
-        </TouchableOpacity>
-      </SafeAreaView>
-
       {/* Settings Modal */}
       <Settings
         visible={showSettings}
@@ -440,7 +423,10 @@ export default function App() {
         partnerLocation={partnerLocation!}
         myWeather={myWeather!}
         partnerWeather={partnerWeather!}
+        mySchedule={mySchedule}
+        partnerSchedule={partnerSchedule}
         onUpdateNicknames={updateNicknames}
+        onUpdateSchedules={setSchedules}
       />
 
       {/* TimeBridge Modal */}
@@ -530,48 +516,5 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontWeight: '500',
     letterSpacing: 0.5,
-  },
-  // v2.5.0: Action buttons container
-  actionButtonsContainer: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    zIndex: 100,
-    gap: 12,
-  },
-  actionButton: {
-    padding: 12,
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  messageButton: {
-    position: 'relative',
-  },
-  messageBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#ef4444',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#000',
-  },
-  messageBadgeText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '600',
   },
 });
