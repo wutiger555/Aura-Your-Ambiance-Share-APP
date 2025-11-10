@@ -349,7 +349,7 @@ const IntroScreenRedesign: React.FC<IntroScreenProps> = ({ onStart }) => {
           <View style={styles.logoArea}>
             <Animated.View style={[styles.logoGlowRing, logoGlowStyle]} />
             <Animated.View style={[styles.logoWrapper, logoStyle]}>
-              <AuraLogo size={100} animate={false} />
+              <AuraLogo size={100} />
             </Animated.View>
           </View>
 

@@ -265,29 +265,19 @@ export default function App() {
 
 
   const handleReset = () => {
-    Alert.alert(
-      'Reset Connection',
-      'This will clear your locations and start fresh.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            // Clear locations from store (will also clear AsyncStorage)
-            clearLocations();
-            // Clear weather data
-            setMyWeather(null as any);
-            setPartnerWeather(null as any);
-            // Reset UI state
-            setSetupStep('intro');
-            setShowSettings(false);
-            setIsFirstLoad(true);
-            setIsReturningUser(true); // Mark as returning user for fast reset flow
-          },
-        },
-      ]
-    );
+    // Note: Confirmation is handled by SettingsTabbed's custom modal
+    // No need for double confirmation with Alert.alert
+
+    // Clear locations from store (will also clear AsyncStorage)
+    clearLocations();
+    // Clear weather data
+    setMyWeather(null as any);
+    setPartnerWeather(null as any);
+    // Reset UI state
+    setSetupStep('intro');
+    setShowSettings(false);
+    setIsFirstLoad(true);
+    setIsReturningUser(true); // Mark as returning user for fast reset flow
   };
 
   // Show intro animation when first loading with saved locations

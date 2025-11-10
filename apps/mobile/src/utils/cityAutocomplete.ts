@@ -59,12 +59,17 @@ export async function searchCities(query: string): Promise<CitySuggestion[]> {
       })
       .map((item: any) => {
         const address = item.address || {};
-        const cityName =
+        const rawCityName =
           address.city ||
           address.town ||
           address.village ||
           address.municipality ||
           item.name;
+
+        // Clean city name: Nominatim sometimes returns multiple names separated by semicolons
+        // (e.g., "伯克利;柏克萊" for different transliterations)
+        // Take only the first name to avoid duplicates
+        const cityName = rawCityName.split(';')[0].trim();
 
         return {
           name: cityName,

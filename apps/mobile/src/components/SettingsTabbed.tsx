@@ -347,7 +347,7 @@ export default function SettingsTabbed({
         {/* Reset Confirmation Modal */}
         {showResetConfirm && (
           <View style={styles.confirmOverlay}>
-            <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill}>
+            <BlurView intensity={90} tint="dark" style={styles.confirmBlur}>
               <View style={styles.confirmModal}>
                 <Text style={styles.confirmTitle}>Reset Connection?</Text>
                 <Text style={styles.confirmMessage}>
@@ -660,6 +660,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
+  },
+  confirmBlur: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   confirmModal: {
     width: SCREEN_WIDTH - 60,

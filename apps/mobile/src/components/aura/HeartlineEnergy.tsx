@@ -176,9 +176,11 @@ const HeartlineEnergy: React.FC<HeartlineEnergyProps> = ({
         style={[
           styles.pulseWave,
           {
-            left: wave1X,
-            top: wave1Y,
             backgroundColor: color,
+            transform: [
+              { translateX: wave1X },
+              { translateY: wave1Y },
+            ],
           },
         ]}
       />
@@ -188,9 +190,11 @@ const HeartlineEnergy: React.FC<HeartlineEnergyProps> = ({
         style={[
           styles.pulseWave,
           {
-            left: wave2X,
-            top: wave2Y,
             backgroundColor: color,
+            transform: [
+              { translateX: wave2X },
+              { translateY: wave2Y },
+            ],
           },
         ]}
       />
@@ -200,9 +204,11 @@ const HeartlineEnergy: React.FC<HeartlineEnergyProps> = ({
         style={[
           styles.pulseWave,
           {
-            left: wave3X,
-            top: wave3Y,
             backgroundColor: color,
+            transform: [
+              { translateX: wave3X },
+              { translateY: wave3Y },
+            ],
           },
         ]}
       />
@@ -212,10 +218,12 @@ const HeartlineEnergy: React.FC<HeartlineEnergyProps> = ({
         style={[
           styles.centerBurst,
           {
-            left: centerX,
-            top: centerY,
             opacity: burstOpacity,
-            transform: [{ scale: burstScale }],
+            transform: [
+              { translateX: centerX },
+              { translateY: centerY },
+              { scale: burstScale },
+            ],
           },
         ]}
       >
@@ -231,23 +239,17 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   pulseWave: {
-    position: 'absolute',
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginLeft: -6,
-    marginTop: -6,
     shadowColor: '#fff',
     shadowOpacity: 0.8,
     shadowRadius: 8,
     elevation: 5,
   },
   centerBurst: {
-    position: 'absolute',
     width: 40,
     height: 40,
-    marginLeft: -20,
-    marginTop: -20,
     justifyContent: 'center',
     alignItems: 'center',
   },
