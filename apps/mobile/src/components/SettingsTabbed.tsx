@@ -257,41 +257,189 @@ export default function SettingsTabbed({
             </View>
           )}
 
-          {/* Schedule Tab */}
+          {/* Schedule Tab - Redesigned with full timeline preview */}
           {activeTab === 'schedule' && (
             <View style={styles.tabContent}>
               <Text style={styles.sectionTitle}>Daily Rhythms</Text>
               <Text style={styles.sectionHint}>
-                Set your daily schedules to find the best times to connect
+                Visualize your daily schedules and find the best times to connect
               </Text>
 
-              <TouchableOpacity
-                style={styles.rhythmButton}
-                onPress={() => setShowRhythmEditor(true)}
-              >
-                <BlurView intensity={60} tint="dark" style={styles.rhythmButtonBlur}>
-                  <Calendar size={20} color="#a78bfa" />
-                  <View style={styles.rhythmButtonText}>
-                    <Text style={styles.rhythmButtonTitle}>Edit Daily Rhythms</Text>
-                    <Text style={styles.rhythmButtonHint}>
-                      {mySchedule && partnerSchedule
-                        ? 'Schedules configured'
-                        : 'Not set up yet'}
-                    </Text>
-                  </View>
-                </BlurView>
-              </TouchableOpacity>
+              {mySchedule && partnerSchedule ? (
+                <>
+                  {/* Full Timeline Preview */}
+                  <View style={styles.timelineContainer}>
+                    {/* Time labels */}
+                    <View style={styles.timeLabels}>
+                      {[0, 6, 12, 18, 24].map((hour) => (
+                        <Text key={hour} style={styles.timeLabel}>
+                          {hour}:00
+                        </Text>
+                      ))}
+                    </View>
 
-              {mySchedule && partnerSchedule && (
-                <View style={styles.schedulePreview}>
-                  <Text style={styles.schedulePreviewTitle}>Quick Preview</Text>
-                  <Text style={styles.schedulePreviewText}>
-                    Your sleep: {mySchedule.sleep.start}:00 - {mySchedule.sleep.end}:00
+                    {/* Your schedule row */}
+                    <View style={styles.scheduleRow}>
+                      <Text style={styles.scheduleRowLabel}>You</Text>
+                      <View style={styles.timeline}>
+                        {/* Sleep blocks */}
+                        {mySchedule.sleep.start > mySchedule.sleep.end ? (
+                          <>
+                            <View
+                              style={[
+                                styles.timeBlock,
+                                styles.sleepBlock,
+                                {
+                                  left: 0,
+                                  width: `${(mySchedule.sleep.end / 24) * 100}%`,
+                                },
+                              ]}
+                            />
+                            <View
+                              style={[
+                                styles.timeBlock,
+                                styles.sleepBlock,
+                                {
+                                  left: `${(mySchedule.sleep.start / 24) * 100}%`,
+                                  width: `${((24 - mySchedule.sleep.start) / 24) * 100}%`,
+                                },
+                              ]}
+                            />
+                          </>
+                        ) : (
+                          <View
+                            style={[
+                              styles.timeBlock,
+                              styles.sleepBlock,
+                              {
+                                left: `${(mySchedule.sleep.start / 24) * 100}%`,
+                                width: `${((mySchedule.sleep.end - mySchedule.sleep.start) / 24) * 100}%`,
+                              },
+                            ]}
+                          />
+                        )}
+                        {/* Work blocks */}
+                        {mySchedule.work && (
+                          <View
+                            style={[
+                              styles.timeBlock,
+                              styles.workBlock,
+                              {
+                                left: `${(mySchedule.work.start / 24) * 100}%`,
+                                width: `${((mySchedule.work.end - mySchedule.work.start) / 24) * 100}%`,
+                              },
+                            ]}
+                          />
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Partner schedule row */}
+                    <View style={styles.scheduleRow}>
+                      <Text style={styles.scheduleRowLabel}>Partner</Text>
+                      <View style={styles.timeline}>
+                        {/* Sleep blocks */}
+                        {partnerSchedule.sleep.start > partnerSchedule.sleep.end ? (
+                          <>
+                            <View
+                              style={[
+                                styles.timeBlock,
+                                styles.sleepBlock,
+                                {
+                                  left: 0,
+                                  width: `${(partnerSchedule.sleep.end / 24) * 100}%`,
+                                },
+                              ]}
+                            />
+                            <View
+                              style={[
+                                styles.timeBlock,
+                                styles.sleepBlock,
+                                {
+                                  left: `${(partnerSchedule.sleep.start / 24) * 100}%`,
+                                  width: `${((24 - partnerSchedule.sleep.start) / 24) * 100}%`,
+                                },
+                              ]}
+                            />
+                          </>
+                        ) : (
+                          <View
+                            style={[
+                              styles.timeBlock,
+                              styles.sleepBlock,
+                              {
+                                left: `${(partnerSchedule.sleep.start / 24) * 100}%`,
+                                width: `${((partnerSchedule.sleep.end - partnerSchedule.sleep.start) / 24) * 100}%`,
+                              },
+                            ]}
+                          />
+                        )}
+                        {/* Work blocks */}
+                        {partnerSchedule.work && (
+                          <View
+                            style={[
+                              styles.timeBlock,
+                              styles.workBlock,
+                              {
+                                left: `${(partnerSchedule.work.start / 24) * 100}%`,
+                                width: `${((partnerSchedule.work.end - partnerSchedule.work.start) / 24) * 100}%`,
+                              },
+                            ]}
+                          />
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Legend */}
+                    <View style={styles.legend}>
+                      <View style={styles.legendItem}>
+                        <View style={[styles.legendColor, { backgroundColor: '#3b82f6' }]} />
+                        <Text style={styles.legendText}>Sleep</Text>
+                      </View>
+                      <View style={styles.legendItem}>
+                        <View style={[styles.legendColor, { backgroundColor: '#f59e0b' }]} />
+                        <Text style={styles.legendText}>Work</Text>
+                      </View>
+                      <View style={styles.legendItem}>
+                        <View style={[styles.legendColor, { backgroundColor: '#10b981' }]} />
+                        <Text style={styles.legendText}>Free time</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Edit button */}
+                  <TouchableOpacity
+                    style={styles.rhythmButton}
+                    onPress={() => setShowRhythmEditor(true)}
+                  >
+                    <BlurView intensity={60} tint="dark" style={styles.rhythmButtonBlur}>
+                      <Calendar size={20} color="#a78bfa" />
+                      <View style={styles.rhythmButtonText}>
+                        <Text style={styles.rhythmButtonTitle}>Edit Daily Rhythms</Text>
+                        <Text style={styles.rhythmButtonHint}>Tap to modify schedules</Text>
+                      </View>
+                    </BlurView>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.placeholder}>
+                    No schedules configured yet. Set up your daily rhythms to find the best times to
+                    connect.
                   </Text>
-                  <Text style={styles.schedulePreviewText}>
-                    Partner sleep: {partnerSchedule.sleep.start}:00 - {partnerSchedule.sleep.end}:00
-                  </Text>
-                </View>
+                  <TouchableOpacity
+                    style={styles.rhythmButton}
+                    onPress={() => setShowRhythmEditor(true)}
+                  >
+                    <BlurView intensity={60} tint="dark" style={styles.rhythmButtonBlur}>
+                      <Calendar size={20} color="#a78bfa" />
+                      <View style={styles.rhythmButtonText}>
+                        <Text style={styles.rhythmButtonTitle}>Set Up Daily Rhythms</Text>
+                        <Text style={styles.rhythmButtonHint}>Configure your schedules</Text>
+                      </View>
+                    </BlurView>
+                  </TouchableOpacity>
+                </>
               )}
             </View>
           )}
@@ -303,7 +451,7 @@ export default function SettingsTabbed({
 
               <View style={styles.aboutSection}>
                 <Text style={styles.aboutLabel}>Version</Text>
-                <Text style={styles.aboutValue}>2.6.0 - Minimalist Redesign</Text>
+                <Text style={styles.aboutValue}>2.7.0 - Premium Redesign</Text>
               </View>
 
               <View style={styles.aboutSection}>
@@ -329,19 +477,24 @@ export default function SettingsTabbed({
                   mindful travel decisions.
                 </Text>
               </View>
+
+              {/* Reset Connection - Only in About tab */}
+              <View style={styles.aboutSection}>
+                <Text style={styles.aboutLabel}>Reset Connection</Text>
+                <Text style={styles.aboutText}>
+                  Clear all locations, schedules, and personalization data. This will return you to the intro screen.
+                </Text>
+                <TouchableOpacity
+                  style={styles.resetButton}
+                  onPress={() => setShowResetConfirm(true)}
+                >
+                  <BlurView intensity={30} tint="dark" style={styles.resetButtonBlur}>
+                    <Text style={styles.resetButtonText}>Reset Connection</Text>
+                  </BlurView>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
-
-          {/* Reset Button (always visible at bottom) */}
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={() => setShowResetConfirm(true)}
-          >
-            <BlurView intensity={30} tint="dark" style={styles.resetButtonBlur}>
-              <Text style={styles.resetButtonText}>Reset Connection</Text>
-              <Text style={styles.resetButtonHint}>Clear all data and start over</Text>
-            </BlurView>
-          </TouchableOpacity>
         </ScrollView>
 
         {/* Reset Confirmation Modal */}
@@ -478,7 +631,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingBottom: 100, // Increased to prevent content being cut off
   },
   tabContent: {
     gap: 16,
@@ -715,5 +868,72 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: 'white',
+  },
+  // Timeline visualization for Daily Rhythms
+  timelineContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  timeLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  timeLabel: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontWeight: '600',
+  },
+  scheduleRow: {
+    marginBottom: 16,
+  },
+  scheduleRowLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 8,
+  },
+  timeline: {
+    height: 32,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)', // Free time background
+    borderRadius: 8,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  timeBlock: {
+    position: 'absolute',
+    height: '100%',
+    borderRadius: 6,
+  },
+  sleepBlock: {
+    backgroundColor: '#3b82f6',
+    opacity: 0.7,
+  },
+  workBlock: {
+    backgroundColor: '#f59e0b',
+    opacity: 0.8,
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginTop: 12,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 3,
+  },
+  legendText: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: '500',
   },
 });
