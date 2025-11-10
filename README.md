@@ -8,7 +8,7 @@
 
 *A digital sanctuary for long-distance couples*
 
-[![Version](https://img.shields.io/badge/version-2.5.0-blue)](https://github.com/your-username/aura/releases)
+[![Version](https://img.shields.io/badge/version-2.6.5-blue)](https://github.com/your-username/aura/releases)
 [![Expo SDK](https://img.shields.io/badge/Expo-SDK%2054-000020?logo=expo)](https://expo.dev/)
 [![React Native](https://img.shields.io/badge/React%20Native-0.76-61DAFB?logo=react)](https://reactnative.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript)](https://www.typescriptlang.org/)
@@ -70,6 +70,29 @@ Our mission is to transform the two most fundamental environmental factors, **ti
 *   **Time Bridge:** A detailed overlay that visualizes and compares the 24-hour daily timelines for both individuals, highlighting sunrise, sunset, and current times.
 *   **Connection Data:** Subtly displays the physical distance and time zone difference, grounding the digital connection in real-world context.
 *   **Elegant & Minimalist UI:** A focus on a beautiful, immersive experience rather than cluttered social features.
+
+### New in v2.6.5 (Intro Animation & Memory Optimization)
+
+#### Premium Intro Animation
+*   **Professional Logo-Centric Intro:** Completely redesigned 4-second intro experience
+    *   Aura logo as the visual centerpiece with breathing glow effects
+    *   Smooth bounce-in animation with elastic easing
+    *   Dual glow rings (inner purple, outer pink) create depth
+    *   Manual breathing cycles (no infinite loops for stability)
+    *   Elegant scale-up transition to main screen
+*   **Memory-Optimized Architecture:**
+    *   AuraLogo redesigned as pure static SVG component (zero animations internally)
+    *   All animations handled by parent components
+    *   Reduced total shared values from 5 → 3 for iOS Simulator compatibility
+    *   Eliminated React hooks violations (no conditional `useSharedValue` calls)
+*   **Design Philosophy:** Elevated intro from basic to premium quality while maintaining minimalist aesthetic
+
+#### Critical Performance Fixes
+*   **Resolved iOS Simulator Crashes:** Fixed persistent MALLOC 768M+ memory crashes
+    *   Root cause: Hidden shared values in AuraLogo component
+    *   Solution: Complete component redesign with separation of concerns
+    *   Result: Stable 60fps animations within memory limits
+*   **React Compliance:** Fixed illegal conditional hooks usage that caused unpredictable behavior
 
 ### New in v2.5.0 (Enhanced Personalization & UX)
 

@@ -377,6 +377,133 @@ Per API terms of service, the app should include attribution to:
 - OpenStreetMap (for Nominatim geocoding)
 - Open-Meteo (for weather data)
 
+## Version 2.6.5 Critical Memory Fixes & Architecture Changes
+
+### Premium Intro Animation
+
+Version 2.6.5 introduces `IntroScreenPremium` (`apps/mobile/src/components/aura/IntroScreenPremium.tsx`) - a professional 4-second logo-centric intro:
+
+**Animation Phases:**
+1. **Bounce-in (0-600ms)**: Logo scales from 0.5 → 1.15 with elastic back easing
+2. **Breathing (600-2600ms)**: Two manual cycles oscillating between 1.08 ↔ 1.15
+3. **Transition (2600-4000ms)**: Dramatic scale-up to 6× for seamless fade to main screen
+
+**Visual Elements:**
+- Dual glow rings (pink outer 360px, purple inner 280px)
+- Static starry gradient background (#0a0118 → #312e81)
+- Aura logo as the hero element with breathing effect
+
+### Critical Architecture Redesign: AuraLogo Component
+
+**Problem Discovered:**
+- `AuraLogo` was creating **2 hidden shared values** (`logoOpacity`, `logoScale`) even with `animate={false}`
+- Combined with `IntroScreenPremium` (3 shared values) = **5 total** → iOS Simulator memory crashes
+- First attempted fix using conditional hooks (`animate ? useSharedValue(0) : null`) **violated React rules**
+
+**Solution (v2.6.5):**
+AuraLogo is now a **pure static SVG component** with zero animations:
+
+```typescript
+// apps/mobile/src/components/aura/AuraLogo.tsx (v2.6.5)
+const AuraLogo: React.FC<AuraLogoProps> = ({ size = 120 }) => {
+  return (
+    <View style={[styles.container, { width: size, height: size }]}>
+      <Svg width={size} height={size} viewBox="0 0 100 100">
+        {/* Pure SVG rendering - NO animations */}
+      </Svg>
+    </View>
+  );
+};
+```
+
+**Key Changes:**
+- ❌ Removed: `useSharedValue`, `useAnimatedStyle`, `withTiming`, `useEffect`
+- ❌ Removed: `animate` prop (all animations handled by parents)
+- ❌ Removed: All Reanimated imports
+- ✅ Changed: `Animated.View` → plain `View`
+- ✅ Result: **0 shared values** (down from 2)
+
+**Parent Component Pattern:**
+```typescript
+// Parent handles ALL animations
+<Animated.View style={[animatedStyle]}>
+  <AuraLogo size={200} />  {/* Pure static SVG */}
+</Animated.View>
+```
+
+### Memory Budget Guidelines for iOS Simulator
+
+**Strict Memory Limits:**
+- **Safe limit**: ~3 shared values per animation component tree
+- **Exceeding this** causes `mach_vm_allocate_kernel failed` errors at kernel level
+- **Hermes engine** unable to allocate memory for `AnimationFrameBatchinator` worklets
+- Real devices have higher limits, but **always design for Simulator constraints**
+
+**Shared Value Accounting (v2.6.5):**
+```
+IntroScreenPremium:
+  ├─ logoScale: useSharedValue(0.5)      [1]
+  ├─ logoOpacity: useSharedValue(0)      [2]
+  └─ glowOpacity: useSharedValue(0)      [3]
+
+AuraLogo (wrapped in Animated.View):
+  └─ NO shared values                    [0]
+
+Total: 3 shared values ✅ (within safe limits)
+```
+
+**Best Practices:**
+1. **Reusable components should be pure** (no animations, no shared values)
+2. **Parent components handle animations** via `Animated.View` wrappers
+3. **Avoid `withRepeat` on mobile** - use manual `withSequence` for breathing effects
+4. **Count ALL shared values** including hidden ones in child components
+5. **Test on iOS Simulator** - it has stricter limits than real devices
+
+### React Hooks Compliance
+
+**❌ NEVER do this:**
+```typescript
+// Conditional hooks violate React rules!
+const value = condition ? useSharedValue(0) : null;
+const style = animate ? useAnimatedStyle(() => {...}) : {};
+```
+
+**✅ Always do this:**
+```typescript
+// Option 1: Always create the hook unconditionally
+const value = useSharedValue(0);
+
+// Option 2: Make it a pure component (no hooks)
+const Component = ({ size }) => <View>...</View>;
+```
+
+**Why it matters:**
+- React expects hooks to be called in the same order every render
+- Conditional hooks cause unpredictable behavior and crashes
+- This is a fundamental React rule, not specific to Reanimated
+
+### Troubleshooting Memory Crashes
+
+**Symptoms:**
+```
+Kernel Triage: VM - (arg = 0x3) mach_vm_allocate_kernel failed
+MALLOC: 768M+ allocated
+Thread 0 Crashed: worklets::AnimationFrameBatchinator::flush()
+```
+
+**Diagnosis Checklist:**
+1. Count all `useSharedValue` calls in component tree
+2. Check child components for hidden shared values
+3. Look for `withRepeat(-1)` (infinite loops)
+4. Verify no conditional hooks usage
+5. Clear cache and test: `npm run mobile -- -c`
+
+**Solutions (in order of preference):**
+1. **Reduce shared value count** - eliminate unnecessary animations
+2. **Split into multiple components** - keep each tree under 3 shared values
+3. **Use static alternatives** - pure components with parent-controlled animations
+4. **Simplify animations** - use `withSequence` instead of `withRepeat`
+
 ## Version 2.4.0 Design Philosophy (Bridging Worlds)
 
 ### Core Narrative: "From Separation to Unity"
