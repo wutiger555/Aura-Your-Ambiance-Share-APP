@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useLocationStore } from './src/stores/useLocationStore';
 import { useWeatherStore } from './src/stores/useWeatherStore';
 import { useMessageStore } from './src/stores/useMessageStore'; // v2.5.0
+import { useDisplaySettings } from './src/stores/useDisplaySettings'; // v2.6.0
 import {
   getCoordinatesForCity,
   getWeather,
@@ -26,17 +27,16 @@ import CoupleSetupScreen from './src/components/aura/CoupleSetupScreen'; // v2.5
 import LocationInputScreen from './src/components/aura/LocationInputScreen';
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
-import AuraGlobe from './src/components/aura/AuraGlobe';
-import Heartline from './src/components/aura/Heartline';
+import AuraGlobeMinimal from './src/components/aura/AuraGlobeMinimal'; // v2.6.0: Minimal version
+import HeartlineRedesign from './src/components/aura/HeartlineRedesign'; // v2.6.0: Redesigned with swap button
 import TimeBridge from './src/components/aura/TimeBridge';
-import Settings from './src/components/Settings';
-import SettingsRedesign from './src/components/SettingsRedesign'; // New visual map-based settings
+import SettingsTabbed from './src/components/SettingsTabbed'; // v2.6.0: Tab-based settings
 import StatusEditModal from './src/components/aura/StatusEditModal'; // v2.5.0
 import RelationshipMilestone from './src/components/aura/RelationshipMilestone'; // v2.5.0
 import MilestoneEditModal from './src/components/aura/MilestoneEditModal'; // v2.5.0
 import WeatherReminderCard from './src/components/aura/WeatherReminderCard'; // v2.5.0
 import MessageCenter from './src/components/aura/MessageCenter'; // v2.5.0
-import ConnectionWidget from './src/components/aura/ConnectionWidget'; // v2.4.0
+import SettingsButton from './src/components/aura/SettingsButton'; // v2.6.0: Elegant gear button
 import { ANIMATION_DURATIONS } from './src/constants/Animations';
 import { generateWeatherReminders, generateTemperatureDifferenceReminder } from './src/utils/weatherReminders'; // v2.5.0
 
@@ -75,6 +75,17 @@ export default function App() {
     addMessage,
     deleteMessage,
   } = useMessageStore(); // v2.5.0
+
+  // v2.6.0: Display settings store
+  const {
+    swappedPositions,
+    showMilestones,
+    showWeatherReminders,
+    showProfileInfo,
+    showSunTimes,
+    showHeartlineInfo,
+    toggleSwappedPositions,
+  } = useDisplaySettings();
 
   const [setupStep, setSetupStep] = useState<SetupStep>('intro');
 
@@ -344,7 +355,32 @@ export default function App() {
   const distance = calculateDistance(myLocation!, partnerLocation!);
   const timeDiff = calculateTimeDifference(myWeather!.timezone, partnerWeather!.timezone);
 
-  // Render Main App with new components
+  // v2.6.0: Determine actual locations based on swap state
+  const topLocation = swappedPositions ? myLocation : partnerLocation;
+  const topWeather = swappedPositions ? myWeather : partnerWeather;
+  const topProfile = swappedPositions
+    ? (coupleProfile ? {
+        name: coupleProfile.myName,
+        emoji: coupleProfile.myEmoji,
+      } : undefined)
+    : (coupleProfile ? {
+        name: coupleProfile.partnerName,
+        emoji: coupleProfile.partnerEmoji,
+      } : undefined);
+
+  const bottomLocation = swappedPositions ? partnerLocation : myLocation;
+  const bottomWeather = swappedPositions ? partnerWeather : myWeather;
+  const bottomProfile = swappedPositions
+    ? (coupleProfile ? {
+        name: coupleProfile.partnerName,
+        emoji: coupleProfile.partnerEmoji,
+      } : undefined)
+    : (coupleProfile ? {
+        name: coupleProfile.myName,
+        emoji: coupleProfile.myEmoji,
+      } : undefined);
+
+  // Render Main App with new components (v2.6.0: Minimalist redesign)
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -357,50 +393,44 @@ export default function App() {
         distance={distance}
       />
 
-      {/* AuraGlobe for Partner (Top) */}
-      <AuraGlobe
-        location={partnerLocation!}
-        weather={partnerWeather!}
+      {/* AuraGlobeMinimal for Top Location (v2.6.0: Minimal version with display settings) */}
+      <AuraGlobeMinimal
+        location={topLocation!}
+        weather={topWeather!}
         position="top"
-        distance={distance}
-        profile={coupleProfile ? {
-          name: coupleProfile.partnerName,
-          emoji: coupleProfile.partnerEmoji,
-          statusMessage: partnerLocation?.statusMessage,
-        } : undefined}
-        onEditStatus={() => setEditingStatus('partner')}
+        showProfileInfo={showProfileInfo}
+        showSunTimes={showSunTimes}
+        profile={topProfile}
       />
 
-      {/* AuraGlobe for Me (Bottom) */}
-      <AuraGlobe
-        location={myLocation!}
-        weather={myWeather!}
+      {/* AuraGlobeMinimal for Bottom Location (v2.6.0: Minimal version with display settings) */}
+      <AuraGlobeMinimal
+        location={bottomLocation!}
+        weather={bottomWeather!}
         position="bottom"
-        distance={distance}
-        profile={coupleProfile ? {
-          name: coupleProfile.myName,
-          emoji: coupleProfile.myEmoji,
-          statusMessage: myLocation?.statusMessage,
-        } : undefined}
-        onEditStatus={() => setEditingStatus('me')}
+        showProfileInfo={showProfileInfo}
+        showSunTimes={showSunTimes}
+        profile={bottomProfile}
       />
 
-      {/* Heartline (Connection curve with stats) */}
-      <Heartline
+      {/* HeartlineRedesign (v2.6.0: Connection curve with elegant swap button) */}
+      <HeartlineRedesign
         distance={distance}
         timeDifference={timeDiff}
         myWeather={myWeather}
         partnerWeather={partnerWeather}
         onShowDetails={() => setShowTimeBridge(true)}
+        onSwapPositions={toggleSwappedPositions}
+        showInfo={showHeartlineInfo}
       />
 
-      {/* Connection Widget - v2.4.0: Bottom-right floating button */}
-      <ConnectionWidget
+      {/* SettingsButton (v2.6.0: Elegant gear button replacing ConnectionWidget) */}
+      <SettingsButton
         onPress={() => setShowSettings(true)}
       />
 
-      {/* v2.5.0: Relationship Milestone */}
-      {coupleProfile && (
+      {/* v2.5.0/v2.6.0: Relationship Milestone (conditional based on DisplaySettings) */}
+      {showMilestones && coupleProfile && (
         <RelationshipMilestone
           relationshipStart={coupleProfile.relationshipStart}
           nextMeetingDate={coupleProfile.nextMeetingDate}
@@ -409,13 +439,13 @@ export default function App() {
         />
       )}
 
-      {/* v2.5.0: Weather Reminder Card */}
-      {weatherReminders.length > 0 && (
+      {/* v2.5.0/v2.6.0: Weather Reminder Card (conditional based on DisplaySettings) */}
+      {showWeatherReminders && weatherReminders.length > 0 && (
         <WeatherReminderCard reminders={weatherReminders} />
       )}
 
-      {/* Settings Modal */}
-      <Settings
+      {/* Settings Modal (v2.6.0: Tab-based SettingsTabbed) */}
+      <SettingsTabbed
         visible={showSettings}
         onClose={() => setShowSettings(false)}
         onReset={handleReset}
