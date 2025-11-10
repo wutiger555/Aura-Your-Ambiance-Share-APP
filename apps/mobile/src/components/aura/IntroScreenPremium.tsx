@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  useAnimatedProps,
   withTiming,
   withDelay,
   withRepeat,
@@ -20,9 +19,6 @@ interface IntroScreenPremiumProps {
   onComplete: () => void;
 }
 
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
-const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
-
 /**
  * IntroScreenPremium - High-quality intro with flowing gradient
  * v2.6.0: Premium Aura Logo animation with color flow
@@ -30,7 +26,7 @@ const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
  * Flow (3.5s total):
  * 0.0s - Background particles fade in
  * 0.3s - Logo container appears with scale
- * 0.6s - Gradient starts flowing through logo
+ * 0.6s - Multiple gradient layers start flowing
  * 1.0s - Glow halos pulse
  * 2.0s - "AURA" text letters appear one by one
  * 2.8s - Subtitle fades in
@@ -41,7 +37,9 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
   const backgroundOpacity = useSharedValue(0);
   const logoScale = useSharedValue(0.5);
   const logoOpacity = useSharedValue(0);
-  const gradientFlow = useSharedValue(0);
+  const gradientLayer1Opacity = useSharedValue(0);
+  const gradientLayer2Opacity = useSharedValue(0);
+  const gradientLayer3Opacity = useSharedValue(0);
   const glowPulse = useSharedValue(0.5);
   const letterA1Opacity = useSharedValue(0);
   const letterU_Opacity = useSharedValue(0);
@@ -71,16 +69,40 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
       withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) })
     );
 
-    // Gradient flow animation (continuous)
-    gradientFlow.value = withDelay(
+    // Gradient flow animation using layered opacity animation
+    gradientLayer1Opacity.value = withDelay(
       600,
       withRepeat(
-        withTiming(1, {
-          duration: 2000,
-          easing: Easing.inOut(Easing.ease),
-        }),
+        withSequence(
+          withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.3, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        ),
         -1,
-        true
+        false
+      )
+    );
+
+    gradientLayer2Opacity.value = withDelay(
+      1100,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.3, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        false
+      )
+    );
+
+    gradientLayer3Opacity.value = withDelay(
+      1600,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.3, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        false
       )
     );
 
@@ -139,19 +161,17 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
     transform: [{ scale: logoScale.value }],
   }));
 
-  const gradientProps = useAnimatedProps(() => {
-    const offset1 = interpolate(gradientFlow.value, [0, 1], [0, 0.3]);
-    const offset2 = interpolate(gradientFlow.value, [0, 1], [0.5, 0.8]);
-    const offset3 = interpolate(gradientFlow.value, [0, 1], [1, 1.3]);
+  const gradientLayer1Style = useAnimatedStyle(() => ({
+    opacity: gradientLayer1Opacity.value,
+  }));
 
-    return {
-      locations: [
-        Math.max(0, Math.min(1, offset1)),
-        Math.max(0, Math.min(1, offset2)),
-        Math.max(0, Math.min(1, offset3)),
-      ] as any,
-    };
-  });
+  const gradientLayer2Style = useAnimatedStyle(() => ({
+    opacity: gradientLayer2Opacity.value,
+  }));
+
+  const gradientLayer3Style = useAnimatedStyle(() => ({
+    opacity: gradientLayer3Opacity.value,
+  }));
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: glowPulse.value * 0.6,
@@ -217,24 +237,55 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
         <Animated.View style={[styles.logoWrapper, logoContainerStyle]}>
           {/* Outer glow layers */}
           <Animated.View style={[styles.glowOuter, glowStyle]}>
-            <AnimatedBlurView intensity={20} tint="dark" style={styles.glowBlur} />
+            <BlurView intensity={20} tint="dark" style={styles.glowBlur} />
           </Animated.View>
 
           <Animated.View style={[styles.glowMiddle, glowStyle]}>
-            <AnimatedBlurView intensity={15} tint="dark" style={styles.glowBlur} />
+            <BlurView intensity={15} tint="dark" style={styles.glowBlur} />
           </Animated.View>
 
-          {/* Logo with flowing gradient */}
-          <AnimatedLinearGradient
-            colors={['#06b6d4', '#a78bfa', '#ec4899', '#06b6d4']}
-            // @ts-ignore - animatedProps works but TS doesn't recognize it
-            animatedProps={gradientProps}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.logoGradient}
-          >
+          {/* Logo with layered flowing gradients */}
+          <View style={styles.logoGradientContainer}>
+            {/* Base gradient */}
+            <LinearGradient
+              colors={['#06b6d4', '#a78bfa', '#ec4899']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.logoGradient}
+            />
+
+            {/* Flowing gradient layer 1 - cyan focus */}
+            <Animated.View style={[StyleSheet.absoluteFill, gradientLayer1Style]}>
+              <LinearGradient
+                colors={['#06b6d4', 'rgba(6, 182, 212, 0.3)', 'rgba(6, 182, 212, 0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.logoGradient}
+              />
+            </Animated.View>
+
+            {/* Flowing gradient layer 2 - purple focus */}
+            <Animated.View style={[StyleSheet.absoluteFill, gradientLayer2Style]}>
+              <LinearGradient
+                colors={['rgba(167, 139, 250, 0)', '#a78bfa', 'rgba(167, 139, 250, 0.3)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.logoGradient}
+              />
+            </Animated.View>
+
+            {/* Flowing gradient layer 3 - pink focus */}
+            <Animated.View style={[StyleSheet.absoluteFill, gradientLayer3Style]}>
+              <LinearGradient
+                colors={['rgba(236, 72, 153, 0)', 'rgba(236, 72, 153, 0.3)', '#ec4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.logoGradient}
+              />
+            </Animated.View>
+
+            {/* Logo text content */}
             <View style={styles.logoContent}>
-              {/* Letter by letter reveal */}
               <View style={styles.logoTextRow}>
                 <Animated.Text style={[styles.logoLetter, letterA1Style]}>A</Animated.Text>
                 <Animated.Text style={[styles.logoLetter, letterU_Style]}>U</Animated.Text>
@@ -242,7 +293,7 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
                 <Animated.Text style={[styles.logoLetter, letterA2Style]}>A</Animated.Text>
               </View>
             </View>
-          </AnimatedLinearGradient>
+          </View>
 
           {/* Inner glow */}
           <Animated.View style={[styles.glowInner, glowStyle]} pointerEvents="none">
@@ -317,7 +368,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   // Logo gradient container
-  logoGradient: {
+  logoGradientContainer: {
+    position: 'relative',
     paddingHorizontal: 40,
     paddingVertical: 20,
     borderRadius: 20,
@@ -326,6 +378,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 30,
     elevation: 20,
+  },
+  logoGradient: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 20,
   },
   logoContent: {
     alignItems: 'center',
