@@ -22,7 +22,9 @@ import {
 } from '@aura/shared';
 
 // New Components
-import IntroScreen from './src/components/aura/IntroScreenPremium'; // v2.6.0: 3.5s premium intro with gradient flow
+// v2.6.5: TEMPORARY - Using static intro to diagnose memory crash
+import IntroScreen from './src/components/aura/IntroScreenStatic'; // ZERO animations for strict memory limits
+// import IntroScreen from './src/components/aura/IntroScreenPremium'; // v2.6.0: 3.5s premium intro with gradient flow
 import QuickStartScreen from './src/components/aura/QuickStartScreen'; // v2.6.0: Streamlined onboarding
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
