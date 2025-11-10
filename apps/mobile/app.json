@@ -39,14 +39,6 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
-    },
-    "plugins": [
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow Aura to use your location to connect with your loved one."
-        }
-      ]
-    ]
+    }
   }
 }
