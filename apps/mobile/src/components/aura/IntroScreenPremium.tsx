@@ -12,42 +12,13 @@ import Animated, {
   Extrapolation,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SvgXml } from 'react-native-svg';
+import { Svg, Circle, Defs, LinearGradient as SvgLinearGradient, Stop, G } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
 interface IntroScreenPremiumProps {
   onComplete: () => void;
 }
-
-// Aura Logo SVG - from /apps/mobile/assets/AuraLogo.svg
-const AURA_LOGO_SVG = `
-<svg width="240" height="240" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="auraGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:#FDE68A;"/>
-      <stop offset="30%" style="stop-color:#FBCFE8;"/>
-      <stop offset="55%" style="stop-color:#C7D2FE;"/>
-      <stop offset="100%" style="stop-color:#60A5FA;"/>
-    </linearGradient>
-    <filter id="sunGlow">
-      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
-
-  <g transform="rotate(-90 50 50)">
-    <circle cx="50" cy="50" r="48" style="fill:none; stroke:rgba(255, 255, 255, 0.5); stroke-width:1;"/>
-    <circle cx="50" cy="50" r="45" style="fill:none; stroke:rgba(255, 255, 255, 0.2); stroke-width:0.5;"/>
-  </g>
-
-  <circle cx="50" cy="50" r="45" style="fill:url(#auraGradient);"/>
-  <circle cx="50" cy="50" r="5" style="fill:#fefce8; filter:url(#sunGlow);"/>
-</svg>
-`;
 
 /**
  * IntroScreenPremium - Professional intro with Aura logo (4s)
@@ -259,7 +230,22 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
 
         {/* Aura Logo with rotation */}
         <Animated.View style={[styles.logoContainer, logoContainerStyle]}>
-          <SvgXml xml={AURA_LOGO_SVG} width={240} height={240} />
+          <Svg width={240} height={240} viewBox="0 0 100 100">
+            <Defs>
+              <SvgLinearGradient id="auraGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                <Stop offset="0%" stopColor="#FDE68A" />
+                <Stop offset="30%" stopColor="#FBCFE8" />
+                <Stop offset="55%" stopColor="#C7D2FE" />
+                <Stop offset="100%" stopColor="#60A5FA" />
+              </SvgLinearGradient>
+            </Defs>
+            <G transform="rotate(-90 50 50)">
+              <Circle cx="50" cy="50" r="48" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="1" />
+              <Circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="0.5" />
+            </G>
+            <Circle cx="50" cy="50" r="45" fill="url(#auraGradient)" />
+            <Circle cx="50" cy="50" r="5" fill="#fefce8" />
+          </Svg>
         </Animated.View>
       </View>
     </View>
