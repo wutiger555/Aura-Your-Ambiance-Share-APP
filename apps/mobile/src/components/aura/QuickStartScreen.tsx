@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,14 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  FlatList,
+  Keyboard,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { MapPin, Loader, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { autoDetectCity, LocationResult } from '../../utils/locationService';
+import { searchCities, CitySuggestion, debounce } from '../../utils/cityAutocomplete';
 
 interface QuickStartScreenProps {
   onComplete: (myCity: string, partnerCity: string, coupleNames?: { myName: string; partnerName: string }) => void;
@@ -40,6 +43,13 @@ export default function QuickStartScreen({ onComplete }: QuickStartScreenProps) 
   const [isDetecting, setIsDetecting] = useState(false);
   const [detectionError, setDetectionError] = useState('');
 
+  // City autocomplete states
+  const [myCitySuggestions, setMyCitySuggestions] = useState<CitySuggestion[]>([]);
+  const [partnerCitySuggestions, setPartnerCitySuggestions] = useState<CitySuggestion[]>([]);
+  const [isSearchingMy, setIsSearchingMy] = useState(false);
+  const [isSearchingPartner, setIsSearchingPartner] = useState(false);
+  const [activeInput, setActiveInput] = useState<'my' | 'partner' | null>(null);
+
   // Optional personalization
   const [showPersonalization, setShowPersonalization] = useState(false);
   const [myName, setMyName] = useState('');
@@ -64,6 +74,77 @@ export default function QuickStartScreen({ onComplete }: QuickStartScreenProps) 
       }),
     ]).start();
   }, []);
+
+  // Debounced search for city suggestions
+  const debouncedSearchMy = useRef(
+    debounce(async (query: string) => {
+      if (query.length < 2) {
+        setMyCitySuggestions([]);
+        setIsSearchingMy(false);
+        return;
+      }
+      setIsSearchingMy(true);
+      const suggestions = await searchCities(query);
+      setMyCitySuggestions(suggestions);
+      setIsSearchingMy(false);
+    }, 500)
+  ).current;
+
+  const debouncedSearchPartner = useRef(
+    debounce(async (query: string) => {
+      if (query.length < 2) {
+        setPartnerCitySuggestions([]);
+        setIsSearchingPartner(false);
+        return;
+      }
+      setIsSearchingPartner(true);
+      const suggestions = await searchCities(query);
+      setPartnerCitySuggestions(suggestions);
+      setIsSearchingPartner(false);
+    }, 500)
+  ).current;
+
+  // Handle city input changes with autocomplete
+  const handleMyCityChange = (text: string) => {
+    setMyCity(text);
+    setMyLocation(null); // Clear auto-detected location if user types
+    setActiveInput('my');
+    if (text.trim()) {
+      debouncedSearchMy(text);
+    } else {
+      setMyCitySuggestions([]);
+    }
+  };
+
+  const handlePartnerCityChange = (text: string) => {
+    setPartnerCity(text);
+    setActiveInput('partner');
+    if (text.trim()) {
+      debouncedSearchPartner(text);
+    } else {
+      setPartnerCitySuggestions([]);
+    }
+  };
+
+  // Handle suggestion selection
+  const selectMyCitySuggestion = (suggestion: CitySuggestion) => {
+    setMyCity(suggestion.name);
+    setMyLocation({
+      city: suggestion.name,
+      latitude: suggestion.latitude,
+      longitude: suggestion.longitude,
+    });
+    setMyCitySuggestions([]);
+    setActiveInput(null);
+    Keyboard.dismiss();
+  };
+
+  const selectPartnerCitySuggestion = (suggestion: CitySuggestion) => {
+    setPartnerCity(suggestion.name);
+    setPartnerCitySuggestions([]);
+    setActiveInput(null);
+    Keyboard.dismiss();
+  };
 
   const handleAutoDetect = async () => {
     setIsDetecting(true);
@@ -202,15 +283,47 @@ export default function QuickStartScreen({ onComplete }: QuickStartScreenProps) 
 
                       <Text style={styles.orText}>or</Text>
 
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Enter your city..."
-                        placeholderTextColor="rgba(255, 255, 255, 0.3)"
-                        value={myCity}
-                        onChangeText={setMyCity}
-                        autoCapitalize="words"
-                        returnKeyType="next"
-                      />
+                      <View>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter your city... (e.g., Taipei)"
+                          placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                          value={myCity}
+                          onChangeText={handleMyCityChange}
+                          onFocus={() => setActiveInput('my')}
+                          autoCapitalize="words"
+                          returnKeyType="next"
+                        />
+                        {isSearchingMy && (
+                          <View style={styles.searchingIndicator}>
+                            <ActivityIndicator size="small" color="#06b6d4" />
+                          </View>
+                        )}
+                      </View>
+
+                      {/* My City Suggestions Dropdown */}
+                      {activeInput === 'my' && myCitySuggestions.length > 0 && (
+                        <View style={styles.suggestionsContainer}>
+                          <BlurView intensity={80} tint="dark" style={styles.suggestionsBlur}>
+                            <FlatList
+                              data={myCitySuggestions}
+                              keyExtractor={(item, index) => `${item.name}-${index}`}
+                              renderItem={({ item }) => (
+                                <TouchableOpacity
+                                  style={styles.suggestionItem}
+                                  onPress={() => selectMyCitySuggestion(item)}
+                                >
+                                  <MapPin size={14} color="#06b6d4" />
+                                  <View style={styles.suggestionTextContainer}>
+                                    <Text style={styles.suggestionName}>{item.name}</Text>
+                                    <Text style={styles.suggestionCountry}>{item.country}</Text>
+                                  </View>
+                                </TouchableOpacity>
+                              )}
+                            />
+                          </BlurView>
+                        </View>
+                      )}
                     </>
                   )}
 
@@ -224,16 +337,48 @@ export default function QuickStartScreen({ onComplete }: QuickStartScreenProps) 
                 {/* Partner's Location */}
                 <View style={styles.section}>
                   <Text style={styles.sectionLabel}>Where is your person?</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter their city..."
-                    placeholderTextColor="rgba(255, 255, 255, 0.3)"
-                    value={partnerCity}
-                    onChangeText={setPartnerCity}
-                    autoCapitalize="words"
-                    returnKeyType="done"
-                    onSubmitEditing={handleConnect}
-                  />
+                  <View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter their city... (e.g., Tokyo)"
+                      placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                      value={partnerCity}
+                      onChangeText={handlePartnerCityChange}
+                      onFocus={() => setActiveInput('partner')}
+                      autoCapitalize="words"
+                      returnKeyType="done"
+                      onSubmitEditing={handleConnect}
+                    />
+                    {isSearchingPartner && (
+                      <View style={styles.searchingIndicator}>
+                        <ActivityIndicator size="small" color="#ec4899" />
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Partner City Suggestions Dropdown */}
+                  {activeInput === 'partner' && partnerCitySuggestions.length > 0 && (
+                    <View style={styles.suggestionsContainer}>
+                      <BlurView intensity={80} tint="dark" style={styles.suggestionsBlur}>
+                        <FlatList
+                          data={partnerCitySuggestions}
+                          keyExtractor={(item, index) => `${item.name}-${index}`}
+                          renderItem={({ item }) => (
+                            <TouchableOpacity
+                              style={styles.suggestionItem}
+                              onPress={() => selectPartnerCitySuggestion(item)}
+                            >
+                              <MapPin size={14} color="#ec4899" />
+                              <View style={styles.suggestionTextContainer}>
+                                <Text style={styles.suggestionName}>{item.name}</Text>
+                                <Text style={styles.suggestionCountry}>{item.country}</Text>
+                              </View>
+                            </TouchableOpacity>
+                          )}
+                        />
+                      </BlurView>
+                    </View>
+                  )}
                 </View>
 
                 {/* Optional: Personalization */}
@@ -503,5 +648,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.4)',
     textAlign: 'center',
+  },
+  // Autocomplete suggestions
+  searchingIndicator: {
+    position: 'absolute',
+    right: 16,
+    top: 14,
+  },
+  suggestionsContainer: {
+    marginTop: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    maxHeight: 200,
+  },
+  suggestionsBlur: {
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  suggestionTextContainer: {
+    flex: 1,
+  },
+  suggestionName: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: 'white',
+    marginBottom: 2,
+  },
+  suggestionCountry: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.5)',
   },
 });

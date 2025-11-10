@@ -5,6 +5,28 @@ import { LocationData } from "../types";
  * Rate limit: 1 request per second (automatically handled with delays)
  */
 
+// Nominatim API response types
+interface NominatimAddress {
+    city?: string;
+    town?: string;
+    village?: string;
+    county?: string;
+    municipality?: string;
+    country?: string;
+}
+
+interface NominatimSearchResult {
+    lat: string;
+    lon: string;
+    display_name: string;
+    address?: NominatimAddress;
+}
+
+interface NominatimReverseResult {
+    address?: NominatimAddress;
+    display_name: string;
+}
+
 // Simple rate limiter
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests
@@ -46,7 +68,7 @@ export async function getCoordinatesForCity(cityName: string): Promise<LocationD
             throw new Error(`Nominatim API error: ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = await response.json() as NominatimSearchResult[];
 
         if (!data || data.length === 0) {
             return null;
@@ -114,7 +136,7 @@ export async function getCityForCoordinates(latitude: number, longitude: number)
             throw new Error(`Nominatim API error: ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = await response.json() as NominatimReverseResult;
 
         if (!data || !data.address) {
             return null;

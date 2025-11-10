@@ -22,7 +22,7 @@ import {
 } from '@aura/shared';
 
 // New Components
-import IntroScreen from './src/components/aura/IntroScreenRedesign';
+import IntroScreen from './src/components/aura/IntroScreenMinimal'; // v2.6.0: 2.5s minimal intro
 import QuickStartScreen from './src/components/aura/QuickStartScreen'; // v2.6.0: Streamlined onboarding
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
@@ -97,8 +97,6 @@ export default function App() {
   }, [messages]);
   const [showSettings, setShowSettings] = useState(false);
   const [showTimeBridge, setShowTimeBridge] = useState(false);
-  const [cityInput, setCityInput] = useState(''); // State for the input field
-  const [cityError, setCityError] = useState('');
   const [showIntro, setShowIntro] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [editingStatus, setEditingStatus] = useState<'me' | 'partner' | null>(null); // v2.5.0
@@ -133,8 +131,8 @@ export default function App() {
   useEffect(() => {
     console.log('[App] Setup check:', {
       hasSetup,
-      myCity: myLocation?.city,
-      partnerCity: partnerLocation?.city
+      myCity: myLocation?.name,
+      partnerCity: partnerLocation?.name
     });
 
     if (hasSetup && myLocation && partnerLocation) {
@@ -257,44 +255,7 @@ export default function App() {
     }
   };
 
-  // Handle location submission for both steps
-  const handleLocationSubmit = async (step: 'my' | 'partner') => {
-    setCityError('');
-    setLoading(true);
-
-    try {
-      const location = await getCoordinatesForCity(cityInput);
-
-      if (!location) {
-        setCityError('City not found. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      if (step === 'my') {
-        setMyLocation(location);
-        setCityInput(''); // Clear input for next step
-        setTimeout(() => {
-          setSetupStep('inputPartner');
-        }, 400);
-      } else {
-        setPartnerLocation(location);
-        setTimeout(() => {
-          setSetupStep('connecting');
-          // Start fetching weather data immediately when animation starts
-          fetchWeatherData();
-          setTimeout(() => {
-            setSetupStep('done');
-          }, ANIMATION_DURATIONS.CONNECTION_INTRO + 800); // Add 800ms buffer after animation
-        }, 400);
-      }
-    } catch (error) {
-      setCityError('Failed to find city. Please try again.');
-    }
-    finally {
-      setLoading(false);
-    }
-  };
+  // v2.6.0: Location submission now handled by QuickStartScreen component
 
 
   const handleReset = () => {
@@ -316,7 +277,6 @@ export default function App() {
             setSetupStep('intro');
             setShowSettings(false);
             setIsFirstLoad(true);
-            setCityError('');
           },
         },
       ]
@@ -328,12 +288,12 @@ export default function App() {
     return <ConnectionIntro />;
   }
 
-  // Render IntroScreen (optional, can be skipped)
+  // Render IntroScreen (2.5s minimal animation)
   if (setupStep === 'intro') {
     return (
       <>
         <StatusBar barStyle="light-content" />
-        <IntroScreen onStart={() => setSetupStep('quickStart')} />
+        <IntroScreen onComplete={() => setSetupStep('quickStart')} />
       </>
     );
   }

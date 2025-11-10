@@ -7,6 +7,19 @@ export interface LocationResult {
   longitude: number;
 }
 
+export enum LocationErrorType {
+  PERMISSION_DENIED = 'PERMISSION_DENIED',
+  LOCATION_UNAVAILABLE = 'LOCATION_UNAVAILABLE',
+  GEOCODING_FAILED = 'GEOCODING_FAILED',
+  TIMEOUT = 'TIMEOUT',
+  UNKNOWN = 'UNKNOWN',
+}
+
+export interface LocationError {
+  type: LocationErrorType;
+  message: string;
+}
+
 /**
  * Location Service for Aura
  * Handles automatic location detection and reverse geocoding
@@ -42,12 +55,25 @@ export async function getLocationPermissionStatus(): Promise<Location.Permission
 /**
  * Get user's current location (latitude/longitude)
  * Requires permission to be granted first
+ * With timeout to prevent hanging
  */
 export async function getCurrentLocation(): Promise<Location.LocationObject | null> {
   try {
-    const location = await Location.getCurrentPositionAsync({
+    // Add timeout to prevent hanging (10 seconds)
+    const locationPromise = Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
+      timeInterval: 5000,
+      distanceInterval: 0,
     });
+
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => {
+        console.warn('[LocationService] Location request timed out after 10s');
+        resolve(null);
+      }, 10000);
+    });
+
+    const location = await Promise.race([locationPromise, timeoutPromise]);
     return location;
   } catch (error) {
     console.error('[LocationService] Failed to get current location:', error);
@@ -57,82 +83,128 @@ export async function getCurrentLocation(): Promise<Location.LocationObject | nu
 
 /**
  * Reverse geocode: Convert coordinates to city name
- * Uses OpenStreetMap Nominatim API
+ * Uses OpenStreetMap Nominatim API with retry logic
  */
 export async function getCityFromCoordinates(
   latitude: number,
-  longitude: number
+  longitude: number,
+  retries: number = 2
 ): Promise<string | null> {
-  try {
-    // Use Nominatim reverse geocoding
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
-      {
-        headers: {
-          'User-Agent': 'Aura-App/2.6.0',
-        },
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // Wait 1 second between attempts (Nominatim rate limit)
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log(`[LocationService] Retry attempt ${attempt}/${retries}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`Nominatim API error: ${response.status}`);
+      // Use Nominatim reverse geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'Aura-App/2.6.0',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 429 && attempt < retries) {
+          // Rate limited, retry
+          console.warn('[LocationService] Rate limited, retrying...');
+          continue;
+        }
+        throw new Error(`Nominatim API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Extract city name from response
+      const city =
+        data.address?.city ||
+        data.address?.town ||
+        data.address?.village ||
+        data.address?.municipality ||
+        data.address?.county ||
+        data.name ||
+        null;
+
+      if (city) {
+        return city;
+      }
+
+      // No city found, but request succeeded
+      console.warn('[LocationService] No city found in reverse geocoding response');
+      return null;
+    } catch (error) {
+      if (attempt === retries) {
+        console.error('[LocationService] Reverse geocoding failed after retries:', error);
+        return null;
+      }
+      // Continue to retry
+      console.warn(`[LocationService] Reverse geocoding attempt ${attempt + 1} failed:`, error);
     }
-
-    const data = await response.json();
-
-    // Extract city name from response
-    const city =
-      data.address?.city ||
-      data.address?.town ||
-      data.address?.village ||
-      data.address?.municipality ||
-      data.address?.county ||
-      data.name ||
-      null;
-
-    return city;
-  } catch (error) {
-    console.error('[LocationService] Reverse geocoding failed:', error);
-    return null;
   }
+
+  return null;
 }
 
 /**
  * Auto-detect user's current city
  * Full flow: Request permission → Get location → Reverse geocode
+ * Returns LocationResult on success, null on failure
+ * Check console for detailed error information
  */
 export async function autoDetectCity(): Promise<LocationResult | null> {
   try {
-    // 1. Check permission
+    // 1. Check and request permission if needed
+    console.log('[LocationService] Checking location permission...');
     const permissionStatus = await getLocationPermissionStatus();
 
     if (permissionStatus !== Location.PermissionStatus.GRANTED) {
-      // Request permission
+      console.log('[LocationService] Permission not granted, requesting...');
       const newStatus = await requestLocationPermission();
-      if (newStatus !== Location.PermissionStatus.GRANTED) {
-        console.log('[LocationService] Permission denied by user');
+
+      if (newStatus === Location.PermissionStatus.DENIED) {
+        console.warn('[LocationService] Permission explicitly denied by user');
         return null;
       }
+
+      if (newStatus !== Location.PermissionStatus.GRANTED) {
+        console.warn('[LocationService] Permission not granted:', newStatus);
+        return null;
+      }
+
+      console.log('[LocationService] Permission granted!');
+    } else {
+      console.log('[LocationService] Permission already granted');
     }
 
     // 2. Get current coordinates
+    console.log('[LocationService] Getting current location...');
     const location = await getCurrentLocation();
+
     if (!location) {
-      console.error('[LocationService] Failed to get coordinates');
+      console.error('[LocationService] Failed to get coordinates (timeout or unavailable)');
       return null;
     }
 
     const { latitude, longitude } = location.coords;
-    console.log('[LocationService] Coordinates:', { latitude, longitude });
+    console.log('[LocationService] Got coordinates:', {
+      latitude: latitude.toFixed(4),
+      longitude: longitude.toFixed(4)
+    });
 
     // 3. Reverse geocode to city name
+    console.log('[LocationService] Reverse geocoding to city name...');
     const city = await getCityFromCoordinates(latitude, longitude);
+
     if (!city) {
-      console.error('[LocationService] Failed to reverse geocode');
+      console.error('[LocationService] Reverse geocoding failed - could not determine city name');
       return null;
     }
 
-    console.log('[LocationService] Detected city:', city);
+    console.log('[LocationService] ✓ Successfully detected city:', city);
 
     return {
       city,
@@ -140,7 +212,7 @@ export async function autoDetectCity(): Promise<LocationResult | null> {
       longitude,
     };
   } catch (error) {
-    console.error('[LocationService] Auto-detect failed:', error);
+    console.error('[LocationService] Auto-detect failed with error:', error);
     return null;
   }
 }
