@@ -30,6 +30,7 @@ import {
   ChevronRight,
   Check,
 } from 'lucide-react-native';
+import AuraLogo from './AuraLogo';
 import { autoDetectCity } from '../../utils/locationService';
 import { searchCities, CitySuggestion, debounce } from '../../utils/cityAutocomplete';
 
@@ -43,6 +44,7 @@ interface OnboardingFlowProps {
     displayMode: 'minimal' | 'cozy' | 'full';
     coupleNames?: { myName: string; partnerName: string };
   }) => void;
+  isReturningUser?: boolean; // If true, skip welcome and purpose
 }
 
 type Step =
@@ -102,9 +104,10 @@ const DISPLAY_MODES = [
  * - Consistent autocomplete for both locations
  * - Award-winning app aesthetics (inspired by Calm, Headspace, Duolingo)
  */
-export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
-  const [step, setStep] = useState<Step>('welcome');
-  const [useCase, setUseCase] = useState('');
+export default function OnboardingFlow({ onComplete, isReturningUser = false }: OnboardingFlowProps) {
+  // If returning user (reset), skip welcome and purpose
+  const [step, setStep] = useState<Step>(isReturningUser ? 'location-you' : 'welcome');
+  const [useCase, setUseCase] = useState(isReturningUser ? 'relationship' : ''); // Default for reset
   const [displayMode, setDisplayMode] = useState<'minimal' | 'cozy' | 'full'>('cozy');
 
   // Location states
@@ -224,27 +227,28 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.centerContent}>
-          {/* Logo/Icon */}
-          <View style={styles.welcomeIcon}>
-            <LinearGradient
-              colors={['#06b6d4', '#a78bfa', '#ec4899']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.welcomeIconGradient}
-            >
-              <Globe size={48} color="white" />
-            </LinearGradient>
+          {/* Aura Logo with elegant presentation */}
+          <View style={styles.welcomeLogoContainer}>
+            <View style={styles.welcomeGlow}>
+              <View style={styles.welcomeGlowOuter} />
+            </View>
+            <View style={styles.welcomeGlow}>
+              <View style={styles.welcomeGlowInner} />
+            </View>
+            <View style={styles.welcomeLogoWrapper}>
+              <AuraLogo size={140} />
+            </View>
           </View>
 
-          <Text style={styles.welcomeTitle}>Welcome to Aura</Text>
+          <Text style={styles.welcomeTitle}>Aura</Text>
           <Text style={styles.welcomeSubtitle}>
-            Your shared atmosphere across the distance
+            Your shared atmosphere{'\n'}across the distance
           </Text>
 
           <View style={styles.featureList}>
-            <FeatureItem text="See real-time weather and time for two places" />
-            <FeatureItem text="Feel connected through blended skies" />
-            <FeatureItem text="Track your time difference effortlessly" />
+            <FeatureItem text="Blend two skies into one living atmosphere" />
+            <FeatureItem text="See their weather and time in real-time" />
+            <FeatureItem text="Feel the connection across any distance" />
           </View>
 
           <TouchableOpacity
@@ -257,7 +261,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
               end={{ x: 1, y: 0 }}
               style={styles.buttonGradient}
             >
-              <Text style={styles.buttonText}>Get Started</Text>
+              <Text style={styles.buttonText}>Begin</Text>
               <ChevronRight size={20} color="white" />
             </LinearGradient>
           </TouchableOpacity>
@@ -692,31 +696,45 @@ const styles = StyleSheet.create({
   },
 
   // Welcome screen
-  welcomeIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    overflow: 'hidden',
-    marginBottom: 32,
-  },
-  welcomeIconGradient: {
-    flex: 1,
-    justifyContent: 'center',
+  welcomeLogoContainer: {
+    position: 'relative',
+    marginBottom: 40,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeGlow: {
+    position: 'absolute',
+  },
+  welcomeGlowOuter: {
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(236, 72, 153, 0.15)',
+  },
+  welcomeGlowInner: {
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(167, 139, 250, 0.2)',
+  },
+  welcomeLogoWrapper: {
+    zIndex: 10,
   },
   welcomeTitle: {
-    fontSize: 36,
+    fontSize: 44,
     fontWeight: '700',
     color: 'white',
-    marginBottom: 12,
+    marginBottom: 16,
     textAlign: 'center',
+    letterSpacing: 2,
   },
   welcomeSubtitle: {
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 17,
+    color: 'rgba(255, 255, 255, 0.65)',
     marginBottom: 48,
     textAlign: 'center',
     paddingHorizontal: 20,
+    lineHeight: 26,
   },
   featureList: {
     gap: 20,

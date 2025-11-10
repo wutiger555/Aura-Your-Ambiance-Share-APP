@@ -22,8 +22,9 @@ import {
 } from '@aura/shared';
 
 // New Components
-// v2.6.5: TEMPORARY - Using static intro to diagnose memory crash
-import IntroScreen from './src/components/aura/IntroScreenStatic'; // ZERO animations for strict memory limits
+// v2.6.5: Using lightweight animated intro
+import IntroScreen from './src/components/aura/IntroScreenAnimated'; // Lightweight breathing animation
+// import IntroScreen from './src/components/aura/IntroScreenStatic'; // ZERO animations (diagnostic version)
 // import IntroScreen from './src/components/aura/IntroScreenPremium'; // v2.6.0: 3.5s premium intro with gradient flow
 import OnboardingFlow from './src/components/aura/OnboardingFlow'; // v2.6.5: Tutorial-style guided onboarding
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
@@ -102,6 +103,7 @@ export default function App() {
   const [showTimeBridge, setShowTimeBridge] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [isReturningUser, setIsReturningUser] = useState(false); // v2.6.5: Track if user is resetting
   const [editingStatus, setEditingStatus] = useState<'me' | 'partner' | null>(null); // v2.5.0
   const [showMilestoneEdit, setShowMilestoneEdit] = useState(false); // v2.5.0
   const [showMessages, setShowMessages] = useState(false); // v2.5.0
@@ -263,8 +265,8 @@ export default function App() {
 
   const handleReset = () => {
     Alert.alert(
-      'Reset Locations',
-      'Are you sure you want to reset your locations?',
+      'Reset Connection',
+      'This will clear your locations and start fresh.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -280,6 +282,7 @@ export default function App() {
             setSetupStep('intro');
             setShowSettings(false);
             setIsFirstLoad(true);
+            setIsReturningUser(true); // Mark as returning user for fast reset flow
           },
         },
       ]
@@ -307,6 +310,7 @@ export default function App() {
       <>
         <StatusBar barStyle="light-content" />
         <OnboardingFlow
+          isReturningUser={isReturningUser}
           onComplete={async (data) => {
             setLoading(true);
 
@@ -353,6 +357,7 @@ export default function App() {
               // After short animation, go to done
               setTimeout(() => {
                 setSetupStep('done');
+                setIsReturningUser(false); // Reset the flag
               }, ANIMATION_DURATIONS.CONNECTION_INTRO);
             } catch (error) {
               Alert.alert('Error', 'Failed to set up locations. Please try again.');
