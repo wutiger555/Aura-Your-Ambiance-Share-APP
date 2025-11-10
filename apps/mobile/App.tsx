@@ -22,8 +22,9 @@ import {
 } from '@aura/shared';
 
 // New Components
-// v2.6.5: Using native Animated API (NO Reanimated for simulator compatibility)
-import IntroScreen from './src/components/aura/IntroScreenNative'; // Native Animated API - simulator safe
+// v2.6.5: Using Lottie for premium animations without memory overhead
+import IntroScreen from './src/components/aura/IntroScreenLottie'; // Lottie - professional animations, zero memory overhead
+// import IntroScreen from './src/components/aura/IntroScreenNative'; // Native Animated API - simple fallback
 // import IntroScreen from './src/components/aura/IntroScreenStatic'; // ZERO animations fallback
 // import IntroScreen from './src/components/aura/IntroScreenAnimated'; // Reanimated (crashes on some simulators)
 import OnboardingFlow from './src/components/aura/OnboardingFlow'; // v2.6.5: Tutorial-style guided onboarding

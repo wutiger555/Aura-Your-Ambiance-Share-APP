@@ -983,6 +983,7 @@ const styles = StyleSheet.create({
   },
   buttonGradient: {
     paddingVertical: 18,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -992,6 +993,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: 'white',
+    flexShrink: 0, // Prevent text from being cut off
   },
   skipButton: {
     marginTop: 16,
