@@ -23,8 +23,7 @@ import {
 
 // New Components
 import IntroScreen from './src/components/aura/IntroScreenRedesign';
-import CoupleSetupScreen from './src/components/aura/CoupleSetupScreen'; // v2.5.0
-import LocationInputScreen from './src/components/aura/LocationInputScreen';
+import QuickStartScreen from './src/components/aura/QuickStartScreen'; // v2.6.0: Streamlined onboarding
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
 import AuraGlobeMinimal from './src/components/aura/AuraGlobeMinimal'; // v2.6.0: Minimal version
@@ -40,7 +39,8 @@ import SettingsButton from './src/components/aura/SettingsButton'; // v2.6.0: El
 import { ANIMATION_DURATIONS } from './src/constants/Animations';
 import { generateWeatherReminders, generateTemperatureDifferenceReminder } from './src/utils/weatherReminders'; // v2.5.0
 
-type SetupStep = 'intro' | 'coupleSetup' | 'inputMy' | 'inputPartner' | 'connecting' | 'done';
+// v2.6.0: Simplified flow - intro → quickStart → connecting → done
+type SetupStep = 'intro' | 'quickStart' | 'connecting' | 'done';
 
 export default function App() {
   const {
@@ -257,67 +257,65 @@ export default function App() {
     return <ConnectionIntro />;
   }
 
-  // Render IntroScreen
+  // Render IntroScreen (optional, can be skipped)
   if (setupStep === 'intro') {
     return (
       <>
         <StatusBar barStyle="light-content" />
-        <IntroScreen onStart={() => {
-          // v2.5.0: Check if coupleProfile exists, if not go to coupleSetup first
-          if (!coupleProfile) {
-            setSetupStep('coupleSetup');
-          } else {
-            setSetupStep('inputMy');
-          }
-        }} />
+        <IntroScreen onStart={() => setSetupStep('quickStart')} />
       </>
     );
   }
 
-  // v2.5.0: Render CoupleSetupScreen
-  if (setupStep === 'coupleSetup') {
+  // v2.6.0: Render QuickStartScreen (single-page onboarding)
+  if (setupStep === 'quickStart') {
     return (
       <>
         <StatusBar barStyle="light-content" />
-        <CoupleSetupScreen
-          onComplete={(profile) => {
-            setCoupleProfile(profile);
-            setSetupStep('inputMy');
+        <QuickStartScreen
+          onComplete={async (myCity, partnerCity, coupleNames) => {
+            setLoading(true);
+
+            try {
+              // Geocode both cities
+              const [myLoc, partnerLoc] = await Promise.all([
+                getCoordinatesForCity(myCity),
+                getCoordinatesForCity(partnerCity),
+              ]);
+
+              if (!myLoc || !partnerLoc) {
+                Alert.alert('Error', 'Failed to find one or both cities. Please try again.');
+                setLoading(false);
+                return;
+              }
+
+              // Set locations
+              setMyLocation(myLoc);
+              setPartnerLocation(partnerLoc);
+
+              // Set couple names if provided
+              if (coupleNames) {
+                setCoupleProfile({
+                  myName: coupleNames.myName,
+                  partnerName: coupleNames.partnerName,
+                });
+              }
+
+              // Proceed to connecting animation
+              setSetupStep('connecting');
+
+              // Fetch weather during animation
+              fetchWeatherData();
+
+              // After short animation, go to done
+              setTimeout(() => {
+                setSetupStep('done');
+              }, ANIMATION_DURATIONS.CONNECTION_INTRO);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to set up locations. Please try again.');
+              setLoading(false);
+            }
           }}
-        />
-      </>
-    );
-  }
-
-  // Render LocationInputScreen for user's city
-  if (setupStep === 'inputMy') {
-    return (
-      <>
-        <StatusBar barStyle="light-content" />
-        <LocationInputScreen
-          step="my"
-          onSubmit={() => handleLocationSubmit('my')}
-          isLoading={isLoading}
-          error={cityError}
-          city={cityInput}
-          onCityChange={setCityInput}
-        />
-      </>
-    );
-  }
-
-  // Render LocationInputScreen for partner's city
-  if (setupStep === 'inputPartner') {
-    return (
-      <>
-        <StatusBar barStyle="light-content" />
-        <LocationInputScreen
-          step="partner"
-          onSubmit={() => handleLocationSubmit('partner')}
-          isLoading={isLoading}
-          error={cityError}
-          city={cityInput}
-          onCityChange={setCityInput}
         />
       </>
     );
