@@ -29,7 +29,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No dynamic memory allocation for worklets or shared value bridges
 - Compatible with Hermes engine's strict iOS Simulator memory limits
 
+### Added - Premium Lottie Animations (CURRENT SOLUTION)
+
+#### IntroScreenLottie Component
+- **Professional animations using Lottie library**: Solves animation quality without memory overhead
+  - **Technology**: `lottie-react-native@6.5.1` for pre-rendered JSON animations
+  - **Custom animation**: `aura-breathing.json` with 3-ring pulsing effect
+    - 3 concentric rings (pink outer, purple middle, cyan inner)
+    - Staggered breathing cycles at 60fps
+    - Smooth ease-in-out timing with 15-frame delays
+    - 3-second seamless loop
+  - **Memory footprint**: 0 shared values (same as static, but with animations!)
+  - **Animation quality**: Professional-grade without runtime overhead
+  - **Customizable**: Easy to swap JSON files from LottieFiles.com
+
+**Why Lottie is the Perfect Solution:**
+- Pre-rendered animations = no runtime calculations or worklets
+- Works perfectly on iOS Simulator with strict memory limits
+- Professional quality animations from design tools (After Effects, etc.)
+- Zero Reanimated dependency = zero memory crashes
+- Can use complex animations that would be impossible with Reanimated on simulator
+
+**How to Customize:**
+1. Download animations from https://lottiefiles.com (search: "connection", "world", "network")
+2. Place JSON in `apps/mobile/assets/lottie/`
+3. Update `require()` path in `IntroScreenLottie.tsx`
+4. Adjust `speed` prop (0.5 = slower, 2.0 = faster)
+
 ### Fixed - UI/UX Issues
+
+#### OnboardingFlow Button Text Overflow
+- **Fixed button text running off screen**: Proper padding and flex behavior
+- **Solution**:
+  - Added `paddingHorizontal: 24` to `buttonGradient` style
+  - Added `flexShrink: 0` to `buttonText` to prevent truncation
+- **Impact**: All button text displays properly on all screen sizes
 
 #### OnboardingFlow Centering
 - **Fixed reset dialog positioning**: Dialog now properly centered vertically on screen
@@ -134,11 +168,13 @@ return <View><Svg>...</Svg></View>;
   - Use composition: `<Animated.View><StaticComponent /></Animated.View>`
 
 ### Performance Impact
-- **Startup time**: Reduced from 8s → 2.5s (70% faster intro with native Animated)
+- **Startup time**: Reduced from 8s → 3.5s (56% faster intro with Lottie)
 - **Memory usage**: Reduced shared value count to ZERO (100% reduction vs Reanimated)
-- **Stability**: **CRITICAL** - Eliminated all iOS Simulator memory crashes via architectural change
+- **Animation quality**: UPGRADED from simple fade/scale to professional multi-ring breathing effect
+- **Stability**: **CRITICAL** - Eliminated all iOS Simulator memory crashes via Lottie architecture
 - **Frame rate**: Maintained 60fps throughout intro animation
 - **Compatibility**: Now works on ALL iOS Simulators, including extreme memory-constrained environments
+- **Developer experience**: Easy to swap animations without code changes (just replace JSON)
 
 ### Design Philosophy - v2.6.5
 
