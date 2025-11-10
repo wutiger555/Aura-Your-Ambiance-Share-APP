@@ -15,6 +15,7 @@ import { BlurView } from 'expo-blur';
 import { WeatherData } from '@aura/shared';
 import { getDSTInfo } from '../../utils/dstUtils';
 import HeartlineParticles from './HeartlineParticles';
+import HeartlineEnergy from './HeartlineEnergy';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -172,6 +173,16 @@ const HeartlineRedesign: React.FC<HeartlineRedesignProps> = ({
     return 10; // Very far
   }, [distance]);
 
+  // Curve control points for energy effects
+  const curvePoints = {
+    startX: SCREEN_WIDTH / 2,
+    startY: SCREEN_HEIGHT * 0.85,
+    controlX: SCREEN_WIDTH * 0.8,
+    controlY: SCREEN_HEIGHT / 2,
+    endX: SCREEN_WIDTH / 2,
+    endY: SCREEN_HEIGHT * 0.15,
+  };
+
   return (
     <View style={styles.container} pointerEvents="box-none">
       {/* Flowing particles along the curve */}
@@ -182,6 +193,17 @@ const HeartlineRedesign: React.FC<HeartlineRedesignProps> = ({
           partnerColor={partnerColor}
         />
       )}
+
+      {/* Energy pulse waves and center burst */}
+      <HeartlineEnergy
+        startX={curvePoints.startX}
+        startY={curvePoints.startY}
+        controlX={curvePoints.controlX}
+        controlY={curvePoints.controlY}
+        endX={curvePoints.endX}
+        endY={curvePoints.endY}
+        color="rgba(167, 139, 250, 0.7)"
+      />
 
       {/* SVG connection curve with breathing animation */}
       <Svg
