@@ -8,8 +8,6 @@ import Animated, {
   withSequence,
   withRepeat,
   Easing,
-  interpolate,
-  Extrapolation,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import AuraLogo from './AuraLogo';
@@ -21,143 +19,148 @@ interface IntroScreenPremiumProps {
 }
 
 /**
- * IntroScreenPremium - Professional intro with Aura logo (4s)
- * v2.6.1: Premium redesign with smooth, layered animations
+ * IntroScreenPremium - Redesigned modern intro (4s)
+ * v2.6.2: Complete rebuild with proven working patterns
  *
- * Animation phases:
- * Phase 1 (0-800ms): Entrance - glow rings + logo bounce in
- * Phase 2 (800-2200ms): Showcase - breathing + gradient rotation
- * Phase 3 (2200-3000ms): Emphasis - center pulse + ring expansion
- * Phase 4 (3000-4000ms): Transition - scale up to fullscreen + fade out
+ * Animation Flow:
+ * Phase 1 (0-800ms): Logo bounces in with glow rings
+ * Phase 2 (800-2400ms): Breathing animation - logo pulses gently
+ * Phase 3 (2400-3000ms): Emphasis - synchronized expansion
+ * Phase 4 (3000-4000ms): Scale up + fade to next screen
  */
 export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumProps) {
-  // 6 shared values for smooth, professional animation
-  const bgOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.3);
+  // Core animation values (5 shared values total)
+  const logoScale = useSharedValue(0.4);
   const logoOpacity = useSharedValue(0);
-  const ring1Scale = useSharedValue(1.5);
-  const ring2Scale = useSharedValue(1.8);
-  const rotationProgress = useSharedValue(0);
+  const innerGlowScale = useSharedValue(0.8);
+  const outerGlowScale = useSharedValue(0.8);
+  const glowOpacity = useSharedValue(0);
 
   useEffect(() => {
     // PHASE 1: Entrance (0-800ms)
-    // Background fades in
-    bgOpacity.value = withTiming(1, {
-      duration: 600,
-      easing: Easing.out(Easing.quad),
+    // Logo appears with elastic bounce
+    logoOpacity.value = withTiming(1, {
+      duration: 400,
+      easing: Easing.out(Easing.ease),
     });
 
-    // Rings bounce in from large to normal
-    ring1Scale.value = withTiming(1, {
-      duration: 800,
-      easing: Easing.out(Easing.back(1.5)),
-    });
-    ring2Scale.value = withTiming(1, {
-      duration: 900,
-      easing: Easing.out(Easing.back(1.5)),
-    });
-
-    // Logo bounces in with elastic effect
-    logoOpacity.value = withDelay(
-      200,
-      withTiming(1, {
+    logoScale.value = withSequence(
+      withTiming(1.2, {
+        duration: 500,
+        easing: Easing.out(Easing.back(1.7)),
+      }),
+      // PHASE 2: Breathing (800-2400ms)
+      withRepeat(
+        withSequence(
+          withTiming(1.1, {
+            duration: 800,
+            easing: Easing.inOut(Easing.sine),
+          }),
+          withTiming(1.2, {
+            duration: 800,
+            easing: Easing.inOut(Easing.sine),
+          })
+        ),
+        1, // Repeat once (one full breath cycle)
+        true
+      ),
+      // PHASE 3: Emphasis (2400-3000ms)
+      withTiming(1.25, {
         duration: 600,
         easing: Easing.out(Easing.cubic),
       })
     );
-    logoScale.value = withDelay(
-      200,
-      withSequence(
-        // Bounce in
-        withTiming(1.15, {
-          duration: 500,
-          easing: Easing.out(Easing.back(1.8)),
-        }),
-        // PHASE 2: Breathing (800-2200ms)
-        withRepeat(
-          withSequence(
-            withTiming(1.05, {
-              duration: 700,
-              easing: Easing.inOut(Easing.sine),
-            }),
-            withTiming(1.15, {
-              duration: 700,
-              easing: Easing.inOut(Easing.sine),
-            })
-          ),
-          1, // Repeat once (2 cycles total)
-          true
-        ),
-        // Hold at 1.1 briefly
-        withTiming(1.1, { duration: 100 })
-      )
-    );
 
-    // Gradient rotation for color flow (throughout showcase)
-    rotationProgress.value = withDelay(
-      800,
+    // Glow rings animate with logo
+    glowOpacity.value = withDelay(
+      100,
       withTiming(1, {
-        duration: 1400,
-        easing: Easing.inOut(Easing.cubic),
+        duration: 600,
+        easing: Easing.out(Easing.ease),
       })
     );
 
-    // PHASE 3: Emphasis (2200-3000ms)
-    // Rings pulse outward
-    ring1Scale.value = withDelay(
-      2200,
+    innerGlowScale.value = withDelay(
+      200,
       withSequence(
-        withTiming(1.15, {
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
+        withTiming(1, {
+          duration: 600,
+          easing: Easing.out(Easing.back(1.5)),
         }),
-        withTiming(1.05, {
-          duration: 400,
-          easing: Easing.inOut(Easing.cubic),
-        })
+        // Breathing with logo
+        withRepeat(
+          withSequence(
+            withTiming(0.95, {
+              duration: 800,
+              easing: Easing.inOut(Easing.sine),
+            }),
+            withTiming(1.05, {
+              duration: 800,
+              easing: Easing.inOut(Easing.sine),
+            })
+          ),
+          1,
+          true
+        )
       )
     );
-    ring2Scale.value = withDelay(
-      2200,
+
+    outerGlowScale.value = withDelay(
+      300,
       withSequence(
-        withTiming(1.2, {
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
+        withTiming(1, {
+          duration: 700,
+          easing: Easing.out(Easing.back(1.5)),
         }),
-        withTiming(1.1, {
-          duration: 400,
-          easing: Easing.inOut(Easing.cubic),
-        })
+        // Breathing with logo
+        withRepeat(
+          withSequence(
+            withTiming(0.95, {
+              duration: 800,
+              easing: Easing.inOut(Easing.sine),
+            }),
+            withTiming(1.05, {
+              duration: 800,
+              easing: Easing.inOut(Easing.sine),
+            })
+          ),
+          1,
+          true
+        )
       )
     );
 
     // PHASE 4: Transition (3000-4000ms)
-    // Scale up to fullscreen
-    logoScale.value = withDelay(
-      3000,
-      withTiming(5, {
+    setTimeout(() => {
+      // Scale up to fill screen
+      logoScale.value = withTiming(6, {
         duration: 1000,
         easing: Easing.in(Easing.cubic),
-      })
-    );
+      });
 
-    // Fade out everything
-    logoOpacity.value = withDelay(
-      3000,
-      withTiming(0, {
+      innerGlowScale.value = withTiming(8, {
         duration: 1000,
         easing: Easing.in(Easing.cubic),
-      })
-    );
-    bgOpacity.value = withDelay(
-      3200,
-      withTiming(0, {
+      });
+
+      outerGlowScale.value = withTiming(10, {
+        duration: 1000,
+        easing: Easing.in(Easing.cubic),
+      });
+
+      // Fade out
+      logoOpacity.value = withTiming(0, {
         duration: 800,
-        easing: Easing.in(Easing.quad),
-      })
-    );
+        easing: Easing.in(Easing.cubic),
+      });
 
-    // Complete at 4s
+      glowOpacity.value = withTiming(0, {
+        duration: 800,
+        easing: Easing.in(Easing.cubic),
+      });
+    }, 3000);
+
+    // Complete animation
     const timeout = setTimeout(() => {
       onComplete();
     }, 4000);
@@ -165,72 +168,55 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
     return () => clearTimeout(timeout);
   }, []);
 
-  const bgStyle = useAnimatedStyle(() => ({
-    opacity: bgOpacity.value,
+  const logoStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+    transform: [{ scale: logoScale.value }],
   }));
 
-  const logoContainerStyle = useAnimatedStyle(() => {
-    const rotation = interpolate(
-      rotationProgress.value,
-      [0, 1],
-      [0, 360],
-      Extrapolation.CLAMP
-    );
-
-    return {
-      opacity: logoOpacity.value,
-      transform: [
-        { scale: logoScale.value },
-        { rotate: `${rotation}deg` },
-      ],
-    };
-  });
-
-  const ring1Style = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value * 0.6,
-    transform: [{ scale: ring1Scale.value }],
+  const innerGlowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value * 0.4,
+    transform: [{ scale: innerGlowScale.value }],
   }));
 
-  const ring2Style = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value * 0.4,
-    transform: [{ scale: ring2Scale.value }],
+  const outerGlowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value * 0.25,
+    transform: [{ scale: outerGlowScale.value }],
   }));
 
   return (
     <View style={styles.container}>
-      {/* Animated background gradient */}
-      <Animated.View style={[StyleSheet.absoluteFill, bgStyle]}>
-        <LinearGradient
-          colors={['#0a0118', '#1e1b4b', '#312e81', '#1e293b']}
-          locations={[0, 0.35, 0.65, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-      </Animated.View>
+      {/* Background gradient */}
+      <LinearGradient
+        colors={['#0a0118', '#1e1b4b', '#312e81', '#1e293b']}
+        locations={[0, 0.35, 0.65, 1]}
+        style={StyleSheet.absoluteFill}
+      />
 
+      {/* Content */}
       <View style={styles.content}>
-        {/* Outer glow ring - Pink */}
-        <Animated.View style={[styles.glowRing2, ring2Style]}>
+        {/* Outer glow ring (Pink) */}
+        <Animated.View style={[styles.outerGlow, outerGlowStyle]}>
           <LinearGradient
-            colors={['rgba(236, 72, 153, 0)', 'rgba(236, 72, 153, 0.2)', 'rgba(236, 72, 153, 0)']}
+            colors={['rgba(236, 72, 153, 0)', 'rgba(236, 72, 153, 0.3)', 'rgba(236, 72, 153, 0)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.ringGradient}
+            style={styles.glowGradient}
           />
         </Animated.View>
 
-        {/* Inner glow ring - Purple */}
-        <Animated.View style={[styles.glowRing1, ring1Style]}>
+        {/* Inner glow ring (Purple) */}
+        <Animated.View style={[styles.innerGlow, innerGlowStyle]}>
           <LinearGradient
-            colors={['rgba(167, 139, 250, 0)', 'rgba(167, 139, 250, 0.3)', 'rgba(167, 139, 250, 0)']}
+            colors={['rgba(167, 139, 250, 0)', 'rgba(167, 139, 250, 0.4)', 'rgba(167, 139, 250, 0)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.ringGradient}
+            style={styles.glowGradient}
           />
         </Animated.View>
 
-        {/* Aura Logo with rotation */}
-        <Animated.View style={[styles.logoContainer, logoContainerStyle]}>
-          <AuraLogo size={240} animate={false} />
+        {/* Aura Logo */}
+        <Animated.View style={[styles.logoWrapper, logoStyle]}>
+          <AuraLogo size={200} animate={false} />
         </Animated.View>
       </View>
     </View>
@@ -247,25 +233,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoContainer: {
+  logoWrapper: {
     position: 'relative',
     zIndex: 10,
   },
-  glowRing1: {
+  innerGlow: {
     position: 'absolute',
-    width: 320,
-    height: 320,
-    borderRadius: 160,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
     zIndex: 5,
   },
-  glowRing2: {
+  outerGlow: {
     position: 'absolute',
-    width: 420,
-    height: 420,
-    borderRadius: 210,
+    width: 380,
+    height: 380,
+    borderRadius: 190,
     zIndex: 3,
   },
-  ringGradient: {
+  glowGradient: {
     flex: 1,
     borderRadius: 999,
   },
