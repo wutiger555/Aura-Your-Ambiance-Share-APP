@@ -6,6 +6,8 @@ import { WeatherData } from '@aura/shared';
 import { getWeatherAtmosphere } from '../../utils/weatherUtils';
 import CelestialSky from './CelestialSky';
 import ParticleSystem from './ParticleSystem';
+import EnhancedStarfield from './EnhancedStarfield';
+import AuroraEffect from './AuroraEffect';
 import { RainEffect, SnowEffect, CloudEffect, ThunderstormEffect } from './weather-effects';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -73,6 +75,17 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
   // Determine weather effects for each half
   const myWeatherEffect = myWeather ? getWeatherEffect(myWeather.current.weather_code) : null;
   const partnerWeatherEffect = partnerWeather ? getWeatherEffect(partnerWeather.current.weather_code) : null;
+
+  // Determine if it's night time for both locations
+  const isMyNight = myWeather ? myWeather.current.is_day === 0 : false;
+  const isPartnerNight = partnerWeather ? partnerWeather.current.is_day === 0 : false;
+  const isAnyNight = isMyNight || isPartnerNight;
+
+  // Determine aurora conditions (clear night sky)
+  const shouldShowAurora = isAnyNight && (
+    (myWeather && myWeather.current.weather_code === 0) ||
+    (partnerWeather && partnerWeather.current.weather_code === 0)
+  );
 
   return (
     <View style={styles.container}>
@@ -175,6 +188,21 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
           </>
         )}
       </MaskedView>
+
+      {/* Enhanced Starfield - Shows at night with twinkling stars and shooting stars */}
+      <EnhancedStarfield
+        density={0.6}
+        enableShootingStars={true}
+        isNight={isAnyNight}
+      />
+
+      {/* Aurora Effect - Shows on clear nights, themed by location */}
+      {shouldShowAurora && (
+        <AuroraEffect
+          theme={isPartnerNight && !isMyNight ? 'pink' : 'green'}
+          intensity={0.5}
+        />
+      )}
     </View>
   );
 };

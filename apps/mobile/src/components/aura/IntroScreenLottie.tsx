@@ -3,7 +3,7 @@ import { View, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import AuraLogo from './AuraLogo';
-import { auraBreathingAnimation } from '../../animations/auraBreathing';
+import { auraConnectionAnimation } from '../../animations/auraConnection';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -39,7 +39,7 @@ export default function IntroScreenLottie({ onComplete }: IntroScreenLottieProps
     // Complete after animation finishes (adjust timing as needed)
     const timeout = setTimeout(() => {
       onComplete();
-    }, 3500); // 3.5 seconds for Lottie animation + fade
+    }, 4000); // 4 seconds for connection animation
 
     return () => clearTimeout(timeout);
   }, [onComplete]);
@@ -60,21 +60,21 @@ export default function IntroScreenLottie({ onComplete }: IntroScreenLottieProps
           <View style={styles.innerGlow} />
         </View>
 
-        {/* Lottie Breathing Animation - Behind Logo */}
+        {/* Lottie Connection Animation - "Two worlds, one atmosphere" */}
         <View style={styles.lottieContainer}>
           <LottieView
             ref={animationRef}
-            source={auraBreathingAnimation}
+            source={auraConnectionAnimation}
             style={styles.lottieAnimation}
-            loop={true}
+            loop={false}
             autoPlay={true}
-            speed={0.7}
+            speed={1.0}
           />
         </View>
 
-        {/* Aura Logo - Centered */}
+        {/* Aura Logo - Emerges after connection forms */}
         <View style={styles.logoWrapper}>
-          <AuraLogo size={180} />
+          <AuraLogo size={160} />
         </View>
 
         {/*
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   lottieAnimation: {
-    width: 500,
-    height: 500,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.6,
   },
 });
