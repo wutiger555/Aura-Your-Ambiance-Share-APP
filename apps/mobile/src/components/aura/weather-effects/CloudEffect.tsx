@@ -139,7 +139,8 @@ const RealisticCloud: React.FC<RealisticCloudProps> = ({ startY, delay, duration
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
     overflow: 'hidden',
   },
   cloud: {
