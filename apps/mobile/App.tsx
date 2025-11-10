@@ -38,6 +38,7 @@ import MessageCenter from './src/components/aura/MessageCenter'; // v2.5.0
 import SettingsButton from './src/components/aura/SettingsButton'; // v2.6.0: Elegant gear button
 import { ANIMATION_DURATIONS } from './src/constants/Animations';
 import { generateWeatherReminders, generateTemperatureDifferenceReminder } from './src/utils/weatherReminders'; // v2.5.0
+import { hasLocationChanged, autoDetectCity } from './src/utils/locationService'; // v2.6.0
 
 // v2.6.0: Simplified flow - intro → quickStart → connecting → done
 type SetupStep = 'intro' | 'quickStart' | 'connecting' | 'done';
@@ -103,6 +104,7 @@ export default function App() {
   const [editingStatus, setEditingStatus] = useState<'me' | 'partner' | null>(null); // v2.5.0
   const [showMilestoneEdit, setShowMilestoneEdit] = useState(false); // v2.5.0
   const [showMessages, setShowMessages] = useState(false); // v2.5.0
+  const [hasCheckedLocation, setHasCheckedLocation] = useState(false); // v2.6.0: Track if we've checked location
 
   // v2.5.0: Generate weather reminders (must be before any conditional returns)
   const weatherReminders = useMemo(() => {
@@ -159,6 +161,75 @@ export default function App() {
     }
     // Don't change setupStep if we're mid-flow (one location set)
   }, [hasSetup, myLocation, partnerLocation]);
+
+  // v2.6.0: Check if user's location has changed significantly
+  useEffect(() => {
+    const checkLocationChange = async () => {
+      // Only check once per session, and only when we're in done state with existing location
+      if (hasCheckedLocation || setupStep !== 'done' || !myLocation || !myWeather) {
+        return;
+      }
+
+      setHasCheckedLocation(true);
+
+      try {
+        const changed = await hasLocationChanged(
+          myLocation.latitude,
+          myLocation.longitude,
+          50 // 50km threshold
+        );
+
+        if (changed) {
+          // Location has changed significantly
+          Alert.alert(
+            '📍 Location Changed?',
+            `It looks like you might be in a different location now. Would you like to update your location?`,
+            [
+              {
+                text: 'No, Keep Current',
+                style: 'cancel',
+              },
+              {
+                text: 'Yes, Update',
+                onPress: async () => {
+                  try {
+                    const newLocation = await autoDetectCity();
+                    if (newLocation) {
+                      Alert.alert(
+                        'Update Location',
+                        `We detected you're now in ${newLocation.city}. Update your location?`,
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Update',
+                            onPress: () => {
+                              setMyLocation({
+                                name: newLocation.city,
+                                latitude: newLocation.latitude,
+                                longitude: newLocation.longitude,
+                              });
+                              // Refresh weather data
+                              fetchWeatherData();
+                            },
+                          },
+                        ]
+                      );
+                    }
+                  } catch (error) {
+                    console.error('[App] Failed to auto-detect new location:', error);
+                  }
+                },
+              },
+            ]
+          );
+        }
+      } catch (error) {
+        console.error('[App] Location change check failed:', error);
+      }
+    };
+
+    checkLocationChange();
+  }, [setupStep, myLocation, myWeather, hasCheckedLocation]);
 
   const fetchWeatherData = async () => {
     if (!myLocation || !partnerLocation) return;
