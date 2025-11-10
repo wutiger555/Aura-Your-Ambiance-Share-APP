@@ -29,19 +29,42 @@ This is a **TypeScript monorepo** with three main packages:
 
 ## Common Commands
 
+### Starting the Mobile App
+
+**CRITICAL: Always use double dash (`--`) to pass flags from root to workspace!**
+
+```bash
+# Normal development start (from project root)
+npm run mobile
+
+# Clear cache and start (CORRECT - use double dash with space)
+npm run mobile -- -c
+# ✅ Correct: npm run mobile -- -c
+# ❌ Wrong:   npm run mobile --c  (flag doesn't reach expo!)
+
+# Alternative: Run from mobile directory
+cd apps/mobile
+npx expo start -c
+```
+
+### When to Clear Cache
+
+**You MUST clear cache when:**
+- ✅ After installing/updating packages
+- ✅ When animations don't play
+- ✅ When code changes don't appear
+- ✅ When Logo/SVG components don't render
+- ✅ After switching git branches
+
+**Clearing cache does NOT:**
+- ❌ Clear AsyncStorage (saved locations, settings persist)
+- ❌ Require reinstalling node_modules
+
+### Other Commands
+
 ```bash
 # Install dependencies for all workspaces
 npm install
-
-# Run mobile app (normal development)
-npm run mobile
-# or from apps/mobile:
-npx expo start
-
-# Run mobile app with clean cache (after package changes or when code changes don't appear)
-npm run mobile -- --clear
-# or from apps/mobile:
-npx expo start -c
 
 # Run web app
 npm run web
@@ -49,7 +72,7 @@ npm run web
 # Type check all workspaces
 npm run type-check
 
-# Complete clean reinstall ("nuke" option)
+# Complete clean reinstall ("nuke" option - last resort)
 npm run clean
 npm install
 cd apps/mobile && npx expo start -c
@@ -58,7 +81,28 @@ cd apps/mobile && npx expo start -c
 cd apps/mobile && npx expo-doctor
 ```
 
-**Important**: Use `npx expo start -c` (clear cache) after installing/updating packages or when animations don't play. This clears Metro Bundler cache but does NOT clear AsyncStorage (saved locations).
+### Troubleshooting Cache Issues
+
+If `npm run mobile -- -c` doesn't work:
+
+```bash
+# Method 1: Manual cache clear
+cd apps/mobile
+rm -rf .expo
+rm -rf node_modules/.cache
+npx expo start
+
+# Method 2: Complete Metro Bundler reset
+cd apps/mobile
+watchman watch-del-all  # If watchman is installed
+npx expo start -c
+
+# Method 3: Full workspace reinstall
+cd /home/user/Aura-Your-Ambiance-Share-APP
+npm run clean
+npm install
+npm run mobile -- -c
+```
 
 ## Application Flow & State Management
 
