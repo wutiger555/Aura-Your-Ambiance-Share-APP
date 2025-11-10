@@ -1,75 +1,134 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedProps,
   withTiming,
   withDelay,
   withSequence,
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SvgXml } from 'react-native-svg';
+
+const { width, height } = Dimensions.get('window');
 
 interface IntroScreenPremiumProps {
   onComplete: () => void;
 }
 
+// Aura Logo SVG with dynamic gradient
+const AURA_LOGO = `
+<svg width="200" height="200" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="auraGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#FDE68A;"/>
+      <stop offset="30%" style="stop-color:#FBCFE8;"/>
+      <stop offset="55%" style="stop-color:#C7D2FE;"/>
+      <stop offset="100%" style="stop-color:#60A5FA;"/>
+    </linearGradient>
+    <filter id="sunGlow">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g transform="rotate(-90 50 50)">
+    <circle cx="50" cy="50" r="48" style="fill:none; stroke:rgba(255, 255, 255, 0.5); stroke-width:1;"/>
+    <circle cx="50" cy="50" r="45" style="fill:none; stroke:rgba(255, 255, 255, 0.2); stroke-width:0.5;"/>
+  </g>
+
+  <circle cx="50" cy="50" r="45" style="fill:url(#auraGradient);"/>
+  <circle cx="50" cy="50" r="5" style="fill:#fefce8; filter:url(#sunGlow);"/>
+</svg>
+`;
+
 /**
- * IntroScreenPremium - Lightweight intro (3.5s)
- * v2.6.0: Memory-optimized version
+ * IntroScreenPremium - Modern intro with actual Aura logo (3.5s)
+ * v2.6.0: Premium redesign with gradient flow animation
  *
- * Minimized shared values to prevent memory issues
- * Flow: Logo appears → Text reveals → Complete
+ * Animation sequence:
+ * 1. Logo fades in and scales up (0-600ms)
+ * 2. Gradient rotates creating flow effect (600-2400ms)
+ * 3. Center glow pulses (2400-2800ms)
+ * 4. Logo scales up to full screen and fades out (2800-3300ms)
  */
 export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumProps) {
-  // Minimize shared values - only use essential ones
-  const containerOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.8);
-  const textOpacity = useSharedValue(0);
+  // Only 4 shared values for memory efficiency
+  const logoOpacity = useSharedValue(0);
+  const logoScale = useSharedValue(0.5);
+  const logoRotation = useSharedValue(0);
+  const glowScale = useSharedValue(1);
 
   useEffect(() => {
-    // Simple fade in
-    containerOpacity.value = withTiming(1, { duration: 600 });
+    // 1. Fade in + scale up (0-600ms)
+    logoOpacity.value = withTiming(1, {
+      duration: 600,
+      easing: Easing.out(Easing.cubic)
+    });
 
-    // Logo scale
-    logoScale.value = withDelay(
-      200,
+    logoScale.value = withTiming(1, {
+      duration: 600,
+      easing: Easing.out(Easing.back(1.2))
+    });
+
+    // 2. Rotate gradient for flow effect (600-2400ms)
+    logoRotation.value = withDelay(
+      600,
+      withTiming(360, {
+        duration: 1800,
+        easing: Easing.inOut(Easing.cubic)
+      })
+    );
+
+    // 3. Center glow pulse (2400-2800ms)
+    glowScale.value = withDelay(
+      2400,
       withSequence(
-        withTiming(1.1, {
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-        }),
-        withTiming(1, {
-          duration: 200,
-          easing: Easing.inOut(Easing.cubic),
-        })
+        withTiming(1.2, { duration: 200, easing: Easing.out(Easing.cubic) }),
+        withTiming(1, { duration: 200, easing: Easing.inOut(Easing.cubic) })
       )
     );
 
-    // Text reveal
-    textOpacity.value = withDelay(
-      800,
-      withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) })
+    // 4. Scale up to full screen + fade out (2800-3300ms)
+    logoScale.value = withDelay(
+      2800,
+      withTiming(4, {
+        duration: 500,
+        easing: Easing.in(Easing.cubic)
+      })
     );
 
-    // Complete at 3.5s
+    logoOpacity.value = withDelay(
+      2800,
+      withTiming(0, {
+        duration: 500,
+        easing: Easing.in(Easing.cubic)
+      })
+    );
+
+    // Complete at 3.3s
     const timeout = setTimeout(() => {
       onComplete();
-    }, 3500);
+    }, 3300);
 
     return () => clearTimeout(timeout);
   }, []);
 
-  const containerStyle = useAnimatedStyle(() => ({
-    opacity: containerOpacity.value,
+  const logoContainerStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+    transform: [
+      { scale: logoScale.value },
+      { rotate: `${logoRotation.value}deg` },
+    ],
   }));
 
-  const logoStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: logoScale.value }],
-  }));
-
-  const textStyle = useAnimatedStyle(() => ({
-    opacity: textOpacity.value,
+  const glowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: glowScale.value }],
   }));
 
   return (
@@ -78,36 +137,16 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
       locations={[0, 0.35, 0.65, 1]}
       style={styles.container}
     >
-      <Animated.View style={[styles.content, containerStyle]}>
-        {/* Logo */}
-        <Animated.View style={[styles.logoContainer, logoStyle]}>
-          <LinearGradient
-            colors={['#06b6d4', '#a78bfa', '#ec4899']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.logoGradient}
-          >
-            <Text style={styles.logoText}>AURA</Text>
-          </LinearGradient>
+      <View style={styles.content}>
+        {/* Animated glow rings */}
+        <Animated.View style={[styles.glowRing1, glowStyle]} />
+        <Animated.View style={[styles.glowRing2, glowStyle]} />
 
-          {/* Simple glow effect */}
-          <View style={styles.glowContainer} pointerEvents="none">
-            <LinearGradient
-              colors={[
-                'rgba(6, 182, 212, 0.3)',
-                'rgba(167, 139, 250, 0.3)',
-                'rgba(236, 72, 153, 0.3)',
-              ]}
-              style={styles.glow}
-            />
-          </View>
+        {/* Aura Logo */}
+        <Animated.View style={[styles.logoContainer, logoContainerStyle]}>
+          <SvgXml xml={AURA_LOGO} width={200} height={200} />
         </Animated.View>
-
-        {/* Subtitle */}
-        <Animated.View style={[styles.subtitleContainer, textStyle]}>
-          <Text style={styles.subtitle}>Two worlds, one atmosphere</Text>
-        </Animated.View>
-      </Animated.View>
+      </View>
     </LinearGradient>
   );
 }
@@ -123,48 +162,22 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     position: 'relative',
+    zIndex: 10,
   },
-  logoGradient: {
-    paddingHorizontal: 40,
-    paddingVertical: 20,
-    borderRadius: 20,
-    shadowColor: '#a78bfa',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 30,
-    elevation: 20,
-  },
-  logoText: {
-    fontSize: 56,
-    fontWeight: '900',
-    color: 'white',
-    letterSpacing: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
-  },
-  glowContainer: {
+  glowRing1: {
     position: 'absolute',
-    top: -20,
-    left: -20,
-    right: -20,
-    bottom: -20,
-    borderRadius: 40,
-    zIndex: -1,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(167, 139, 250, 0.15)',
+    zIndex: 1,
   },
-  glow: {
-    flex: 1,
-    borderRadius: 40,
-    opacity: 0.5,
-  },
-  subtitleContainer: {
-    marginTop: 40,
-  },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.8)',
-    letterSpacing: 1.5,
-    textAlign: 'center',
+  glowRing2: {
+    position: 'absolute',
+    width: 360,
+    height: 360,
+    borderRadius: 180,
+    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+    zIndex: 0,
   },
 });
