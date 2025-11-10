@@ -25,7 +25,7 @@ import {
 // v2.6.5: TEMPORARY - Using static intro to diagnose memory crash
 import IntroScreen from './src/components/aura/IntroScreenStatic'; // ZERO animations for strict memory limits
 // import IntroScreen from './src/components/aura/IntroScreenPremium'; // v2.6.0: 3.5s premium intro with gradient flow
-import QuickStartScreen from './src/components/aura/QuickStartScreen'; // v2.6.0: Streamlined onboarding
+import OnboardingFlow from './src/components/aura/OnboardingFlow'; // v2.6.5: Tutorial-style guided onboarding
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
 import AuraGlobeMinimal from './src/components/aura/AuraGlobeMinimal'; // v2.6.0: Minimal version
@@ -88,6 +88,7 @@ export default function App() {
     showSunTimes,
     showHeartlineInfo,
     toggleSwappedPositions,
+    setAppearanceMode,
   } = useDisplaySettings();
 
   const [setupStep, setSetupStep] = useState<SetupStep>('intro');
@@ -300,20 +301,20 @@ export default function App() {
     );
   }
 
-  // v2.6.0: Render QuickStartScreen (single-page onboarding)
+  // v2.6.5: Render OnboardingFlow (tutorial-style guided setup)
   if (setupStep === 'quickStart') {
     return (
       <>
         <StatusBar barStyle="light-content" />
-        <QuickStartScreen
-          onComplete={async (myCity, partnerCity, coupleNames) => {
+        <OnboardingFlow
+          onComplete={async (data) => {
             setLoading(true);
 
             try {
               // Geocode both cities
               const [myLoc, partnerLoc] = await Promise.all([
-                getCoordinatesForCity(myCity),
-                getCoordinatesForCity(partnerCity),
+                getCoordinatesForCity(data.myCity),
+                getCoordinatesForCity(data.partnerCity),
               ]);
 
               if (!myLoc || !partnerLoc) {
@@ -327,12 +328,21 @@ export default function App() {
               setPartnerLocation(partnerLoc);
 
               // Set couple names if provided
-              if (coupleNames) {
+              if (data.coupleNames) {
                 setCoupleProfile({
-                  myName: coupleNames.myName,
-                  partnerName: coupleNames.partnerName,
+                  myName: data.coupleNames.myName,
+                  partnerName: data.coupleNames.partnerName,
                 });
               }
+
+              // Apply display mode preference
+              // Map onboarding modes to display settings modes
+              const displayModeMap = {
+                minimal: 'minimal' as const,
+                cozy: 'balanced' as const,
+                full: 'detailed' as const,
+              };
+              setAppearanceMode(displayModeMap[data.displayMode]);
 
               // Proceed to connecting animation
               setSetupStep('connecting');
