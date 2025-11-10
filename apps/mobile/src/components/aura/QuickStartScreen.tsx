@@ -50,10 +50,12 @@ export default function QuickStartScreen({ onComplete }: QuickStartScreenProps) 
   const [isSearchingPartner, setIsSearchingPartner] = useState(false);
   const [activeInput, setActiveInput] = useState<'my' | 'partner' | null>(null);
 
-  // Optional personalization
-  const [showPersonalization, setShowPersonalization] = useState(false);
+  // Optional personalization (default expanded for better UX)
+  const [showPersonalization, setShowPersonalization] = useState(true);
   const [myName, setMyName] = useState('');
   const [partnerName, setPartnerName] = useState('');
+  const [myEmoji, setMyEmoji] = useState('');
+  const [partnerEmoji, setPartnerEmoji] = useState('');
 
   // Animations
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -107,12 +109,15 @@ export default function QuickStartScreen({ onComplete }: QuickStartScreenProps) 
   // Handle city input changes with autocomplete
   const handleMyCityChange = (text: string) => {
     setMyCity(text);
-    setMyLocation(null); // Clear auto-detected location if user types
-    setActiveInput('my');
-    if (text.trim()) {
+    // Only clear location if it was auto-detected (to allow manual typing)
+    if (myLocation) {
+      setMyLocation(null);
+    }
+    if (text.trim() && text.length >= 2) {
       debouncedSearchMy(text);
     } else {
       setMyCitySuggestions([]);
+      setIsSearchingMy(false);
     }
   };
 
@@ -250,81 +255,81 @@ export default function QuickStartScreen({ onComplete }: QuickStartScreenProps) 
                 <View style={styles.section}>
                   <Text style={styles.sectionLabel}>Where are you?</Text>
 
-                  {myCity ? (
-                    <View style={styles.detectedLocation}>
-                      <MapPin size={18} color="#06b6d4" />
-                      <Text style={styles.detectedText}>{myCity}</Text>
-                      <TouchableOpacity
-                        onPress={() => {
-                          setMyCity('');
-                          setMyLocation(null);
-                        }}
-                        style={styles.changeButton}
-                      >
-                        <Text style={styles.changeButtonText}>Change</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <>
-                      <TouchableOpacity
-                        style={styles.autoDetectButton}
-                        onPress={handleAutoDetect}
-                        disabled={isDetecting}
-                      >
-                        {isDetecting ? (
-                          <ActivityIndicator size="small" color="#06b6d4" />
-                        ) : (
-                          <MapPin size={20} color="#06b6d4" />
-                        )}
-                        <Text style={styles.autoDetectText}>
-                          {isDetecting ? 'Detecting...' : 'Auto-detect my location'}
-                        </Text>
-                      </TouchableOpacity>
-
-                      <Text style={styles.orText}>or</Text>
-
-                      <View>
-                        <TextInput
-                          style={styles.input}
-                          placeholder="Enter your city... (e.g., Taipei)"
-                          placeholderTextColor="rgba(255, 255, 255, 0.3)"
-                          value={myCity}
-                          onChangeText={handleMyCityChange}
-                          onFocus={() => setActiveInput('my')}
-                          autoCapitalize="words"
-                          returnKeyType="next"
-                        />
-                        {isSearchingMy && (
-                          <View style={styles.searchingIndicator}>
-                            <ActivityIndicator size="small" color="#06b6d4" />
-                          </View>
-                        )}
-                      </View>
-
-                      {/* My City Suggestions Dropdown */}
-                      {activeInput === 'my' && myCitySuggestions.length > 0 && (
-                        <View style={styles.suggestionsContainer}>
-                          <BlurView intensity={80} tint="dark" style={styles.suggestionsBlur}>
-                            <FlatList
-                              data={myCitySuggestions}
-                              keyExtractor={(item, index) => `${item.name}-${index}`}
-                              renderItem={({ item }) => (
-                                <TouchableOpacity
-                                  style={styles.suggestionItem}
-                                  onPress={() => selectMyCitySuggestion(item)}
-                                >
-                                  <MapPin size={14} color="#06b6d4" />
-                                  <View style={styles.suggestionTextContainer}>
-                                    <Text style={styles.suggestionName}>{item.name}</Text>
-                                    <Text style={styles.suggestionCountry}>{item.country}</Text>
-                                  </View>
-                                </TouchableOpacity>
-                              )}
-                            />
-                          </BlurView>
-                        </View>
+                  {/* Auto-detect button - always show unless user is typing */}
+                  {!myCity && (
+                    <TouchableOpacity
+                      style={styles.autoDetectButton}
+                      onPress={handleAutoDetect}
+                      disabled={isDetecting}
+                    >
+                      {isDetecting ? (
+                        <ActivityIndicator size="small" color="#06b6d4" />
+                      ) : (
+                        <MapPin size={20} color="#06b6d4" />
                       )}
-                    </>
+                      <Text style={styles.autoDetectText}>
+                        {isDetecting ? 'Detecting...' : 'Auto-detect my location'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {!myCity && <Text style={styles.orText}>or</Text>}
+
+                  {/* Input field - always visible for typing */}
+                  <View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter your city... (e.g., Taipei)"
+                      placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                      value={myCity}
+                      onChangeText={handleMyCityChange}
+                      onFocus={() => setActiveInput('my')}
+                      onBlur={() => {
+                        // Only clear active input if no suggestions
+                        setTimeout(() => {
+                          if (myCitySuggestions.length === 0) {
+                            setActiveInput(null);
+                          }
+                        }, 200);
+                      }}
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                    {isSearchingMy && (
+                      <View style={styles.searchingIndicator}>
+                        <ActivityIndicator size="small" color="#06b6d4" />
+                      </View>
+                    )}
+                    {myLocation && (
+                      <View style={styles.detectedBadge}>
+                        <MapPin size={12} color="#10b981" />
+                        <Text style={styles.detectedBadgeText}>Location confirmed</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* My City Suggestions Dropdown */}
+                  {activeInput === 'my' && myCitySuggestions.length > 0 && (
+                    <View style={styles.suggestionsContainer}>
+                      <BlurView intensity={80} tint="dark" style={styles.suggestionsBlur}>
+                        <FlatList
+                          data={myCitySuggestions}
+                          keyExtractor={(item, index) => `${item.name}-${index}`}
+                          renderItem={({ item }) => (
+                            <TouchableOpacity
+                              style={styles.suggestionItem}
+                              onPress={() => selectMyCitySuggestion(item)}
+                            >
+                              <MapPin size={14} color="#06b6d4" />
+                              <View style={styles.suggestionTextContainer}>
+                                <Text style={styles.suggestionName}>{item.name}</Text>
+                                <Text style={styles.suggestionCountry}>{item.country}</Text>
+                              </View>
+                            </TouchableOpacity>
+                          )}
+                        />
+                      </BlurView>
+                    </View>
                   )}
 
                   {detectionError ? (
@@ -345,6 +350,13 @@ export default function QuickStartScreen({ onComplete }: QuickStartScreenProps) 
                       value={partnerCity}
                       onChangeText={handlePartnerCityChange}
                       onFocus={() => setActiveInput('partner')}
+                      onBlur={() => {
+                        setTimeout(() => {
+                          if (partnerCitySuggestions.length === 0) {
+                            setActiveInput(null);
+                          }
+                        }, 200);
+                      }}
                       autoCapitalize="words"
                       returnKeyType="done"
                       onSubmitEditing={handleConnect}
@@ -381,40 +393,68 @@ export default function QuickStartScreen({ onComplete }: QuickStartScreenProps) 
                   )}
                 </View>
 
-                {/* Optional: Personalization */}
+                {/* Personalization Section */}
+                <View style={styles.divider} />
+
                 <TouchableOpacity
                   style={styles.expandButton}
                   onPress={() => setShowPersonalization(!showPersonalization)}
                 >
                   {showPersonalization ? (
-                    <ChevronUp size={18} color="rgba(255, 255, 255, 0.5)" />
+                    <ChevronUp size={16} color="rgba(255, 255, 255, 0.6)" />
                   ) : (
-                    <ChevronDown size={18} color="rgba(255, 255, 255, 0.5)" />
+                    <ChevronDown size={16} color="rgba(255, 255, 255, 0.6)" />
                   )}
                   <Text style={styles.expandText}>
-                    {showPersonalization ? 'Hide' : 'Add names (optional)'}
+                    {showPersonalization ? 'Hide personalization' : 'Personalize your connection ✨'}
                   </Text>
                 </TouchableOpacity>
 
                 {showPersonalization && (
                   <View style={styles.personalizationSection}>
-                    <View style={styles.divider} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Your name..."
-                      placeholderTextColor="rgba(255, 255, 255, 0.3)"
-                      value={myName}
-                      onChangeText={setMyName}
-                      autoCapitalize="words"
-                    />
-                    <TextInput
-                      style={[styles.input, { marginTop: 12 }]}
-                      placeholder="Partner's name..."
-                      placeholderTextColor="rgba(255, 255, 255, 0.3)"
-                      value={partnerName}
-                      onChangeText={setPartnerName}
-                      autoCapitalize="words"
-                    />
+                    <Text style={styles.personalizationHint}>
+                      Add a personal touch (optional but fun!)
+                    </Text>
+
+                    {/* My Info Row */}
+                    <View style={styles.personRow}>
+                      <TextInput
+                        style={[styles.emojiInput]}
+                        placeholder="🌸"
+                        placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                        value={myEmoji}
+                        onChangeText={setMyEmoji}
+                        maxLength={2}
+                      />
+                      <TextInput
+                        style={[styles.input, styles.nameInput]}
+                        placeholder="Your name..."
+                        placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                        value={myName}
+                        onChangeText={setMyName}
+                        autoCapitalize="words"
+                      />
+                    </View>
+
+                    {/* Partner Info Row */}
+                    <View style={[styles.personRow, { marginTop: 12 }]}>
+                      <TextInput
+                        style={[styles.emojiInput]}
+                        placeholder="🌙"
+                        placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                        value={partnerEmoji}
+                        onChangeText={setPartnerEmoji}
+                        maxLength={2}
+                      />
+                      <TextInput
+                        style={[styles.input, styles.nameInput]}
+                        placeholder="Partner's name..."
+                        placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                        value={partnerName}
+                        onChangeText={setPartnerName}
+                        autoCapitalize="words"
+                      />
+                    </View>
                   </View>
                 )}
 
@@ -620,10 +660,37 @@ const styles = StyleSheet.create({
   },
   expandText: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: '500',
   },
   personalizationSection: {
-    marginTop: 8,
+    marginTop: 12,
+  },
+  personalizationHint: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.5)',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  personRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  emojiInput: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    fontSize: 28,
+    textAlign: 'center',
+    color: 'white',
+  },
+  nameInput: {
+    flex: 1,
   },
   // Connect button
   connectButton: {
@@ -654,6 +721,23 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     top: 14,
+  },
+  detectedBadge: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  detectedBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#10b981',
   },
   suggestionsContainer: {
     marginTop: 8,
