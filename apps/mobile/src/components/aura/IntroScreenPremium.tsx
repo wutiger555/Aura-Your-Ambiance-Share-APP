@@ -17,14 +17,16 @@ interface IntroScreenPremiumProps {
 
 /**
  * IntroScreenPremium - Memory-optimized professional intro (4s)
- * v2.6.4: CRITICAL FIX - AuraLogo with animate={false}
+ * v2.6.5: COMPLETE MEMORY FIX - Static AuraLogo
  *
  * Optimizations:
  * - Only 3 shared values (logoScale, logoOpacity, glowOpacity)
- * - AuraLogo with animate={false} creates NO additional shared values
+ * - AuraLogo is now pure static SVG (ZERO shared values internally)
  * - NO withRepeat (manual breathing with withSequence)
  * - Simplified animation chains
  * - Static glow rings (no independent scaling)
+ *
+ * Total Shared Values: 3 (within iOS Simulator limits)
  *
  * Animation Flow:
  * Phase 1 (0-600ms): Logo bounces in
@@ -137,9 +139,9 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
           <View style={styles.innerGlowInner} />
         </Animated.View>
 
-        {/* Aura Logo */}
+        {/* Aura Logo (static SVG, parent handles animation) */}
         <Animated.View style={[styles.logoWrapper, logoStyle]}>
-          <AuraLogo size={200} animate={false} />
+          <AuraLogo size={200} />
         </Animated.View>
       </View>
     </View>
