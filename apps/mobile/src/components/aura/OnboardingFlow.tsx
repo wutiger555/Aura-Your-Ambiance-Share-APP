@@ -686,6 +686,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
     paddingBottom: 40,
   },
   centerContent: {
@@ -693,6 +694,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 40,
+    minHeight: SCREEN_HEIGHT * 0.8, // Ensure proper centering
   },
 
   // Welcome screen

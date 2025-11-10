@@ -22,10 +22,10 @@ import {
 } from '@aura/shared';
 
 // New Components
-// v2.6.5: Using lightweight animated intro
-import IntroScreen from './src/components/aura/IntroScreenAnimated'; // Lightweight breathing animation
-// import IntroScreen from './src/components/aura/IntroScreenStatic'; // ZERO animations (diagnostic version)
-// import IntroScreen from './src/components/aura/IntroScreenPremium'; // v2.6.0: 3.5s premium intro with gradient flow
+// v2.6.5: Using native Animated API (NO Reanimated for simulator compatibility)
+import IntroScreen from './src/components/aura/IntroScreenNative'; // Native Animated API - simulator safe
+// import IntroScreen from './src/components/aura/IntroScreenStatic'; // ZERO animations fallback
+// import IntroScreen from './src/components/aura/IntroScreenAnimated'; // Reanimated (crashes on some simulators)
 import OnboardingFlow from './src/components/aura/OnboardingFlow'; // v2.6.5: Tutorial-style guided onboarding
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
