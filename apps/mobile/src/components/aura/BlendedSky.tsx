@@ -5,9 +5,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import { WeatherData } from '@aura/shared';
 import { getWeatherAtmosphere } from '../../utils/weatherUtils';
 import CelestialSky from './CelestialSky';
-import ParticleSystem from './ParticleSystem';
 import EnhancedStarfield from './EnhancedStarfield';
-import AuroraEffect from './AuroraEffect';
 import {
   EnhancedRainEffect,
   EnhancedSnowEffect,
@@ -81,16 +79,10 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
   const myWeatherEffect = myWeather ? getWeatherEffect(myWeather.current.weather_code) : null;
   const partnerWeatherEffect = partnerWeather ? getWeatherEffect(partnerWeather.current.weather_code) : null;
 
-  // Determine if it's night time for both locations
+  // Determine if it's night time for both locations (for starfield)
   const isMyNight = myWeather ? myWeather.current.is_day === 0 : false;
   const isPartnerNight = partnerWeather ? partnerWeather.current.is_day === 0 : false;
   const isAnyNight = isMyNight || isPartnerNight;
-
-  // Determine aurora conditions (clear night sky)
-  const shouldShowAurora = isAnyNight && (
-    (myWeather && myWeather.current.weather_code === 0) ||
-    (partnerWeather && partnerWeather.current.weather_code === 0)
-  );
 
   return (
     <View style={styles.container}>
@@ -111,8 +103,6 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
         />
-        {/* Particles for top half */}
-        <ParticleSystem count={4} color="rgba(255, 255, 255, 0.3)" />
         {/* Celestial body for top half */}
         {partnerWeather && (
           <CelestialSky weather={partnerWeather} isTop={true} />
@@ -162,8 +152,6 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
         />
-        {/* Particles for bottom half */}
-        <ParticleSystem count={4} color="rgba(255, 255, 255, 0.3)" />
         {/* Celestial body for bottom half */}
         {myWeather && <CelestialSky weather={myWeather} isTop={false} />}
         {/* Weather effects for bottom half */}
@@ -194,20 +182,12 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
         )}
       </MaskedView>
 
-      {/* Enhanced Starfield - Shows at night with twinkling stars and shooting stars */}
+      {/* Enhanced Starfield - Shows at night with static stars */}
       <EnhancedStarfield
         density={0.6}
-        enableShootingStars={true}
+        enableShootingStars={false}
         isNight={isAnyNight}
       />
-
-      {/* Aurora Effect - Shows on clear nights, themed by location */}
-      {shouldShowAurora && (
-        <AuroraEffect
-          theme={isPartnerNight && !isMyNight ? 'pink' : 'green'}
-          intensity={0.5}
-        />
-      )}
     </View>
   );
 };

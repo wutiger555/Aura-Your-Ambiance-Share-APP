@@ -8,7 +8,7 @@ import Animated, {
   withDelay,
   Easing,
 } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
+import Svg, { Ellipse, G } from 'react-native-svg';
 
 interface CloudEffectProps {
   density: 'partly' | 'overcast'; // Based on weather code 2-3
@@ -20,15 +20,24 @@ interface Cloud {
   startY: number; // Vertical position percentage
   delay: number;
   duration: number;
-  size: number;
+  scale: number;
   opacity: number;
 }
 
+/**
+ * CloudEffect - Realistic cloud layer with natural shapes
+ * v2.7.0: Redesigned for more realistic appearance
+ *
+ * Improvements:
+ * - Natural cloud shapes using overlapping ellipses
+ * - More realistic color based on day/night/weather
+ * - Subtle parallax effect with multiple layers
+ */
 const CloudEffect: React.FC<CloudEffectProps> = ({ density, isDay }) => {
   // Adjust cloud count based on density
   const cloudCounts = {
-    partly: 3,
-    overcast: 6,
+    partly: 4,
+    overcast: 8,
   };
 
   const cloudCount = cloudCounts[density];
@@ -36,22 +45,22 @@ const CloudEffect: React.FC<CloudEffectProps> = ({ density, isDay }) => {
   // Generate clouds with randomized properties
   const clouds: Cloud[] = Array.from({ length: cloudCount }, (_, i) => ({
     id: i,
-    startY: 10 + Math.random() * 40, // 10-50% from top
-    delay: Math.random() * 5000, // 0-5s delay
-    duration: 40000 + Math.random() * 20000, // 40-60s drift duration (very slow)
-    size: 80 + Math.random() * 60, // 80-140px width
-    opacity: density === 'overcast' ? 0.25 : 0.15,
+    startY: 5 + Math.random() * 50, // 5-55% from top
+    delay: Math.random() * 8000, // 0-8s delay
+    duration: 50000 + Math.random() * 30000, // 50-80s drift duration (slow)
+    scale: 0.6 + Math.random() * 0.6, // 0.6-1.2 scale
+    opacity: density === 'overcast' ? (0.35 + Math.random() * 0.15) : (0.2 + Math.random() * 0.1),
   }));
 
   return (
     <View style={styles.container} pointerEvents="none">
       {clouds.map((cloud) => (
-        <Cloud
+        <RealisticCloud
           key={cloud.id}
           startY={cloud.startY}
           delay={cloud.delay}
           duration={cloud.duration}
-          size={cloud.size}
+          scale={cloud.scale}
           opacity={cloud.opacity}
           isDay={isDay}
         />
@@ -60,25 +69,24 @@ const CloudEffect: React.FC<CloudEffectProps> = ({ density, isDay }) => {
   );
 };
 
-interface CloudProps {
+interface RealisticCloudProps {
   startY: number;
   delay: number;
   duration: number;
-  size: number;
+  scale: number;
   opacity: number;
   isDay: boolean;
 }
 
-const Cloud: React.FC<CloudProps> = ({ startY, delay, duration, size, opacity, isDay }) => {
-  const translateX = useSharedValue(-20); // Start from left off-screen
-  const scale = useSharedValue(0.8);
+const RealisticCloud: React.FC<RealisticCloudProps> = ({ startY, delay, duration, scale, opacity, isDay }) => {
+  const translateX = useSharedValue(-30); // Start from left off-screen
 
   useEffect(() => {
     // Horizontal drift across screen
     translateX.value = withDelay(
       delay,
       withRepeat(
-        withTiming(120, {
+        withTiming(130, {
           // End off-screen right
           duration,
           easing: Easing.linear,
@@ -87,32 +95,18 @@ const Cloud: React.FC<CloudProps> = ({ startY, delay, duration, size, opacity, i
         false
       )
     );
-
-    // Gentle scaling for depth effect
-    scale.value = withDelay(
-      delay,
-      withRepeat(
-        withTiming(1.1, {
-          duration: duration / 2,
-          easing: Easing.inOut(Easing.sin),
-        }),
-        -1,
-        true
-      )
-    );
   }, [delay, duration]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: translateX.value },
-      { scale: scale.value },
+      { translateX: `${translateX.value}%` },
     ],
   }));
 
-  // Cloud color based on day/night
+  // Realistic cloud color based on conditions
   const cloudColor = isDay
-    ? 'rgba(255, 255, 255, 0.6)' // White clouds for day
-    : 'rgba(148, 163, 184, 0.3)'; // Gray-blue clouds for night
+    ? 'rgba(255, 255, 255, 0.85)' // Bright white for day
+    : 'rgba(200, 210, 220, 0.4)'; // Muted gray-blue for night
 
   return (
     <Animated.View
@@ -120,24 +114,25 @@ const Cloud: React.FC<CloudProps> = ({ startY, delay, duration, size, opacity, i
         styles.cloud,
         {
           top: `${startY}%`,
-          width: size,
-          height: size * 0.6, // Clouds are wider than tall
         },
         animatedStyle,
       ]}
     >
-      {/* Use BlurView for soft, cloud-like appearance */}
-      <BlurView intensity={20} tint={isDay ? 'light' : 'dark'} style={styles.blurContainer}>
-        <View
-          style={[
-            styles.cloudShape,
-            {
-              backgroundColor: cloudColor,
-              opacity,
-            },
-          ]}
-        />
-      </BlurView>
+      <Svg width={220 * scale} height={80 * scale} viewBox="0 0 220 80" style={{ opacity }}>
+        <G>
+          {/* Natural cloud shape using multiple overlapping ellipses */}
+          {/* Bottom base */}
+          <Ellipse cx="110" cy="55" rx="90" ry="25" fill={cloudColor} />
+          {/* Left puff */}
+          <Ellipse cx="60" cy="45" rx="50" ry="35" fill={cloudColor} />
+          {/* Center puff (largest) */}
+          <Ellipse cx="110" cy="35" rx="65" ry="35" fill={cloudColor} />
+          {/* Right puff */}
+          <Ellipse cx="160" cy="45" rx="55" ry="30" fill={cloudColor} />
+          {/* Top highlight */}
+          <Ellipse cx="95" cy="25" rx="45" ry="25" fill={cloudColor} opacity="0.8" />
+        </G>
+      </Svg>
     </Animated.View>
   );
 };
@@ -150,15 +145,6 @@ const styles = StyleSheet.create({
   cloud: {
     position: 'absolute',
     left: 0,
-  },
-  blurContainer: {
-    flex: 1,
-    borderRadius: 100,
-    overflow: 'hidden',
-  },
-  cloudShape: {
-    flex: 1,
-    borderRadius: 100,
   },
 });
 

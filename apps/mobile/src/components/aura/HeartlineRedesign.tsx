@@ -15,7 +15,6 @@ import { BlurView } from 'expo-blur';
 import { WeatherData } from '@aura/shared';
 import { getDSTInfo } from '../../utils/dstUtils';
 import HeartlineParticles from './HeartlineParticles';
-import HeartlineEnergy from './HeartlineEnergy';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -193,17 +192,6 @@ const HeartlineRedesign: React.FC<HeartlineRedesignProps> = ({
           partnerColor={partnerColor}
         />
       )}
-
-      {/* Energy pulse waves and center burst */}
-      <HeartlineEnergy
-        startX={curvePoints.startX}
-        startY={curvePoints.startY}
-        controlX={curvePoints.controlX}
-        controlY={curvePoints.controlY}
-        endX={curvePoints.endX}
-        endY={curvePoints.endY}
-        color="rgba(167, 139, 250, 0.7)"
-      />
 
       {/* SVG connection curve with breathing animation */}
       <Svg

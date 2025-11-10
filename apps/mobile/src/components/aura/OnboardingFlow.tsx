@@ -697,10 +697,10 @@ const styles = StyleSheet.create({
     minHeight: SCREEN_HEIGHT * 0.8, // Ensure proper centering
   },
 
-  // Welcome screen
+  // Welcome screen - Premium Logo presentation
   welcomeLogoContainer: {
     position: 'relative',
-    marginBottom: 40,
+    marginBottom: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -708,19 +708,27 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   welcomeGlowOuter: {
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: 'rgba(236, 72, 153, 0.15)',
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: 'rgba(236, 72, 153, 0.18)',
+    // Subtle blur effect simulation
+    opacity: 0.6,
   },
   welcomeGlowInner: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(167, 139, 250, 0.2)',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(167, 139, 250, 0.25)',
+    opacity: 0.8,
   },
   welcomeLogoWrapper: {
     zIndex: 10,
+    // Premium shadow for depth
+    shadowColor: '#a78bfa',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
   },
   welcomeTitle: {
     fontSize: 44,
@@ -774,24 +782,35 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
 
-  // Use case selection
+  // Use case selection - Premium card design
   useCaseGrid: {
-    gap: 16,
+    gap: 18,
     marginBottom: 32,
   },
   useCaseCard: {
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    padding: 24,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 18,
+    // Premium depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   useCaseCardSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(6, 182, 212, 0.5)',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    borderColor: 'rgba(6, 182, 212, 0.6)',
+    borderWidth: 3,
+    shadowColor: '#06b6d4',
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   useCaseIcon: {
     width: 56,
@@ -815,31 +834,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Location screens
+  // Location screens - Premium design
   locationHeader: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 36,
   },
   locationMarker: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
+    // Premium depth with glow effect
+    shadowColor: '#06b6d4',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 12,
   },
   autoDetectButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.3)',
-    marginBottom: 16,
+    gap: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 18,
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    borderWidth: 2,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
+    marginBottom: 20,
+    // Premium glassmorphism
+    shadowColor: '#06b6d4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
   },
   autoDetectText: {
     fontSize: 16,
@@ -857,14 +888,21 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   textInput: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    fontSize: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    fontSize: 17,
     color: 'white',
+    fontWeight: '500',
+    // Premium glassmorphism
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   inputIcon: {
     position: 'absolute',
@@ -907,21 +945,31 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.5)',
   },
 
-  // Display mode selection
+  // Display mode selection - Premium card design
   displayModeList: {
-    gap: 16,
+    gap: 18,
     marginBottom: 32,
   },
   displayModeCard: {
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    padding: 24,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   displayModeCardSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(6, 182, 212, 0.5)',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    borderColor: 'rgba(6, 182, 212, 0.6)',
+    borderWidth: 3,
+    shadowColor: '#06b6d4',
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   displayModeHeader: {
     flexDirection: 'row',
@@ -972,28 +1020,43 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 
-  // Buttons
+  // Buttons - Premium glassmorphism design
   primaryButton: {
-    borderRadius: 16,
-    overflow: 'hidden',
+    borderRadius: 20,
+    overflow: 'visible',
     marginTop: 'auto',
+    // Elevated shadow for depth
+    shadowColor: '#06b6d4',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
+    shadowOpacity: 0,
   },
   buttonGradient: {
-    paddingVertical: 18,
-    paddingHorizontal: 24,
+    paddingVertical: 20,
+    paddingHorizontal: 32,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 12,
+    borderRadius: 20,
+    // Subtle inner border for premium feel
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   buttonText: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: 'white',
-    flexShrink: 0, // Prevent text from being cut off
+    flexShrink: 0,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   skipButton: {
     marginTop: 16,

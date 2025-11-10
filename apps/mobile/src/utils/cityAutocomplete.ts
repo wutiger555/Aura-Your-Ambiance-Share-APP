@@ -67,9 +67,28 @@ export async function searchCities(query: string): Promise<CitySuggestion[]> {
           item.name;
 
         // Clean city name: Nominatim sometimes returns multiple names separated by semicolons
-        // (e.g., "伯克利;柏克萊" for different transliterations)
-        // Take only the first name to avoid duplicates
-        const cityName = rawCityName.split(';')[0].trim();
+        // (e.g., "旧金山;舊金山;三藩市" for San Francisco with multiple transliterations)
+        // Strategy: Prefer English names, or shortest name if all non-English
+        const cleanCityName = (name: string): string => {
+          if (!name) return '';
+
+          const names = name.split(';').map(n => n.trim()).filter(n => n.length > 0);
+          if (names.length === 0) return '';
+          if (names.length === 1) return names[0];
+
+          // Prefer names without CJK characters (English names)
+          const englishNames = names.filter(n => !/[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/.test(n));
+          if (englishNames.length > 0) {
+            return englishNames[0];
+          }
+
+          // If all are CJK, prefer the shortest (usually most common)
+          return names.reduce((shortest, current) =>
+            current.length < shortest.length ? current : shortest
+          );
+        };
+
+        const cityName = cleanCityName(rawCityName);
 
         return {
           name: cityName,
