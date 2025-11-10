@@ -1,164 +1,103 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withDelay,
   withSequence,
-  withRepeat,
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import AuraLogo from './AuraLogo';
-
-const { width, height } = Dimensions.get('window');
 
 interface IntroScreenPremiumProps {
   onComplete: () => void;
 }
 
 /**
- * IntroScreenPremium - Redesigned modern intro (4s)
- * v2.6.2: Complete rebuild with proven working patterns
+ * IntroScreenPremium - Memory-optimized professional intro (4s)
+ * v2.6.3: Memory-friendly redesign
+ *
+ * Optimizations:
+ * - Only 3 shared values (logoScale, logoOpacity, glowOpacity)
+ * - NO withRepeat (manual breathing with withSequence)
+ * - Simplified animation chains
+ * - Static glow rings (no independent scaling)
  *
  * Animation Flow:
- * Phase 1 (0-800ms): Logo bounces in with glow rings
- * Phase 2 (800-2400ms): Breathing animation - logo pulses gently
- * Phase 3 (2400-3000ms): Emphasis - synchronized expansion
- * Phase 4 (3000-4000ms): Scale up + fade to next screen
+ * Phase 1 (0-600ms): Logo bounces in
+ * Phase 2 (600-2600ms): Two breathing cycles (manual)
+ * Phase 3 (2600-4000ms): Scale up + fade out
  */
 export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumProps) {
-  // Core animation values (5 shared values total)
-  const logoScale = useSharedValue(0.4);
+  // Only 3 shared values for minimal memory usage
+  const logoScale = useSharedValue(0.5);
   const logoOpacity = useSharedValue(0);
-  const innerGlowScale = useSharedValue(0.8);
-  const outerGlowScale = useSharedValue(0.8);
   const glowOpacity = useSharedValue(0);
 
   useEffect(() => {
-    // PHASE 1: Entrance (0-800ms)
-    // Logo appears with elastic bounce
+    // Logo fade in
     logoOpacity.value = withTiming(1, {
       duration: 400,
       easing: Easing.out(Easing.ease),
     });
 
-    logoScale.value = withSequence(
-      withTiming(1.2, {
-        duration: 500,
-        easing: Easing.out(Easing.back(1.7)),
-      }),
-      // PHASE 2: Breathing (800-2400ms)
-      withRepeat(
-        withSequence(
-          withTiming(1.1, {
-            duration: 800,
-            easing: Easing.inOut(Easing.sine),
-          }),
-          withTiming(1.2, {
-            duration: 800,
-            easing: Easing.inOut(Easing.sine),
-          })
-        ),
-        1, // Repeat once (one full breath cycle)
-        true
-      ),
-      // PHASE 3: Emphasis (2400-3000ms)
-      withTiming(1.25, {
-        duration: 600,
-        easing: Easing.out(Easing.cubic),
-      })
-    );
-
-    // Glow rings animate with logo
+    // Glow fade in (delayed)
     glowOpacity.value = withDelay(
-      100,
+      150,
       withTiming(1, {
-        duration: 600,
+        duration: 500,
         easing: Easing.out(Easing.ease),
       })
     );
 
-    innerGlowScale.value = withDelay(
-      200,
-      withSequence(
-        withTiming(1, {
-          duration: 600,
-          easing: Easing.out(Easing.back(1.5)),
-        }),
-        // Breathing with logo
-        withRepeat(
-          withSequence(
-            withTiming(0.95, {
-              duration: 800,
-              easing: Easing.inOut(Easing.sine),
-            }),
-            withTiming(1.05, {
-              duration: 800,
-              easing: Easing.inOut(Easing.sine),
-            })
-          ),
-          1,
-          true
-        )
+    // Logo animation sequence (no withRepeat!)
+    logoScale.value = withSequence(
+      // Phase 1: Bounce in (0-600ms)
+      withTiming(1.15, {
+        duration: 500,
+        easing: Easing.out(Easing.back(1.6)),
+      }),
+      // Phase 2: Manual breathing - cycle 1 (600-1600ms)
+      withTiming(1.08, {
+        duration: 500,
+        easing: Easing.inOut(Easing.sine),
+      }),
+      withTiming(1.15, {
+        duration: 500,
+        easing: Easing.inOut(Easing.sine),
+      }),
+      // Breathing cycle 2 (1600-2600ms)
+      withTiming(1.08, {
+        duration: 500,
+        easing: Easing.inOut(Easing.sine),
+      }),
+      withTiming(1.15, {
+        duration: 500,
+        easing: Easing.inOut(Easing.sine),
+      }),
+      // Phase 3: Scale up for transition (2600-4000ms)
+      withDelay(
+        200,
+        withTiming(6, {
+          duration: 1200,
+          easing: Easing.in(Easing.cubic),
+        })
       )
     );
 
-    outerGlowScale.value = withDelay(
-      300,
-      withSequence(
-        withTiming(1, {
-          duration: 700,
-          easing: Easing.out(Easing.back(1.5)),
-        }),
-        // Breathing with logo
-        withRepeat(
-          withSequence(
-            withTiming(0.95, {
-              duration: 800,
-              easing: Easing.inOut(Easing.sine),
-            }),
-            withTiming(1.05, {
-              duration: 800,
-              easing: Easing.inOut(Easing.sine),
-            })
-          ),
-          1,
-          true
-        )
-      )
-    );
-
-    // PHASE 4: Transition (3000-4000ms)
+    // Fade out at the end
     setTimeout(() => {
-      // Scale up to fill screen
-      logoScale.value = withTiming(6, {
-        duration: 1000,
-        easing: Easing.in(Easing.cubic),
-      });
-
-      innerGlowScale.value = withTiming(8, {
-        duration: 1000,
-        easing: Easing.in(Easing.cubic),
-      });
-
-      outerGlowScale.value = withTiming(10, {
-        duration: 1000,
-        easing: Easing.in(Easing.cubic),
-      });
-
-      // Fade out
       logoOpacity.value = withTiming(0, {
         duration: 800,
         easing: Easing.in(Easing.cubic),
       });
-
       glowOpacity.value = withTiming(0, {
         duration: 800,
         easing: Easing.in(Easing.cubic),
       });
-    }, 3000);
+    }, 3200);
 
     // Complete animation
     const timeout = setTimeout(() => {
@@ -173,19 +112,13 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
     transform: [{ scale: logoScale.value }],
   }));
 
-  const innerGlowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value * 0.4,
-    transform: [{ scale: innerGlowScale.value }],
-  }));
-
-  const outerGlowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value * 0.25,
-    transform: [{ scale: outerGlowScale.value }],
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
   }));
 
   return (
     <View style={styles.container}>
-      {/* Background gradient */}
+      {/* Static background gradient */}
       <LinearGradient
         colors={['#0a0118', '#1e1b4b', '#312e81', '#1e293b']}
         locations={[0, 0.35, 0.65, 1]}
@@ -194,24 +127,13 @@ export default function IntroScreenPremium({ onComplete }: IntroScreenPremiumPro
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Outer glow ring (Pink) */}
-        <Animated.View style={[styles.outerGlow, outerGlowStyle]}>
-          <LinearGradient
-            colors={['rgba(236, 72, 153, 0)', 'rgba(236, 72, 153, 0.3)', 'rgba(236, 72, 153, 0)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.glowGradient}
-          />
+        {/* Static glow rings (only opacity animation, no scaling) */}
+        <Animated.View style={[styles.outerGlow, glowStyle]}>
+          <View style={styles.outerGlowInner} />
         </Animated.View>
 
-        {/* Inner glow ring (Purple) */}
-        <Animated.View style={[styles.innerGlow, innerGlowStyle]}>
-          <LinearGradient
-            colors={['rgba(167, 139, 250, 0)', 'rgba(167, 139, 250, 0.4)', 'rgba(167, 139, 250, 0)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.glowGradient}
-          />
+        <Animated.View style={[styles.innerGlow, glowStyle]}>
+          <View style={styles.innerGlowInner} />
         </Animated.View>
 
         {/* Aura Logo */}
@@ -244,15 +166,21 @@ const styles = StyleSheet.create({
     borderRadius: 140,
     zIndex: 5,
   },
+  innerGlowInner: {
+    flex: 1,
+    borderRadius: 140,
+    backgroundColor: 'rgba(167, 139, 250, 0.25)',
+  },
   outerGlow: {
     position: 'absolute',
-    width: 380,
-    height: 380,
-    borderRadius: 190,
+    width: 360,
+    height: 360,
+    borderRadius: 180,
     zIndex: 3,
   },
-  glowGradient: {
+  outerGlowInner: {
     flex: 1,
-    borderRadius: 999,
+    borderRadius: 180,
+    backgroundColor: 'rgba(236, 72, 153, 0.15)',
   },
 });
