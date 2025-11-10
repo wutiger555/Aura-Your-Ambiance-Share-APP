@@ -17,10 +17,11 @@ interface IntroScreenPremiumProps {
 
 /**
  * IntroScreenPremium - Memory-optimized professional intro (4s)
- * v2.6.3: Memory-friendly redesign
+ * v2.6.4: CRITICAL FIX - AuraLogo with animate={false}
  *
  * Optimizations:
  * - Only 3 shared values (logoScale, logoOpacity, glowOpacity)
+ * - AuraLogo with animate={false} creates NO additional shared values
  * - NO withRepeat (manual breathing with withSequence)
  * - Simplified animation chains
  * - Static glow rings (no independent scaling)

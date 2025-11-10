@@ -15,11 +15,12 @@ interface AuraLogoProps {
 }
 
 const AuraLogo: React.FC<AuraLogoProps> = ({ size = 120, animate = true }) => {
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.8);
+  // Only create shared values if animating (memory optimization)
+  const logoOpacity = animate ? useSharedValue(0) : null;
+  const logoScale = animate ? useSharedValue(0.8) : null;
 
   useEffect(() => {
-    if (animate) {
+    if (animate && logoOpacity && logoScale) {
       logoOpacity.value = withTiming(1, {
         duration: ANIMATION_DURATIONS.FADE_IN,
         easing: Easing.out(Easing.ease),
@@ -29,16 +30,15 @@ const AuraLogo: React.FC<AuraLogoProps> = ({ size = 120, animate = true }) => {
         duration: ANIMATION_DURATIONS.DRAW_RING,
         easing: Easing.out(Easing.back(1.5)),
       });
-    } else {
-      logoOpacity.value = 1;
-      logoScale.value = 1;
     }
-  }, [animate]);
+  }, [animate, logoOpacity, logoScale]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
-  }));
+  const animatedStyle = animate && logoOpacity && logoScale
+    ? useAnimatedStyle(() => ({
+        opacity: logoOpacity.value,
+        transform: [{ scale: logoScale.value }],
+      }))
+    : { opacity: 1, transform: [{ scale: 1 }] };
 
   return (
     <Animated.View style={[styles.container, { width: size, height: size }, animatedStyle]}>
