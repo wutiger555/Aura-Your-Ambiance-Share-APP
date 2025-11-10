@@ -8,7 +8,12 @@ import CelestialSky from './CelestialSky';
 import ParticleSystem from './ParticleSystem';
 import EnhancedStarfield from './EnhancedStarfield';
 import AuroraEffect from './AuroraEffect';
-import { RainEffect, SnowEffect, CloudEffect, ThunderstormEffect } from './weather-effects';
+import {
+  EnhancedRainEffect,
+  EnhancedSnowEffect,
+  CloudEffect,
+  EnhancedThunderstormEffect,
+} from './weather-effects';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -116,13 +121,13 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
         {partnerWeatherEffect && partnerWeather && (
           <>
             {partnerWeatherEffect.type === 'rain' && (
-              <RainEffect
+              <EnhancedRainEffect
                 intensity={partnerWeatherEffect.intensity}
                 isDay={partnerWeather.current.is_day === 1}
               />
             )}
             {partnerWeatherEffect.type === 'snow' && (
-              <SnowEffect
+              <EnhancedSnowEffect
                 intensity={partnerWeatherEffect.intensity}
                 isDay={partnerWeather.current.is_day === 1}
               />
@@ -134,7 +139,7 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
               />
             )}
             {partnerWeatherEffect.type === 'thunderstorm' && (
-              <ThunderstormEffect isDay={partnerWeather.current.is_day === 1} />
+              <EnhancedThunderstormEffect isDay={partnerWeather.current.is_day === 1} />
             )}
           </>
         )}
@@ -165,13 +170,13 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
         {myWeatherEffect && myWeather && (
           <>
             {myWeatherEffect.type === 'rain' && (
-              <RainEffect
+              <EnhancedRainEffect
                 intensity={myWeatherEffect.intensity}
                 isDay={myWeather.current.is_day === 1}
               />
             )}
             {myWeatherEffect.type === 'snow' && (
-              <SnowEffect
+              <EnhancedSnowEffect
                 intensity={myWeatherEffect.intensity}
                 isDay={myWeather.current.is_day === 1}
               />
@@ -183,7 +188,7 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
               />
             )}
             {myWeatherEffect.type === 'thunderstorm' && (
-              <ThunderstormEffect isDay={myWeather.current.is_day === 1} />
+              <EnhancedThunderstormEffect isDay={myWeather.current.is_day === 1} />
             )}
           </>
         )}
