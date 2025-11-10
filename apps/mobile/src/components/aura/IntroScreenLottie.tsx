@@ -3,6 +3,7 @@ import { View, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import AuraLogo from './AuraLogo';
+import { auraBreathingAnimation } from '../../animations/auraBreathing';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -15,7 +16,7 @@ interface IntroScreenLottieProps {
  * v2.6.5: High-quality animations without Reanimated memory overhead
  *
  * Why Lottie:
- * - Pre-rendered JSON animations (no runtime calculations)
+ * - Pre-rendered animations (no runtime calculations)
  * - NO shared values, NO worklets, NO memory overhead
  * - Professional animations from LottieFiles.com
  * - Smooth 60fps on all devices including simulators
@@ -23,9 +24,10 @@ interface IntroScreenLottieProps {
  *
  * How to add custom animations:
  * 1. Download from https://lottiefiles.com (search: "connection", "world", "globe", "network")
- * 2. Place JSON in apps/mobile/assets/lottie/
- * 3. Import: require('../../assets/lottie/your-animation.json')
- * 4. Replace animationSource prop below
+ * 2. Copy the JSON data
+ * 3. Create a new .ts file in src/animations/ exporting as an object
+ * 4. Import and use in the source prop below
+ * 5. Adjust speed prop (0.5 = slower, 2.0 = faster)
  */
 export default function IntroScreenLottie({ onComplete }: IntroScreenLottieProps) {
   const animationRef = useRef<LottieView>(null);
@@ -62,7 +64,7 @@ export default function IntroScreenLottie({ onComplete }: IntroScreenLottieProps
         <View style={styles.lottieContainer}>
           <LottieView
             ref={animationRef}
-            source={require('../../assets/lottie/aura-breathing.json')}
+            source={auraBreathingAnimation}
             style={styles.lottieAnimation}
             loop={true}
             autoPlay={true}
@@ -78,8 +80,8 @@ export default function IntroScreenLottie({ onComplete }: IntroScreenLottieProps
         {/*
           To replace with custom Lottie animation:
           1. Download from LottieFiles.com (search: "connection", "world", "network", "love")
-          2. Place JSON in apps/mobile/assets/lottie/
-          3. Update require() path above
+          2. Create a new .ts file in src/animations/ exporting the animation object
+          3. Import and use it in the source prop above
           4. Adjust speed prop (0.5 = slower, 2.0 = faster)
         */}
       </View>
