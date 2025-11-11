@@ -40,30 +40,30 @@ export const getWeatherAtmosphere = (
   const description = descriptions[code] || 'Unknown';
   const isDistant = distance !== null && distance > 5000; // 5000km threshold for "distant"
 
-  // Day Gradients (RGB colors for React Native)
+  // Day Gradients (RGB colors for React Native) - BRIGHTENED for strong contrast with night
   const dayGradients: { [key: string]: [string, string] } = {
-    clear: ['#38bdf8', '#2563eb'], // sky-400 to blue-600
-    partlyCloudy: ['#0ea5e9', '#4f46e5'], // sky-500 to indigo-600
-    overcast: ['#64748b', '#334155'], // slate-500 to slate-700
-    fog: ['#94a3b8', '#6b7280'], // slate-400 to gray-500
-    drizzle: ['#0284c7', '#334155'], // sky-600 to slate-700
-    rain: ['#475569', '#1f2937'], // slate-600 to gray-800
-    snow: ['#bae6fd', '#94a3b8'], // sky-200 to slate-400
-    thunder: ['#1e293b', '#000000'], // slate-800 to black
-    default: ['#6b7280', '#374151'], // gray-500 to gray-700
+    clear: ['#B0E2FF', '#4A90E2'], // Bright sky blue to azure - MUCH brighter
+    partlyCloudy: ['#87CEEB', '#5B9BD5'], // Sky blue to soft blue
+    overcast: ['#9CA3AF', '#6B7280'], // Light gray to medium gray
+    fog: ['#D1D5DB', '#9CA3AF'], // Very light gray to light gray
+    drizzle: ['#7DD3FC', '#64748B'], // Light sky blue to slate
+    rain: ['#6B7280', '#475569'], // Medium gray to dark gray (but not too dark)
+    snow: ['#E0F2FE', '#BAE6FD'], // Very light sky blue to light sky blue
+    thunder: ['#475569', '#1E293B'], // Dark gray to very dark gray
+    default: ['#93C5FD', '#60A5FA'], // Light blue to medium blue
   };
 
-  // Distant Day Gradients (cooler tones)
+  // Distant Day Gradients (cooler tones) - BRIGHTENED
   const distantDayGradients: { [key: string]: [string, string] } = {
-    clear: ['#7dd3fc', '#6366f1'], // sky-300 to indigo-500
-    partlyCloudy: ['#38bdf8', '#475569'], // sky-400 to slate-600
-    overcast: ['#475569', '#1e293b'], // slate-600 to slate-800
-    fog: ['#64748b', '#4b5563'], // slate-500 to gray-600
-    drizzle: ['#0369a1', '#1e293b'], // sky-700 to slate-800
-    rain: ['#334155', '#111827'], // slate-700 to gray-900
-    snow: ['#7dd3fc', '#64748b'], // sky-300 to slate-500
-    thunder: ['#0f172a', '#000000'], // slate-900 to black
-    default: ['#4b5563', '#1f2937'], // gray-600 to gray-800
+    clear: ['#A5D8FF', '#6B9BD5'], // Light blue to medium blue (cooler but still bright)
+    partlyCloudy: ['#7DD3FC', '#6B7280'], // Sky blue to slate (brighter)
+    overcast: ['#9CA3AF', '#64748B'], // Light gray to slate
+    fog: ['#CBD5E1', '#94A3B8'], // Very light gray to light gray
+    drizzle: ['#67B7D1', '#475569'], // Teal to slate
+    rain: ['#64748B', '#334155'], // Slate to dark slate (lighter)
+    snow: ['#BAE6FD', '#94A3B8'], // Very light blue to light gray
+    thunder: ['#475569', '#1E293B'], // Dark gray to very dark gray
+    default: ['#7DD3FC', '#64748B'], // Light blue to slate
   };
 
   // Night Gradients

@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Dimensions, Animated } from 'react-native';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { View, StyleSheet, Animated } from 'react-native';
 
 interface EnhancedRainEffectProps {
   intensity: 'light' | 'moderate' | 'heavy';
@@ -130,10 +128,7 @@ const EnhancedRainEffect: React.FC<EnhancedRainEffectProps> = ({ intensity, isDa
               {
                 backgroundColor: dropColor,
                 opacity: drop.opacity,
-                transform: [{ translateY: drop.translateY.interpolate({
-                  inputRange: [-20, 120],
-                  outputRange: ['-20%', '120%'],
-                }) }],
+                transform: [{ translateY: drop.translateY }],
               },
             ]}
           />
@@ -146,7 +141,7 @@ const EnhancedRainEffect: React.FC<EnhancedRainEffectProps> = ({ intensity, isDa
                 borderColor: splashColor,
                 opacity: drop.splashOpacity,
                 transform: [{ scale: drop.splashScale }],
-                bottom: SCREEN_HEIGHT * -0.05,
+                top: '95%',
               },
             ]}
           />

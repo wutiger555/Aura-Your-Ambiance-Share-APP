@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Dimensions, Animated } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { View, StyleSheet, Animated } from 'react-native';
 
 interface EnhancedSnowEffectProps {
   intensity: 'light' | 'moderate' | 'heavy';
@@ -136,10 +134,7 @@ const EnhancedSnowEffect: React.FC<EnhancedSnowEffectProps> = ({ intensity, isDa
               left: `${flake.startX}%`,
               opacity: flake.opacity,
               transform: [
-                { translateY: flake.translateY.interpolate({
-                  inputRange: [-10, 120],
-                  outputRange: ['-10%', '120%'],
-                }) },
+                { translateY: flake.translateY },
                 { translateX: flake.translateX },
                 { rotate: flake.rotate.interpolate({
                   inputRange: [0, 360],

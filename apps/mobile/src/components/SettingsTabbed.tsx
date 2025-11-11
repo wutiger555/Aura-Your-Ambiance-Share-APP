@@ -14,6 +14,7 @@ import { BlurView } from 'expo-blur';
 import { X, Palette, MapPin, Calendar, Info } from 'lucide-react-native';
 import { LocationData, WeatherData, DailySchedule } from '@aura/shared';
 import { useDisplaySettings, AppearanceMode } from '../stores/useDisplaySettings';
+import { useLocationStore } from '../stores/useLocationStore';
 
 // Import existing components
 import DailyRhythmEditor from './aura/DailyRhythmEditor';
@@ -78,6 +79,10 @@ export default function SettingsTabbed({
     toggleElement,
     resetToDefaults,
   } = useDisplaySettings();
+
+  // Time format preference from location store
+  const timeFormat = useLocationStore((state) => state.timeFormat);
+  const setTimeFormat = useLocationStore((state) => state.setTimeFormat);
 
   // Default schedule
   const defaultSchedule: DailySchedule = {
@@ -452,6 +457,48 @@ export default function SettingsTabbed({
               <View style={styles.aboutSection}>
                 <Text style={styles.aboutLabel}>Version</Text>
                 <Text style={styles.aboutValue}>2.7.0 - Premium Redesign</Text>
+              </View>
+
+              {/* Time Format Preference */}
+              <View style={styles.aboutSection}>
+                <Text style={styles.aboutLabel}>Time Format</Text>
+                <Text style={styles.aboutText}>
+                  Choose how time is displayed throughout the app
+                </Text>
+                <View style={styles.timeFormatRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.timeFormatButton,
+                      timeFormat === '24h' && styles.timeFormatButtonActive,
+                    ]}
+                    onPress={() => setTimeFormat('24h')}
+                  >
+                    <Text
+                      style={[
+                        styles.timeFormatButtonText,
+                        timeFormat === '24h' && styles.timeFormatButtonTextActive,
+                      ]}
+                    >
+                      24-hour (14:30)
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.timeFormatButton,
+                      timeFormat === '12h' && styles.timeFormatButtonActive,
+                    ]}
+                    onPress={() => setTimeFormat('12h')}
+                  >
+                    <Text
+                      style={[
+                        styles.timeFormatButtonText,
+                        timeFormat === '12h' && styles.timeFormatButtonTextActive,
+                      ]}
+                    >
+                      12-hour (2:30 PM)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.aboutSection}>
@@ -935,5 +982,33 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: 'rgba(255, 255, 255, 0.6)',
     fontWeight: '500',
+  },
+  // Time Format Selector (v2.6.6)
+  timeFormatRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  timeFormatButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+  },
+  timeFormatButtonActive: {
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    borderColor: '#06b6d4',
+  },
+  timeFormatButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  timeFormatButtonTextActive: {
+    color: '#06b6d4',
   },
 });

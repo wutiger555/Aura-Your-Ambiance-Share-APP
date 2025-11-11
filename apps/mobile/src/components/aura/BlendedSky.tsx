@@ -140,8 +140,13 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
 
         {/* Soft gradient overlay at bottom to blend with bottom half */}
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.1)']}
-          locations={[0.85, 1]}
+          colors={[
+            'transparent',
+            'rgba(0,0,0,0.05)',
+            'rgba(0,0,0,0.15)',
+            'rgba(0,0,0,0.25)',
+          ]}
+          locations={[0.6, 0.75, 0.9, 1]}
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
         />
@@ -200,8 +205,13 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
 
         {/* Soft gradient overlay at top to blend with top half */}
         <LinearGradient
-          colors={['rgba(0,0,0,0.1)', 'transparent']}
-          locations={[0, 0.15]}
+          colors={[
+            'rgba(0,0,0,0.25)',
+            'rgba(0,0,0,0.15)',
+            'rgba(0,0,0,0.05)',
+            'transparent',
+          ]}
+          locations={[0, 0.1, 0.25, 0.4]}
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
         />
