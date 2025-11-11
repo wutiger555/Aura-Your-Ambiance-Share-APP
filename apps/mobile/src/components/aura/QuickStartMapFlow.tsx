@@ -13,7 +13,8 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { ChevronRight, Check } from 'lucide-react-native';
-import LocationInputPremium from './LocationInputPremium';
+// import LocationInputPremium from './LocationInputPremium'; // Premium version (causes memory crashes on Simulator)
+import LocationInputSimple from './LocationInputSimple'; // Simplified version (memory-safe)
 
 interface QuickStartMapFlowProps {
   onComplete: (data: {
@@ -110,7 +111,7 @@ const QuickStartMapFlow: React.FC<QuickStartMapFlowProps> = ({
   };
 
   if (step === 'location') {
-    return <LocationInputPremium onComplete={handleLocationComplete} isReturningUser={isReturningUser} />;
+    return <LocationInputSimple onComplete={handleLocationComplete} isReturningUser={isReturningUser} />;
   }
 
   if (step === 'display') {
