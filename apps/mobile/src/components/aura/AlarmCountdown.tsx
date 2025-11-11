@@ -208,14 +208,20 @@ const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
           onPress={() => setShowPopup(true)}
           activeOpacity={0.85}
         >
-          <BlurView intensity={60} tint="dark" style={styles.blurContainer}>
-            {/* Bell icon */}
-            <Bell size={18} color="#06b6d4" strokeWidth={2.5} />
+          <BlurView
+            intensity={60}
+            tint="dark"
+            style={styles.blurContainer}
+          >
+            <View style={styles.blurInner}>
+              {/* Bell icon */}
+              <Bell size={18} color="#06b6d4" strokeWidth={2.5} />
 
-            {/* Time badge with real-time update animation */}
-            <Animated.View style={[styles.badge, animatedBadgeStyle]}>
-              <Text style={styles.badgeText}>{getCompactTime()}</Text>
-            </Animated.View>
+              {/* Time badge with real-time update animation */}
+              <Animated.View style={[styles.badge, animatedBadgeStyle]}>
+                <Text style={styles.badgeText}>{getCompactTime()}</Text>
+              </Animated.View>
+            </View>
           </BlurView>
         </TouchableOpacity>
       </Animated.View>
@@ -247,11 +253,16 @@ const styles = StyleSheet.create({
   blurContainer: {
     flex: 1,
     borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: 'rgba(6, 182, 212, 0.4)',
+    overflow: 'hidden',
+  },
+  blurInner: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.03)', // Subtle background for better blend
+    backgroundColor: 'rgba(6, 182, 212, 0.03)',
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
     // Subtle glow
     shadowColor: '#06b6d4',
     shadowOffset: { width: 0, height: 0 },

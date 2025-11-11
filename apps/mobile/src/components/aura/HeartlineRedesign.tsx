@@ -229,7 +229,11 @@ const HeartlineRedesign: React.FC<HeartlineRedesignProps> = ({
               onPress={handleSwap}
               activeOpacity={0.85}
             >
-              <BlurView intensity={70} tint="dark" style={styles.swapButtonBlur}>
+              <BlurView
+                intensity={70}
+                tint="dark"
+                style={styles.swapButtonBlur}
+              >
                 <View style={styles.swapButtonInner}>
                   <ArrowUpDown size={20} color="rgba(255, 255, 255, 0.9)" strokeWidth={2.5} />
                 </View>
@@ -310,15 +314,16 @@ const styles = StyleSheet.create({
   swapButtonBlur: {
     flex: 1,
     borderRadius: 28,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    overflow: 'hidden',
   },
   swapButtonInner: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 28, // Match outer button radius for perfect circle
+    borderRadius: 28,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   // Info button (distance/time)
   infoButton: {
