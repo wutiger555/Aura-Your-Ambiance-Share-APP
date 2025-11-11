@@ -8,6 +8,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.7.0] - 2025-01-11 (Stable Release - Weather & UX Enhancements)
+
+### 🎯 STABLE RELEASE - Critical Bug Fixes & Feature Enhancements
+
+This is a stable release focusing on fixing critical weather rendering issues, enhancing day/night contrast, and adding user-requested features.
+
+### ✅ Critical Bug Fixes
+
+1. **Weather Effects Display Fixed** ([739f16c], [6d21767], [b86c9c6])
+   - **Problem**: Weather effects (rain, snow) were confined to narrow boundary area
+   - **Root Cause**: MaskedView gradients hiding 70% of content
+   - **Solution**: Complete architectural rewrite
+     - Removed MaskedView entirely
+     - Changed to clean 50/50 split with proper containment
+     - Fixed rain/snow positioning to use container-relative values
+     - Added soft 40% gradient blending at boundaries
+   - **Result**: Weather effects now display across full screen area ✅
+
+2. **Background Swap Functionality Fixed** ([84110b7])
+   - **Problem**: Background didn't swap when user toggles position
+   - **Root Cause**: BlendedSky receiving original weather props instead of swapped
+   - **Solution**: Renamed props to topWeather/bottomWeather for clarity
+   - **Result**: Background now correctly swaps with position toggle ✅
+
+### 🎨 Visual Enhancements
+
+1. **Brightened Daytime Backgrounds** ([b86c9c6])
+   - Clear day: `#B0E2FF → #4A90E2` (much brighter sky blue)
+   - All daytime weather conditions significantly brightened
+   - Strong contrast between day/night for better visual distinction
+   - Example improvements:
+     - Clear: From `#38bdf8` to `#B0E2FF` (+60% brightness)
+     - Snow: From `#bae6fd` to `#E0F2FE` (very light blue)
+
+2. **Smooth Boundary Blending** ([b86c9c6])
+   - Increased gradient range from 15% to 40%
+   - Multi-step gradient: 4 colors for softer transition
+   - Opacity increased from 0.1 to 0.25
+   - Eliminates harsh dividing line between location halves
+
+### 🆕 New Features
+
+1. **Time Format Toggle** ([b86c9c6])
+   - User preference: 24-hour or 12-hour format
+   - Located in Settings > About tab
+   - Visual toggle buttons: "24-hour (14:30)" / "12-hour (2:30 PM)"
+   - Persisted to AsyncStorage
+   - New utilities: `timeUtils.ts` with formatting helpers
+
+### 🔧 Technical Improvements
+
+1. **Weather Effect Architecture**
+   - Removed screen-based calculations
+   - All effects now container-relative
+   - Proper overflow containment
+   - Memory-efficient rendering
+
+2. **State Management**
+   - Added `timeFormat` to locationStore
+   - Clear prop naming for swap state clarity
+   - Consistent internal variable naming
+
+### 📦 Files Modified
+
+**Bug Fixes:**
+- `BlendedSky.tsx`: Complete rewrite, removed MaskedView
+- `EnhancedRainEffect.tsx`: Fixed positioning
+- `EnhancedSnowEffect.tsx`: Fixed positioning
+- `App.tsx`: Pass swapped weather correctly
+
+**Enhancements:**
+- `weatherUtils.ts`: Brightened day gradients
+- `SettingsTabbed.tsx`: Added time format toggle
+- `useLocationStore.ts`: Added timeFormat state
+- `timeUtils.ts`: NEW - Time formatting utilities
+
+### 🧪 Testing Notes
+
+Test scenarios:
+- ✅ Weather effects display across full area (not just boundary)
+- ✅ Day backgrounds are bright (strong contrast with night)
+- ✅ Boundary blending is smooth (no harsh line)
+- ✅ Time format toggle works (persists across sessions)
+- ✅ Position swap updates background correctly
+
+### 📊 Version Comparison
+
+- Previous: 2.6.5 (Animation system overhaul)
+- Current: **2.7.0** (Stable release with critical fixes)
+- Status: ✅ Production Ready
+
+---
+
 ## [2.6.5] - 2025-11-10 (Complete Animation System Overhaul)
 
 ### 🎬 MAJOR UPDATE - Premium Animation Suite
