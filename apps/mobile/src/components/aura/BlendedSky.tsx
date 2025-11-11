@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
 import { WeatherData } from '@aura/shared';
 import { getWeatherAtmosphere } from '../../utils/weatherUtils';
 import CelestialSky from './CelestialSky';
@@ -86,129 +85,127 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Top half (partner weather) with mask */}
-      <MaskedView
-        style={styles.topHalf}
-        maskElement={
-          <LinearGradient
-            colors={['black', 'transparent']}
-            locations={[0.7, 1]}
-            style={StyleSheet.absoluteFill}
-          />
-        }
-      >
-        <View style={StyleSheet.absoluteFill}>
-          {/* Background gradient */}
-          <LinearGradient
-            colors={partnerColors}
-            style={StyleSheet.absoluteFill}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          />
+      {/* Top half (partner weather) - NO MASK, clean separation */}
+      <View style={styles.topHalf}>
+        {/* Background gradient */}
+        <LinearGradient
+          colors={partnerColors}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
 
-          {/* Starfield for partner (only if night) */}
-          {isPartnerNight && (
+        {/* Starfield for partner (only if night) */}
+        {isPartnerNight && (
+          <View style={StyleSheet.absoluteFill}>
             <EnhancedStarfield
               density={0.6}
               enableShootingStars={false}
               isNight={true}
             />
-          )}
+          </View>
+        )}
 
-          {/* Celestial body for top half */}
-          {partnerWeather && (
-            <CelestialSky weather={partnerWeather} isTop={true} />
-          )}
+        {/* Celestial body for top half */}
+        {partnerWeather && (
+          <CelestialSky weather={partnerWeather} isTop={true} />
+        )}
 
-          {/* Weather effects for top half */}
-          {partnerWeatherEffect && partnerWeather && (
-            <>
-              {partnerWeatherEffect.type === 'rain' && (
-                <EnhancedRainEffect
-                  intensity={partnerWeatherEffect.intensity}
-                  isDay={partnerWeather.current.is_day === 1}
-                />
-              )}
-              {partnerWeatherEffect.type === 'snow' && (
-                <EnhancedSnowEffect
-                  intensity={partnerWeatherEffect.intensity}
-                  isDay={partnerWeather.current.is_day === 1}
-                />
-              )}
-              {partnerWeatherEffect.type === 'clouds' && (
-                <CloudEffect
-                  density={partnerWeatherEffect.density}
-                  isDay={partnerWeather.current.is_day === 1}
-                />
-              )}
-              {partnerWeatherEffect.type === 'thunderstorm' && (
-                <EnhancedThunderstormEffect isDay={partnerWeather.current.is_day === 1} />
-              )}
-            </>
-          )}
-        </View>
-      </MaskedView>
+        {/* Weather effects for top half */}
+        {partnerWeatherEffect && partnerWeather && (
+          <View style={StyleSheet.absoluteFill}>
+            {partnerWeatherEffect.type === 'rain' && (
+              <EnhancedRainEffect
+                intensity={partnerWeatherEffect.intensity}
+                isDay={partnerWeather.current.is_day === 1}
+              />
+            )}
+            {partnerWeatherEffect.type === 'snow' && (
+              <EnhancedSnowEffect
+                intensity={partnerWeatherEffect.intensity}
+                isDay={partnerWeather.current.is_day === 1}
+              />
+            )}
+            {partnerWeatherEffect.type === 'clouds' && (
+              <CloudEffect
+                density={partnerWeatherEffect.density}
+                isDay={partnerWeather.current.is_day === 1}
+              />
+            )}
+            {partnerWeatherEffect.type === 'thunderstorm' && (
+              <EnhancedThunderstormEffect isDay={partnerWeather.current.is_day === 1} />
+            )}
+          </View>
+        )}
 
-      {/* Bottom half (my weather) with mask */}
-      <MaskedView
-        style={styles.bottomHalf}
-        maskElement={
-          <LinearGradient
-            colors={['transparent', 'black']}
-            locations={[0, 0.3]}
-            style={StyleSheet.absoluteFill}
-          />
-        }
-      >
-        <View style={StyleSheet.absoluteFill}>
-          {/* Background gradient */}
-          <LinearGradient
-            colors={myColors}
-            style={StyleSheet.absoluteFill}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          />
+        {/* Soft gradient overlay at bottom to blend with bottom half */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.1)']}
+          locations={[0.85, 1]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+      </View>
 
-          {/* Starfield for me (only if night) */}
-          {isMyNight && (
+      {/* Bottom half (my weather) - NO MASK, clean separation */}
+      <View style={styles.bottomHalf}>
+        {/* Background gradient */}
+        <LinearGradient
+          colors={myColors}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
+
+        {/* Starfield for me (only if night) */}
+        {isMyNight && (
+          <View style={StyleSheet.absoluteFill}>
             <EnhancedStarfield
               density={0.6}
               enableShootingStars={false}
               isNight={true}
             />
-          )}
+          </View>
+        )}
 
-          {/* Celestial body for bottom half */}
-          {myWeather && <CelestialSky weather={myWeather} isTop={false} />}
+        {/* Celestial body for bottom half */}
+        {myWeather && <CelestialSky weather={myWeather} isTop={false} />}
 
-          {/* Weather effects for bottom half */}
-          {myWeatherEffect && myWeather && (
-            <>
-              {myWeatherEffect.type === 'rain' && (
-                <EnhancedRainEffect
-                  intensity={myWeatherEffect.intensity}
-                  isDay={myWeather.current.is_day === 1}
-                />
-              )}
-              {myWeatherEffect.type === 'snow' && (
-                <EnhancedSnowEffect
-                  intensity={myWeatherEffect.intensity}
-                  isDay={myWeather.current.is_day === 1}
-                />
-              )}
-              {myWeatherEffect.type === 'clouds' && (
-                <CloudEffect
-                  density={myWeatherEffect.density}
-                  isDay={myWeather.current.is_day === 1}
-                />
-              )}
-              {myWeatherEffect.type === 'thunderstorm' && (
-                <EnhancedThunderstormEffect isDay={myWeather.current.is_day === 1} />
-              )}
-            </>
-          )}
-        </View>
-      </MaskedView>
+        {/* Weather effects for bottom half */}
+        {myWeatherEffect && myWeather && (
+          <View style={StyleSheet.absoluteFill}>
+            {myWeatherEffect.type === 'rain' && (
+              <EnhancedRainEffect
+                intensity={myWeatherEffect.intensity}
+                isDay={myWeather.current.is_day === 1}
+              />
+            )}
+            {myWeatherEffect.type === 'snow' && (
+              <EnhancedSnowEffect
+                intensity={myWeatherEffect.intensity}
+                isDay={myWeather.current.is_day === 1}
+              />
+            )}
+            {myWeatherEffect.type === 'clouds' && (
+              <CloudEffect
+                density={myWeatherEffect.density}
+                isDay={myWeather.current.is_day === 1}
+              />
+            )}
+            {myWeatherEffect.type === 'thunderstorm' && (
+              <EnhancedThunderstormEffect isDay={myWeather.current.is_day === 1} />
+            )}
+          </View>
+        )}
+
+        {/* Soft gradient overlay at top to blend with top half */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.1)', 'transparent']}
+          locations={[0, 0.15]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+      </View>
     </View>
   );
 };
@@ -224,14 +221,16 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.55, // 55% with overlap for smooth blend
+    height: SCREEN_HEIGHT * 0.5, // Clean 50% split
+    overflow: 'hidden', // Prevent content from spilling over
   },
   bottomHalf: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.55, // 55% with overlap for smooth blend
+    height: SCREEN_HEIGHT * 0.5, // Clean 50% split
+    overflow: 'hidden', // Prevent content from spilling over
   },
 });
 
