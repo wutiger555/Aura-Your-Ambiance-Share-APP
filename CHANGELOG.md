@@ -8,7 +8,164 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
-## [2.7.0] - 2025-01-11 (Stable Release - Weather & UX Enhancements)
+## [2.7.0] - 2025-11-11 (Stable Release - Animation Redesign & UX Polish)
+
+### 🎯 STABLE RELEASE - Logo-Centric Animation & UI Refinements
+
+This is a major stable release featuring a complete redesign of the connection animation, critical button UI fixes, real-time countdown animations, and comprehensive UI polish.
+
+### ✅ New Features
+
+1. **Logo-Centric Connection Animation** ([568f745])
+   - **Complete redesign** of "Weaving Your Connection" animation
+   - **Aura Logo as the central element** connecting two locations
+   - **New 6-act structure** (10 seconds):
+     - Act 1 (0-2s): Two globes fly in from sides (continuity)
+     - Act 2 (2-3.5s): Aura Logo materializes with dual glow rings
+     - Act 3 (3.5-5s): Energy beams shoot FROM logo TO globes
+     - Act 4 (5-6.5s): World map emerges, globes transform to city markers
+     - Act 5 (6.5-8s): Energy beams merge into breathing Heartline
+     - Act 6 (8-10s): Smooth fade to main screen gradient
+   - **Design Philosophy**: Logo as the connecting force (top-down energy flow)
+   - **Better integration** between city input and main app experience
+   - **Purple/violet brand colors** with breathing glow effects
+
+2. **Real-Time Countdown Animation** ([ef1bac2])
+   - **Alarm badge now pulses** when time updates
+   - **Visual feedback**: Scale animation (1.0 → 1.15 → 1.0) + opacity fade
+   - **Only animates when value changes** for efficiency
+   - **Users can clearly see** the countdown is actively ticking
+   - Smooth `withSequence` animations for premium feel
+
+3. **Multi-Timezone Alarm System** (Previous commits)
+   - Set alarms that respect different timezones
+   - Alarm countdown indicator on main screen
+   - Expandable popup with full alarm details
+   - Tap to view all alarm information
+
+### 🔧 Critical Bug Fixes
+
+1. **Circular Button Display Fixed** ([ef1bac2])
+   - **Problem**: Buttons displayed square border inside circle shape
+   - **Root Cause**: BlurView border creating rectangular outline
+   - **Solution**: Moved border from BlurView to inner View component
+   - **Files Fixed**:
+     - HeartlineRedesign swap button: Border now inside BlurView
+     - AlarmCountdown alarm button: Border now inside BlurView
+   - **Result**: Perfect circular buttons with proper rounded borders ✅
+
+2. **Settings Tab Cleanup** ([ef1bac2])
+   - **Removed unused "Connection" tab** from Settings
+   - **Simplified from 4 tabs → 3 tabs** (Display, Schedule, About)
+   - **Cleaner interface** with focused functionality
+   - **Removed** MapPin icon import (no longer needed)
+
+### 🎨 Layout Optimizations
+
+1. **Main Page Layout Improvements** ([1e2a93d])
+   - **Center alignment fixed**: Swap + info buttons now horizontal row
+   - **Location displays repositioned**:
+     - Top: 60px → 70px (more breathing room)
+     - Bottom: 60px → 100px (raised from edge)
+   - **Heartline center rebalanced** for true center alignment
+   - **Reduced vertical gap** (12px → 8px) for tighter center
+   - **Better visual hierarchy** throughout main screen
+
+2. **Alarm Countdown Redesign** ([1e2a93d])
+   - **Transformed from info bar → minimal icon** (44x44 circular button)
+   - **Bell icon** with time badge (e.g., "2h")
+   - **Breathing pulse animation** for subtle appeal
+   - **Tap to expand** full details in popup modal
+   - **Reduces main page clutter** while maintaining functionality
+   - **AlarmCountdownPopup**: Glass-morphism modal with:
+     - Alarm label and countdown
+     - Time and timezone reference
+     - Slide-in animation with backdrop
+
+### 🎯 UX Improvements (Previous releases)
+
+1. **Emoji Selection Refined** ([edd8a7e])
+   - Reduced from 70+ mixed emojis to focused set
+   - **4 basic hearts + 50+ cute animals/pets**
+   - Organized by categories (dogs, cats, birds, sea creatures, etc.)
+   - Better matches user preferences
+
+2. **Keyboard Handling Fixed** ([edd8a7e])
+   - Added KeyboardAvoidingView to location input
+   - Platform-specific behavior (padding for iOS, height for Android)
+   - Increased maxHeight 50% → 65% for keyboard space
+   - **No more input blocking on mobile devices** ✅
+
+3. **City Search Improvements** ([edd8a7e])
+   - **Added English-only results**: 'Accept-Language: en' header
+   - **Deduplication implemented**: No more duplicate city names
+   - **Increased API limit** 5 → 15 for better filtering
+   - **Returns max 5 unique results** after deduplication
+   - **Fixes "Berkeley" showing multiple variants** ✅
+
+### 📦 Files Modified
+
+**Animation Redesign:**
+- `ConnectionIntroRedesign.tsx`: Complete overhaul with logo-centric flow
+
+**UI Fixes:**
+- `HeartlineRedesign.tsx`: Fixed button borders + center layout
+- `AlarmCountdown.tsx`: Real-time animation + circular border fix
+- `AlarmCountdownPopup.tsx`: NEW - Expandable alarm details modal
+- `AuraGlobeMinimal.tsx`: Adjusted top/bottom positioning
+- `SettingsTabbed.tsx`: Removed Connection tab
+
+**UX Improvements (Previous):**
+- `QuickStartMapFlow.tsx`: Refined emoji selection
+- `LocationInputSimple.tsx`: Keyboard avoidance
+- `geocoding.ts`: Deduplication + English-only results
+
+### 🧪 Testing Notes
+
+Test scenarios:
+- ✅ Swap button displays perfect circle (no square corners)
+- ✅ Alarm button displays perfect circle (no square corners)
+- ✅ Alarm badge animates when countdown updates
+- ✅ Connection animation features Aura logo prominently
+- ✅ Energy flows FROM logo TO locations (not reversed)
+- ✅ Main page center is truly centered
+- ✅ Location displays have proper spacing from edges
+- ✅ Settings only shows 3 tabs (Display, Schedule, About)
+- ✅ Keyboard doesn't cover city input on mobile
+- ✅ City search returns unique results only
+
+### 📊 Version Comparison
+
+- Previous: 2.6.5 (Premium animation suite with Lottie)
+- Current: **2.7.0** (Logo-centric redesign + UI polish)
+- Status: ✅ Production Ready
+
+### 🎬 Animation Evolution
+
+**v2.6.5**: Opening intro used Lottie for memory-safe animations
+**v2.7.0**: Connection animation completely redesigned:
+- Logo as the central connecting force
+- Energy beams radiating from logo
+- Better narrative flow from input → connection → main screen
+- Maintains memory efficiency while adding visual impact
+
+### Design Philosophy - v2.7.0
+
+**"Premium Connection Experience"**
+
+This release perfects the visual and interactive aspects of Aura:
+
+- **Logo as Hero**: Aura logo becomes the unifying element in connection journey
+- **Energy Flow Clarity**: Top-down energy (logo → locations) symbolizes active connection
+- **UI Precision**: Every button, every border, every animation polished to perfection
+- **Real-Time Feedback**: Users see and feel the countdown actively progressing
+- **Minimal Clutter**: Information on demand through expandable elements
+
+The result: A premium experience where every detail matters and every interaction delights.
+
+---
+
+## [2.7.0-alpha] - 2025-01-11 (Weather & UX Enhancements)
 
 ### 🎯 STABLE RELEASE - Critical Bug Fixes & Feature Enhancements
 

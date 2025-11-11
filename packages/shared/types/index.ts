@@ -57,3 +57,29 @@ export interface DailySchedule {
   work: { start: number; end: number } | null; // Optional work hours
   busy: { start: number; end: number }[]; // Additional busy periods
 }
+
+// v2.7.0: Multi-timezone alarm system
+export interface Alarm {
+  id: string; // Unique identifier (UUID)
+  label: string; // e.g., "Wake up Alex ❤️"
+
+  // Timezone reference: which person's timezone to use
+  timeZoneReference: 'my' | 'partner'; // Use my timezone or partner's timezone
+
+  // Time set in the REFERENCE timezone
+  hour: number; // 0-23 (24-hour format)
+  minute: number; // 0-59
+
+  enabled: boolean; // Is alarm active
+
+  // Repeat pattern
+  repeatDays: number[]; // 0-6 (0=Sunday, 1=Monday, ..., 6=Saturday), empty array = one-time alarm
+
+  // Notification settings
+  sound: string; // Notification sound identifier (default: 'default')
+  vibrate: boolean; // Enable vibration
+
+  // Metadata
+  createdAt: string; // ISO date string
+  notificationId?: string; // Expo notification ID for scheduled notification
+}

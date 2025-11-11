@@ -42,7 +42,7 @@ interface OnboardingFlowProps {
     partnerCity: string;
     useCase: string;
     displayMode: 'minimal' | 'cozy' | 'full';
-    coupleNames?: { myName: string; partnerName: string };
+    coupleNames?: { myName: string; partnerName: string; myEmoji?: string; partnerEmoji?: string };
   }) => void;
   isReturningUser?: boolean; // If true, skip welcome and purpose
 }
@@ -93,6 +93,23 @@ const DISPLAY_MODES = [
   },
 ];
 
+// v2.7.0: Emoji options for personalization
+const EMOJI_OPTIONS = [
+  // Animals
+  '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼',
+  '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔',
+  '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺',
+  '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞',
+  '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐',
+  '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋',
+  // Hearts & Love
+  '❤️', '💕', '💖', '💗', '💓', '💞', '💝',
+  // Stars & Celestial
+  '⭐', '🌟', '✨', '💫', '🌙', '☀️', '🌈',
+  // Flowers & Nature
+  '🌸', '🌺', '🌻', '🌷', '🌹', '🍀', '🌿',
+];
+
 /**
  * OnboardingFlow - Tutorial-style guided setup
  * v2.6.5: Complete redesign with stepped progression
@@ -122,6 +139,8 @@ export default function OnboardingFlow({ onComplete, isReturningUser = false }: 
   // Personalization
   const [myName, setMyName] = useState('');
   const [partnerName, setPartnerName] = useState('');
+  const [myEmoji, setMyEmoji] = useState('');
+  const [partnerEmoji, setPartnerEmoji] = useState('');
 
   // Debounced city search
   const debouncedSearchMy = useRef(
@@ -201,7 +220,12 @@ export default function OnboardingFlow({ onComplete, isReturningUser = false }: 
   const handleComplete = () => {
     const coupleNames =
       myName.trim() && partnerName.trim()
-        ? { myName: myName.trim(), partnerName: partnerName.trim() }
+        ? {
+            myName: myName.trim(),
+            partnerName: partnerName.trim(),
+            myEmoji: myEmoji || undefined,
+            partnerEmoji: partnerEmoji || undefined,
+          }
         : undefined;
 
     onComplete({
@@ -575,6 +599,7 @@ export default function OnboardingFlow({ onComplete, isReturningUser = false }: 
         <Text style={styles.stepSubtitle}>Optional but makes it feel more yours</Text>
 
         <View style={styles.personalizationContainer}>
+          {/* You section */}
           <View style={styles.personRow}>
             <Text style={styles.personLabel}>You</Text>
             <TextInput
@@ -585,8 +610,30 @@ export default function OnboardingFlow({ onComplete, isReturningUser = false }: 
               onChangeText={setMyName}
               autoCapitalize="words"
             />
+
+            {/* Emoji picker for you */}
+            <Text style={styles.emojiLabel}>Choose your emoji</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.emojiPicker}
+            >
+              {EMOJI_OPTIONS.map((emoji, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.emojiButton,
+                    myEmoji === emoji && styles.emojiButtonSelected
+                  ]}
+                  onPress={() => setMyEmoji(emoji)}
+                >
+                  <Text style={styles.emojiText}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
 
+          {/* Them section */}
           <View style={styles.personRow}>
             <Text style={styles.personLabel}>Them</Text>
             <TextInput
@@ -597,6 +644,27 @@ export default function OnboardingFlow({ onComplete, isReturningUser = false }: 
               onChangeText={setPartnerName}
               autoCapitalize="words"
             />
+
+            {/* Emoji picker for partner */}
+            <Text style={styles.emojiLabel}>Choose their emoji</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.emojiPicker}
+            >
+              {EMOJI_OPTIONS.map((emoji, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.emojiButton,
+                    partnerEmoji === emoji && styles.emojiButtonSelected
+                  ]}
+                  onPress={() => setPartnerEmoji(emoji)}
+                >
+                  <Text style={styles.emojiText}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </View>
 
@@ -683,11 +751,12 @@ const styles = StyleSheet.create({
   stepContainer: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 60, // Extra bottom padding for button space
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingBottom: 40,
+    paddingBottom: Platform.OS === 'ios' ? 60 : 80, // Increased to prevent button from being covered
   },
   centerContent: {
     flex: 1,
@@ -947,12 +1016,12 @@ const styles = StyleSheet.create({
 
   // Display mode selection - Premium card design
   displayModeList: {
-    gap: 18,
-    marginBottom: 32,
+    gap: 12, // Reduced from 18 to make cards more compact
+    marginBottom: 24,
   },
   displayModeCard: {
-    padding: 24,
-    borderRadius: 20,
+    padding: 16, // Reduced from 24 to make cards smaller
+    borderRadius: 16, // Slightly reduced for proportion
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -978,20 +1047,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   displayModeLabel: {
-    fontSize: 20,
+    fontSize: 18, // Reduced from 20 for more compact look
     fontWeight: '700',
     color: 'white',
   },
   displayModeDescription: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 12,
+    marginBottom: 8, // Reduced from 12
   },
   displayModeFeatures: {
-    gap: 6,
+    gap: 4, // Reduced from 6
   },
   displayModeFeature: {
-    fontSize: 13,
+    fontSize: 12, // Reduced from 13
     color: 'rgba(255, 255, 255, 0.5)',
   },
 
@@ -1019,12 +1088,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'white',
   },
+  emojiLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  emojiPicker: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  emojiButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emojiButtonSelected: {
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    borderColor: 'rgba(6, 182, 212, 0.6)',
+    borderWidth: 3,
+    shadowColor: '#06b6d4',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  emojiText: {
+    fontSize: 28,
+  },
 
   // Buttons - Premium glassmorphism design
   primaryButton: {
     borderRadius: 20,
     overflow: 'visible',
     marginTop: 'auto',
+    marginBottom: Platform.OS === 'ios' ? 20 : 30, // Ensure button has space from bottom
     // Elevated shadow for depth
     shadowColor: '#06b6d4',
     shadowOffset: { width: 0, height: 8 },
