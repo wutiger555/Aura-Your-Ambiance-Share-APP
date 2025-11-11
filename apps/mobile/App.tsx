@@ -22,9 +22,12 @@ import {
 } from '@aura/shared';
 
 // New Components
-import IntroScreen from './src/components/aura/IntroScreenRedesign';
-import CoupleSetupScreen from './src/components/aura/CoupleSetupScreen'; // v2.5.0
-import LocationInputScreen from './src/components/aura/LocationInputScreen';
+// v2.6.5: Using Lottie for premium animations without memory overhead
+import IntroScreen from './src/components/aura/IntroScreenLottie'; // Lottie - professional animations, zero memory overhead
+// import IntroScreen from './src/components/aura/IntroScreenNative'; // Native Animated API - simple fallback
+// import IntroScreen from './src/components/aura/IntroScreenStatic'; // ZERO animations fallback
+// import IntroScreen from './src/components/aura/IntroScreenAnimated'; // Reanimated (crashes on some simulators)
+import OnboardingFlow from './src/components/aura/OnboardingFlow'; // v2.6.5: Tutorial-style guided onboarding
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
 import AuraGlobeMinimal from './src/components/aura/AuraGlobeMinimal'; // v2.6.0: Minimal version
@@ -39,8 +42,10 @@ import MessageCenter from './src/components/aura/MessageCenter'; // v2.5.0
 import SettingsButton from './src/components/aura/SettingsButton'; // v2.6.0: Elegant gear button
 import { ANIMATION_DURATIONS } from './src/constants/Animations';
 import { generateWeatherReminders, generateTemperatureDifferenceReminder } from './src/utils/weatherReminders'; // v2.5.0
+import { hasLocationChanged, autoDetectCity } from './src/utils/locationService'; // v2.6.0
 
-type SetupStep = 'intro' | 'coupleSetup' | 'inputMy' | 'inputPartner' | 'connecting' | 'done';
+// v2.6.0: Simplified flow - intro → quickStart → connecting → done
+type SetupStep = 'intro' | 'quickStart' | 'connecting' | 'done';
 
 export default function App() {
   const {
@@ -85,6 +90,7 @@ export default function App() {
     showSunTimes,
     showHeartlineInfo,
     toggleSwappedPositions,
+    setAppearanceMode,
   } = useDisplaySettings();
 
   const [setupStep, setSetupStep] = useState<SetupStep>('intro');
@@ -96,13 +102,13 @@ export default function App() {
   }, [messages]);
   const [showSettings, setShowSettings] = useState(false);
   const [showTimeBridge, setShowTimeBridge] = useState(false);
-  const [cityInput, setCityInput] = useState(''); // State for the input field
-  const [cityError, setCityError] = useState('');
   const [showIntro, setShowIntro] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [isReturningUser, setIsReturningUser] = useState(false); // v2.6.5: Track if user is resetting
   const [editingStatus, setEditingStatus] = useState<'me' | 'partner' | null>(null); // v2.5.0
   const [showMilestoneEdit, setShowMilestoneEdit] = useState(false); // v2.5.0
   const [showMessages, setShowMessages] = useState(false); // v2.5.0
+  const [hasCheckedLocation, setHasCheckedLocation] = useState(false); // v2.6.0: Track if we've checked location
 
   // v2.5.0: Generate weather reminders (must be before any conditional returns)
   const weatherReminders = useMemo(() => {
@@ -131,8 +137,8 @@ export default function App() {
   useEffect(() => {
     console.log('[App] Setup check:', {
       hasSetup,
-      myCity: myLocation?.city,
-      partnerCity: partnerLocation?.city
+      myCity: myLocation?.name,
+      partnerCity: partnerLocation?.name
     });
 
     if (hasSetup && myLocation && partnerLocation) {
@@ -160,6 +166,75 @@ export default function App() {
     // Don't change setupStep if we're mid-flow (one location set)
   }, [hasSetup, myLocation, partnerLocation]);
 
+  // v2.6.0: Check if user's location has changed significantly
+  useEffect(() => {
+    const checkLocationChange = async () => {
+      // Only check once per session, and only when we're in done state with existing location
+      if (hasCheckedLocation || setupStep !== 'done' || !myLocation || !myWeather) {
+        return;
+      }
+
+      setHasCheckedLocation(true);
+
+      try {
+        const changed = await hasLocationChanged(
+          myLocation.latitude,
+          myLocation.longitude,
+          50 // 50km threshold
+        );
+
+        if (changed) {
+          // Location has changed significantly
+          Alert.alert(
+            '📍 Location Changed?',
+            `It looks like you might be in a different location now. Would you like to update your location?`,
+            [
+              {
+                text: 'No, Keep Current',
+                style: 'cancel',
+              },
+              {
+                text: 'Yes, Update',
+                onPress: async () => {
+                  try {
+                    const newLocation = await autoDetectCity();
+                    if (newLocation) {
+                      Alert.alert(
+                        'Update Location',
+                        `We detected you're now in ${newLocation.city}. Update your location?`,
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Update',
+                            onPress: () => {
+                              setMyLocation({
+                                name: newLocation.city,
+                                latitude: newLocation.latitude,
+                                longitude: newLocation.longitude,
+                              });
+                              // Refresh weather data
+                              fetchWeatherData();
+                            },
+                          },
+                        ]
+                      );
+                    }
+                  } catch (error) {
+                    console.error('[App] Failed to auto-detect new location:', error);
+                  }
+                },
+              },
+            ]
+          );
+        }
+      } catch (error) {
+        console.error('[App] Location change check failed:', error);
+      }
+    };
+
+    checkLocationChange();
+  }, [setupStep, myLocation, myWeather, hasCheckedLocation]);
+
   const fetchWeatherData = async () => {
     if (!myLocation || !partnerLocation) return;
 
@@ -186,70 +261,23 @@ export default function App() {
     }
   };
 
-  // Handle location submission for both steps
-  const handleLocationSubmit = async (step: 'my' | 'partner') => {
-    setCityError('');
-    setLoading(true);
-
-    try {
-      const location = await getCoordinatesForCity(cityInput);
-
-      if (!location) {
-        setCityError('City not found. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      if (step === 'my') {
-        setMyLocation(location);
-        setCityInput(''); // Clear input for next step
-        setTimeout(() => {
-          setSetupStep('inputPartner');
-        }, 400);
-      } else {
-        setPartnerLocation(location);
-        setTimeout(() => {
-          setSetupStep('connecting');
-          // Start fetching weather data immediately when animation starts
-          fetchWeatherData();
-          setTimeout(() => {
-            setSetupStep('done');
-          }, ANIMATION_DURATIONS.CONNECTION_INTRO + 800); // Add 800ms buffer after animation
-        }, 400);
-      }
-    } catch (error) {
-      setCityError('Failed to find city. Please try again.');
-    }
-    finally {
-      setLoading(false);
-    }
-  };
+  // v2.6.0: Location submission now handled by QuickStartScreen component
 
 
   const handleReset = () => {
-    Alert.alert(
-      'Reset Locations',
-      'Are you sure you want to reset your locations?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            // Clear locations from store (will also clear AsyncStorage)
-            clearLocations();
-            // Clear weather data
-            setMyWeather(null as any);
-            setPartnerWeather(null as any);
-            // Reset UI state
-            setSetupStep('intro');
-            setShowSettings(false);
-            setIsFirstLoad(true);
-            setCityError('');
-          },
-        },
-      ]
-    );
+    // Note: Confirmation is handled by SettingsTabbed's custom modal
+    // No need for double confirmation with Alert.alert
+
+    // Clear locations from store (will also clear AsyncStorage)
+    clearLocations();
+    // Clear weather data
+    setMyWeather(null as any);
+    setPartnerWeather(null as any);
+    // Reset UI state
+    setSetupStep('intro');
+    setShowSettings(false);
+    setIsFirstLoad(true);
+    setIsReturningUser(true); // Mark as returning user for fast reset flow
   };
 
   // Show intro animation when first loading with saved locations
@@ -257,67 +285,76 @@ export default function App() {
     return <ConnectionIntro />;
   }
 
-  // Render IntroScreen
+  // Render IntroScreen (2.5s minimal animation)
   if (setupStep === 'intro') {
     return (
       <>
         <StatusBar barStyle="light-content" />
-        <IntroScreen onStart={() => {
-          // v2.5.0: Check if coupleProfile exists, if not go to coupleSetup first
-          if (!coupleProfile) {
-            setSetupStep('coupleSetup');
-          } else {
-            setSetupStep('inputMy');
-          }
-        }} />
+        <IntroScreen onComplete={() => setSetupStep('quickStart')} />
       </>
     );
   }
 
-  // v2.5.0: Render CoupleSetupScreen
-  if (setupStep === 'coupleSetup') {
+  // v2.6.5: Render OnboardingFlow (tutorial-style guided setup)
+  if (setupStep === 'quickStart') {
     return (
       <>
         <StatusBar barStyle="light-content" />
-        <CoupleSetupScreen
-          onComplete={(profile) => {
-            setCoupleProfile(profile);
-            setSetupStep('inputMy');
+        <OnboardingFlow
+          isReturningUser={isReturningUser}
+          onComplete={async (data) => {
+            setLoading(true);
+
+            try {
+              // Geocode both cities
+              const [myLoc, partnerLoc] = await Promise.all([
+                getCoordinatesForCity(data.myCity),
+                getCoordinatesForCity(data.partnerCity),
+              ]);
+
+              if (!myLoc || !partnerLoc) {
+                Alert.alert('Error', 'Failed to find one or both cities. Please try again.');
+                setLoading(false);
+                return;
+              }
+
+              // Set locations
+              setMyLocation(myLoc);
+              setPartnerLocation(partnerLoc);
+
+              // Set couple names if provided
+              if (data.coupleNames) {
+                setCoupleProfile({
+                  myName: data.coupleNames.myName,
+                  partnerName: data.coupleNames.partnerName,
+                });
+              }
+
+              // Apply display mode preference
+              // Map onboarding modes to display settings modes
+              const displayModeMap = {
+                minimal: 'minimal' as const,
+                cozy: 'balanced' as const,
+                full: 'detailed' as const,
+              };
+              setAppearanceMode(displayModeMap[data.displayMode]);
+
+              // Proceed to connecting animation
+              setSetupStep('connecting');
+
+              // Fetch weather during animation
+              fetchWeatherData();
+
+              // After short animation, go to done
+              setTimeout(() => {
+                setSetupStep('done');
+                setIsReturningUser(false); // Reset the flag
+              }, ANIMATION_DURATIONS.CONNECTION_INTRO);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to set up locations. Please try again.');
+              setLoading(false);
+            }
           }}
-        />
-      </>
-    );
-  }
-
-  // Render LocationInputScreen for user's city
-  if (setupStep === 'inputMy') {
-    return (
-      <>
-        <StatusBar barStyle="light-content" />
-        <LocationInputScreen
-          step="my"
-          onSubmit={() => handleLocationSubmit('my')}
-          isLoading={isLoading}
-          error={cityError}
-          city={cityInput}
-          onCityChange={setCityInput}
-        />
-      </>
-    );
-  }
-
-  // Render LocationInputScreen for partner's city
-  if (setupStep === 'inputPartner') {
-    return (
-      <>
-        <StatusBar barStyle="light-content" />
-        <LocationInputScreen
-          step="partner"
-          onSubmit={() => handleLocationSubmit('partner')}
-          isLoading={isLoading}
-          error={cityError}
-          city={cityInput}
-          onCityChange={setCityInput}
         />
       </>
     );
@@ -387,9 +424,10 @@ export default function App() {
         <StatusBar barStyle="light-content" />
 
       {/* Blended Sky Background with Celestial Bodies and Particles */}
+      {/* v2.6.6: Now respects swap state */}
       <BlendedSky
-        myWeather={myWeather!}
-        partnerWeather={partnerWeather!}
+        topWeather={topWeather!}
+        bottomWeather={bottomWeather!}
         distance={distance}
       />
 

@@ -1,47 +1,25 @@
-import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { Svg, Circle, Defs, LinearGradient, Stop, G } from 'react-native-svg';
-import { ANIMATION_DURATIONS } from '../../constants/Animations';
 
 interface AuraLogoProps {
   size?: number;
-  animate?: boolean;
 }
 
-const AuraLogo: React.FC<AuraLogoProps> = ({ size = 120, animate = true }) => {
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.8);
-
-  useEffect(() => {
-    if (animate) {
-      logoOpacity.value = withTiming(1, {
-        duration: ANIMATION_DURATIONS.FADE_IN,
-        easing: Easing.out(Easing.ease),
-      });
-
-      logoScale.value = withTiming(1, {
-        duration: ANIMATION_DURATIONS.DRAW_RING,
-        easing: Easing.out(Easing.back(1.5)),
-      });
-    } else {
-      logoOpacity.value = 1;
-      logoScale.value = 1;
-    }
-  }, [animate]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
-  }));
-
+/**
+ * AuraLogo - Pure static SVG component (v2.6.5)
+ *
+ * MEMORY OPTIMIZATION:
+ * - NO shared values
+ * - NO animations
+ * - NO Reanimated dependencies
+ * - Parent components handle all animations
+ *
+ * This ensures zero memory overhead from animations.
+ */
+const AuraLogo: React.FC<AuraLogoProps> = ({ size = 120 }) => {
   return (
-    <Animated.View style={[styles.container, { width: size, height: size }, animatedStyle]}>
+    <View style={[styles.container, { width: size, height: size }]}>
       <Svg width={size} height={size} viewBox="0 0 100 100">
         <Defs>
           <LinearGradient id="auraGradient" x1="0%" y1="100%" x2="0%" y2="0%">
@@ -58,7 +36,7 @@ const AuraLogo: React.FC<AuraLogoProps> = ({ size = 120, animate = true }) => {
         <Circle cx="50" cy="50" r="45" fill="url(#auraGradient)" />
         <Circle cx="50" cy="50" r="5" fill="#fefce8" />
       </Svg>
-    </Animated.View>
+    </View>
   );
 };
 

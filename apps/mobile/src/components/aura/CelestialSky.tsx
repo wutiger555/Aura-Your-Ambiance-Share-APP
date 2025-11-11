@@ -84,14 +84,43 @@ const CelestialSky: React.FC<CelestialSkyProps> = ({ weather, isTop }) => {
             },
           ]}
         >
-          <View
-            style={[
-              styles.celestialGlow,
-              {
-                backgroundColor: celestialData.color,
-              },
-            ]}
-          />
+          {/* Enhanced glow rings for more prominence */}
+          {celestialData.isDay ? (
+            <>
+              {/* Sun - Multiple glow layers */}
+              <View style={[styles.celestialOuterGlow, { backgroundColor: 'rgba(255, 215, 0, 0.2)' }]} />
+              <View style={[styles.celestialMiddleGlow, { backgroundColor: 'rgba(255, 215, 0, 0.3)' }]} />
+              <View
+                style={[
+                  styles.celestialGlow,
+                  {
+                    backgroundColor: celestialData.color,
+                    shadowColor: '#FFD700',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.9,
+                    shadowRadius: 40,
+                  },
+                ]}
+              />
+            </>
+          ) : (
+            <>
+              {/* Moon - Softer glow */}
+              <View style={[styles.celestialOuterGlow, { backgroundColor: 'rgba(224, 224, 224, 0.15)' }]} />
+              <View
+                style={[
+                  styles.celestialGlow,
+                  {
+                    backgroundColor: celestialData.color,
+                    shadowColor: '#E0E0E0',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.7,
+                    shadowRadius: 25,
+                  },
+                ]}
+              />
+            </>
+          )}
         </View>
       </Animated.View>
     </View>
@@ -140,6 +169,23 @@ const styles = StyleSheet.create({
     width: CELESTIAL_CONFIG.GLOW_RADIUS,
     height: CELESTIAL_CONFIG.GLOW_RADIUS,
     borderRadius: CELESTIAL_CONFIG.GLOW_RADIUS / 2,
+    position: 'absolute',
+  },
+  celestialOuterGlow: {
+    width: CELESTIAL_CONFIG.GLOW_RADIUS * 2.5,
+    height: CELESTIAL_CONFIG.GLOW_RADIUS * 2.5,
+    borderRadius: CELESTIAL_CONFIG.GLOW_RADIUS * 1.25,
+    position: 'absolute',
+    left: -(CELESTIAL_CONFIG.GLOW_RADIUS * 0.75),
+    top: -(CELESTIAL_CONFIG.GLOW_RADIUS * 0.75),
+  },
+  celestialMiddleGlow: {
+    width: CELESTIAL_CONFIG.GLOW_RADIUS * 1.8,
+    height: CELESTIAL_CONFIG.GLOW_RADIUS * 1.8,
+    borderRadius: CELESTIAL_CONFIG.GLOW_RADIUS * 0.9,
+    position: 'absolute',
+    left: -(CELESTIAL_CONFIG.GLOW_RADIUS * 0.4),
+    top: -(CELESTIAL_CONFIG.GLOW_RADIUS * 0.4),
   },
 });
 

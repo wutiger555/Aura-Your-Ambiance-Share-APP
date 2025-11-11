@@ -2,7 +2,7 @@
   "expo": {
     "name": "Aura",
     "slug": "aura-ambiance-share",
-    "version": "2.5.0",
+    "version": "2.6.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,7 +17,11 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aura.ambianceshare"
+      "bundleIdentifier": "com.aura.ambianceshare",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Aura needs your location to create a shared atmosphere with your loved one.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Aura uses your location to blend skies and connect your worlds."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +30,11 @@
       },
       "package": "com.aura.ambianceshare",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",

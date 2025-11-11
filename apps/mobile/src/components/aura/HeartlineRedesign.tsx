@@ -172,6 +172,16 @@ const HeartlineRedesign: React.FC<HeartlineRedesignProps> = ({
     return 10; // Very far
   }, [distance]);
 
+  // Curve control points for energy effects
+  const curvePoints = {
+    startX: SCREEN_WIDTH / 2,
+    startY: SCREEN_HEIGHT * 0.85,
+    controlX: SCREEN_WIDTH * 0.8,
+    controlY: SCREEN_HEIGHT / 2,
+    endX: SCREEN_WIDTH / 2,
+    endY: SCREEN_HEIGHT * 0.15,
+  };
+
   return (
     <View style={styles.container} pointerEvents="box-none">
       {/* Flowing particles along the curve */}

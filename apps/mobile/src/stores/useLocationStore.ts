@@ -9,6 +9,7 @@ interface LocationStore {
   coupleProfile: CoupleProfile | null; // v2.5.0: Couple personalization
   mySchedule: DailySchedule | null; // v2.4.0: Daily rhythm tracking
   partnerSchedule: DailySchedule | null; // v2.4.0: Daily rhythm tracking
+  timeFormat: '24h' | '12h'; // v2.6.6: Time format preference
   hasSetup: boolean;
   setMyLocation: (location: LocationData) => void;
   setPartnerLocation: (location: LocationData) => void;
@@ -21,6 +22,7 @@ interface LocationStore {
   }) => void;
   updateNicknames: (myNickname: string, partnerNickname: string) => void;
   setSchedules: (mySchedule: DailySchedule, partnerSchedule: DailySchedule) => void; // v2.4.0
+  setTimeFormat: (format: '24h' | '12h') => void; // v2.6.6
   clearLocations: () => void;
 }
 
@@ -32,6 +34,7 @@ export const useLocationStore = create<LocationStore>()(
       coupleProfile: null, // v2.5.0
       mySchedule: null, // v2.4.0
       partnerSchedule: null, // v2.4.0
+      timeFormat: '24h', // v2.6.6: Default to 24-hour format
       hasSetup: false,
       setMyLocation: (location) => {
         console.log('[LocationStore] Setting myLocation:', location.name);
@@ -93,6 +96,11 @@ export const useLocationStore = create<LocationStore>()(
       setSchedules: (mySchedule, partnerSchedule) => {
         console.log('[LocationStore] Setting schedules');
         set({ mySchedule, partnerSchedule });
+      },
+      // v2.6.6: Set time format preference
+      setTimeFormat: (format) => {
+        console.log('[LocationStore] Setting timeFormat:', format);
+        set({ timeFormat: format });
       },
       clearLocations: () => set({
         myLocation: null,

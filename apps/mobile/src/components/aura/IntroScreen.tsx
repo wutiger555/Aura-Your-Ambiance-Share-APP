@@ -227,7 +227,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onStart }) => {
       <View style={styles.content}>
         {/* Logo with entrance animation */}
         <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
-          <AuraLogo size={140} animate={false} />
+          <AuraLogo size={140} />
         </Animated.View>
 
         {/* Title - appears with upward drift */}
