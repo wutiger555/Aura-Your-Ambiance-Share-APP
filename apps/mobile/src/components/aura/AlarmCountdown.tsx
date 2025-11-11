@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useAlarmStore } from '../../stores/useAlarmStore';
 import { useLocationStore } from '../../stores/useLocationStore';
 import { useWeatherStore } from '../../stores/useWeatherStore';
 import { getNextAlarmTriggerTime, formatAlarmTime } from '../../utils/alarmUtils';
 import { Bell } from 'lucide-react-native';
+import AlarmCountdownPopup from './AlarmCountdownPopup';
 
 interface AlarmCountdownProps {
   // Optional: control visibility based on display settings
@@ -13,13 +21,13 @@ interface AlarmCountdownProps {
 }
 
 /**
- * AlarmCountdown - Subtle countdown indicator for upcoming alarms
- * v2.7.0: Shows time remaining until next alarm (only if within 24 hours)
+ * AlarmCountdown - Minimal alarm indicator with expandable popup
+ * v2.7.0: Redesigned for minimal footprint
  *
- * Design principles:
- * - Minimal and non-intrusive
- * - Glass-morphism design matching Aura aesthetic
- * - Auto-updates every minute
+ * Design improvements:
+ * - Small circular icon (40x40) with bell and time badge
+ * - Breathing pulse animation for visual appeal
+ * - Tap to expand full details in popup modal
  * - Only shows when alarm is within 24 hours
  */
 const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
@@ -31,9 +39,29 @@ const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
     label: string;
     time: Date;
     timeString: string;
+    timeZoneReference?: 'my' | 'partner';
   } | null>(null);
 
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [showPopup, setShowPopup] = useState(false);
+
+  // Breathing pulse animation
+  const pulseScale = useSharedValue(1);
+
+  useEffect(() => {
+    pulseScale.value = withRepeat(
+      withTiming(1.08, {
+        duration: 2000,
+        easing: Easing.inOut(Easing.sin),
+      }),
+      -1,
+      true
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
 
   // Calculate next alarm
   useEffect(() => {
@@ -72,6 +100,7 @@ const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
                 label: alarm.label || 'Alarm',
                 time: triggerTime,
                 timeString: formatAlarmTime(triggerTime.getHours(), triggerTime.getMinutes(), true),
+                timeZoneReference: alarm.timeZoneReference,
               };
             }
           }
@@ -123,70 +152,107 @@ const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
     return () => clearInterval(interval);
   }, [nextAlarm]);
 
+  // Get compact time format for badge (e.g., "2h" or "45m")
+  const getCompactTime = () => {
+    if (!nextAlarm || !timeRemaining) return '';
+
+    const now = new Date();
+    const diffMs = nextAlarm.time.getTime() - now.getTime();
+
+    if (diffMs <= 0) return 'now';
+
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 0) {
+      return `${hours}h`;
+    } else if (minutes > 30) {
+      return `${minutes}m`;
+    } else {
+      return `${minutes}m`;
+    }
+  };
+
   // Don't render if no alarm or not visible
   if (!visible || !nextAlarm || !timeRemaining) {
     return null;
   }
 
   return (
-    <View style={styles.container}>
-      <BlurView intensity={25} tint="dark" style={styles.blurContainer}>
-        <View style={styles.content}>
-          {/* Bell icon */}
-          <Bell size={14} color="#06b6d4" strokeWidth={2} />
+    <>
+      <Animated.View style={[styles.container, animatedStyle]}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setShowPopup(true)}
+          activeOpacity={0.85}
+        >
+          <BlurView intensity={60} tint="dark" style={styles.blurContainer}>
+            {/* Bell icon */}
+            <Bell size={18} color="#06b6d4" strokeWidth={2.5} />
 
-          {/* Time remaining */}
-          <Text style={styles.timeText}>{timeRemaining}</Text>
+            {/* Time badge */}
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{getCompactTime()}</Text>
+            </View>
+          </BlurView>
+        </TouchableOpacity>
+      </Animated.View>
 
-          {/* Alarm time */}
-          <Text style={styles.separator}>•</Text>
-          <Text style={styles.alarmTimeText}>{nextAlarm.timeString}</Text>
-        </View>
-      </BlurView>
-    </View>
+      {/* Expandable popup with full details */}
+      <AlarmCountdownPopup
+        visible={showPopup}
+        onClose={() => setShowPopup(false)}
+        nextAlarm={nextAlarm}
+        timeRemaining={timeRemaining}
+      />
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 60, // Below status bar
+    top: 70, // Aligned with adjusted AuraGlobeMinimal top position
     right: 20,
-    zIndex: 50, // Above most elements, below modals
+    zIndex: 50,
+  },
+  button: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
   },
   blurContainer: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.3)',
+    flex: 1,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
     // Subtle glow
     shadowColor: '#06b6d4',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
     shadowRadius: 8,
   },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 6,
+  badge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: '#06b6d4',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: 'rgba(10, 1, 24, 0.9)',
+    minWidth: 20,
   },
-  timeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#06b6d4',
-    letterSpacing: 0.3,
-  },
-  separator: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.3)',
-  },
-  alarmTimeText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.7)',
-    letterSpacing: 0.3,
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: 'white',
+    textAlign: 'center',
+    letterSpacing: 0.2,
   },
 });
 

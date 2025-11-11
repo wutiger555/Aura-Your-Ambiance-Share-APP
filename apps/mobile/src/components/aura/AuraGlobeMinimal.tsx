@@ -138,10 +138,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   top: {
-    top: 60,
+    top: 70,
   },
   bottom: {
-    bottom: 60,
+    bottom: 100,
   },
   content: {
     alignItems: 'center',

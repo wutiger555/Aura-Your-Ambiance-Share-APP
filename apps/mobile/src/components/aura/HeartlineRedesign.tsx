@@ -219,54 +219,56 @@ const HeartlineRedesign: React.FC<HeartlineRedesignProps> = ({
         />
       </Svg>
 
-      {/* Center content */}
+      {/* Center content - simplified for better centering */}
       <View style={styles.centerContent}>
-        {/* Elegant swap button */}
-        <Animated.View style={animatedButtonStyle}>
-          <TouchableOpacity
-            style={styles.swapButton}
-            onPress={handleSwap}
-            activeOpacity={0.85}
-          >
-            <BlurView intensity={70} tint="dark" style={styles.swapButtonBlur}>
-              <View style={styles.swapButtonInner}>
-                <ArrowUpDown size={20} color="rgba(255, 255, 255, 0.9)" strokeWidth={2.5} />
-              </View>
-            </BlurView>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Distance/Time info (controlled by DisplaySettings) */}
-        {showInfo && distance !== null && timeDifference !== null && (
-          <TouchableOpacity
-            style={styles.infoButton}
-            onPress={onShowDetails}
-            activeOpacity={0.8}
-          >
-            <BlurView intensity={50} tint="dark" style={styles.infoButtonBlur}>
-              <View style={styles.infoContent}>
-                <View style={styles.stat}>
-                  <Globe size={14} color="rgba(255, 255, 255, 0.8)" />
-                  <Text style={styles.statText}>
-                    {Math.round(distance).toLocaleString()} km
-                  </Text>
+        <View style={styles.centerRow}>
+          {/* Elegant swap button */}
+          <Animated.View style={animatedButtonStyle}>
+            <TouchableOpacity
+              style={styles.swapButton}
+              onPress={handleSwap}
+              activeOpacity={0.85}
+            >
+              <BlurView intensity={70} tint="dark" style={styles.swapButtonBlur}>
+                <View style={styles.swapButtonInner}>
+                  <ArrowUpDown size={20} color="rgba(255, 255, 255, 0.9)" strokeWidth={2.5} />
                 </View>
+              </BlurView>
+            </TouchableOpacity>
+          </Animated.View>
 
-                <View style={styles.divider} />
+          {/* Distance/Time info - moved next to swap button for better balance */}
+          {showInfo && distance !== null && timeDifference !== null && (
+            <TouchableOpacity
+              style={styles.infoButton}
+              onPress={onShowDetails}
+              activeOpacity={0.8}
+            >
+              <BlurView intensity={50} tint="dark" style={styles.infoButtonBlur}>
+                <View style={styles.infoContent}>
+                  <View style={styles.stat}>
+                    <Globe size={14} color="rgba(255, 255, 255, 0.8)" />
+                    <Text style={styles.statText}>
+                      {Math.round(distance).toLocaleString()} km
+                    </Text>
+                  </View>
 
-                <View style={styles.stat}>
-                  <Clock size={14} color="rgba(255, 255, 255, 0.8)" />
-                  <Text style={styles.statText}>
-                    {timeDifference >= 0 ? '+' : ''}
-                    {timeDifference}h
-                  </Text>
+                  <View style={styles.divider} />
+
+                  <View style={styles.stat}>
+                    <Clock size={14} color="rgba(255, 255, 255, 0.8)" />
+                    <Text style={styles.statText}>
+                      {timeDifference >= 0 ? '+' : ''}
+                      {timeDifference}h
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </BlurView>
-          </TouchableOpacity>
-        )}
+              </BlurView>
+            </TouchableOpacity>
+          )}
+        </View>
 
-        {/* DST warning/info (always show if present) */}
+        {/* DST warning/info - kept below but less intrusive */}
         {dstStatus && (
           <Text style={[styles.dstText, dstStatus.isWarning && styles.dstWarning]}>
             {dstStatus.text}
@@ -290,6 +292,11 @@ const styles = StyleSheet.create({
     left: 0,
   },
   centerContent: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  centerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
@@ -316,7 +323,6 @@ const styles = StyleSheet.create({
   infoButton: {
     borderRadius: 20,
     overflow: 'hidden',
-    marginTop: 4,
   },
   infoButtonBlur: {
     borderRadius: 20,
