@@ -59,6 +59,7 @@ export interface DailySchedule {
 }
 
 // v2.7.0: Multi-timezone alarm system
+// v2.8.0: AlarmKit integration for iOS 26+
 export interface Alarm {
   id: string; // Unique identifier (UUID)
   label: string; // e.g., "Wake up Alex ❤️"
@@ -81,5 +82,18 @@ export interface Alarm {
 
   // Metadata
   createdAt: string; // ISO date string
-  notificationId?: string; // Expo notification ID for scheduled notification
+
+  // v2.8.0: AlarmKit integration (iOS 26+)
+  alarmKitID?: string; // AlarmKit alarm ID (UUID string) - system-level alarm
+
+  // Legacy fallback (iOS < 26, Android)
+  notificationId?: string; // Expo notification ID for notification-based alarm
+}
+
+// v2.8.0: AlarmKit capabilities
+export interface AlarmKitCapabilities {
+  isAvailable: boolean; // iOS 26+ only
+  authorizationStatus: 'notDetermined' | 'authorized' | 'denied' | 'unavailable';
+  supportsLiveActivities: boolean; // Live Activities for countdown timers
+  supportsDynamicIsland: boolean; // Dynamic Island support (iPhone 14 Pro+)
 }

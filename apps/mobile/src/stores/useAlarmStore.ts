@@ -1,10 +1,15 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alarm } from '@aura/shared';
+import { Alarm, AlarmKitCapabilities } from '@aura/shared';
 
 interface AlarmStore {
   alarms: Alarm[];
+
+  // v2.8.0: AlarmKit capabilities tracking
+  alarmKitCapabilities: AlarmKitCapabilities | null;
+
+  // Alarm management
   addAlarm: (alarm: Alarm) => void;
   updateAlarm: (id: string, updates: Partial<Alarm>) => void;
   deleteAlarm: (id: string) => void;
@@ -12,12 +17,22 @@ interface AlarmStore {
   getAlarm: (id: string) => Alarm | undefined;
   getAllAlarms: () => Alarm[];
   getEnabledAlarms: () => Alarm[];
+
+  // v2.8.0: AlarmKit capabilities management
+  setAlarmKitCapabilities: (capabilities: AlarmKitCapabilities) => void;
+
+  // v2.8.0: Migration helpers
+  getAlarmsUsingNotifications: () => Alarm[];
+  getAlarmsUsingAlarmKit: () => Alarm[];
 }
 
 export const useAlarmStore = create<AlarmStore>()(
   persist(
     (set, get) => ({
       alarms: [],
+      alarmKitCapabilities: null, // v2.8.0
+
+      // Alarm management
       addAlarm: (alarm) => {
         console.log('[AlarmStore] Adding alarm:', alarm.label);
         set((state) => ({
@@ -54,6 +69,20 @@ export const useAlarmStore = create<AlarmStore>()(
       },
       getEnabledAlarms: () => {
         return get().alarms.filter((alarm) => alarm.enabled);
+      },
+
+      // v2.8.0: AlarmKit capabilities management
+      setAlarmKitCapabilities: (capabilities) => {
+        console.log('[AlarmStore] Setting AlarmKit capabilities:', capabilities);
+        set({ alarmKitCapabilities: capabilities });
+      },
+
+      // v2.8.0: Migration helpers
+      getAlarmsUsingNotifications: () => {
+        return get().alarms.filter((alarm) => alarm.notificationId && !alarm.alarmKitID);
+      },
+      getAlarmsUsingAlarmKit: () => {
+        return get().alarms.filter((alarm) => alarm.alarmKitID);
       },
     }),
     {
