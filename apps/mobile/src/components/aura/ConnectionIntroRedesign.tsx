@@ -8,7 +8,6 @@ import Animated, {
   withDelay,
   withSequence,
   withRepeat,
-  withSpring,
   Easing,
   interpolate,
   cancelAnimation,
@@ -27,6 +26,7 @@ import { generateStars } from '../../utils/animationUtils';
 import { STARRY_CONFIG, MARKER_CONFIG, ANIMATION_DURATIONS } from '../../constants/Animations';
 import { useLocationStore } from '../../stores/useLocationStore';
 import MinimalistWorldMap from './MinimalistWorldMap';
+import AuraLogo from './AuraLogo';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -35,20 +35,22 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedG = Animated.createAnimatedComponent(G);
 
 /**
- * ConnectionIntroRedesign - Enhanced journey bridging Intro Screen to Main Screen
+ * ConnectionIntroRedesign - Logo-centric bridging journey
+ * v2.7.0: Redesigned with Aura Logo as the unifying element
  *
  * Design Philosophy:
- * - Continues the "two globes" narrative from IntroScreen
- * - Transforms abstract globes into real-world map locations
- * - Introduces breathing connection (preview of Heartline)
- * - Transitions through day/night cycle based on actual weather
+ * - Logo emerges as the connecting force between two locations
+ * - Energy flows FROM the logo TO the locations (top-down energy)
+ * - Seamless transition from abstract globes to real-world map
+ * - Logo breathing symbolizes the living connection
  *
  * Story Arc (10 seconds):
- * Act 1 (0-2s):   Two globes pulse in, same as Intro Screen
- * Act 2 (2-4s):   Globe colors shift to match current weather/time
- * Act 3 (4-6s):   World map emerges behind globes, cities marked
- * Act 4 (6-8s):   Heartline forms between them with breathing pulse
- * Act 5 (8-10s):  Everything fades into blended sky gradient
+ * Act 1 (0-2s):   Two globes fly in from sides (continuity from city input)
+ * Act 2 (2-3.5s): Aura Logo materializes at screen center with glow
+ * Act 3 (3.5-5s): Energy beams shoot from Logo to both globes
+ * Act 4 (5-6.5s): World map emerges, globes transform into city markers
+ * Act 5 (6.5-8s): Energy beams merge into breathing Heartline
+ * Act 6 (8-10s):  Everything fades to main screen gradient
  */
 
 const ConnectionIntroRedesign: React.FC = () => {
@@ -59,15 +61,19 @@ const ConnectionIntroRedesign: React.FC = () => {
 
   // Generate stars
   const stars = useMemo(
-    () => generateStars(STARRY_CONFIG.STAR_COUNT * 0.8, SCREEN_WIDTH, SCREEN_HEIGHT),
+    () => generateStars(STARRY_CONFIG.STAR_COUNT * 0.6, SCREEN_WIDTH, SCREEN_HEIGHT),
     []
   );
 
-  // Globe positions
-  const leftGlobeX = SCREEN_WIDTH * 0.25;
-  const leftGlobeY = SCREEN_HEIGHT * 0.35;
-  const rightGlobeX = SCREEN_WIDTH * 0.75;
-  const rightGlobeY = SCREEN_HEIGHT * 0.65;
+  // Globe positions (more spread out for dramatic effect)
+  const leftGlobeX = SCREEN_WIDTH * 0.15;
+  const leftGlobeY = SCREEN_HEIGHT * 0.40;
+  const rightGlobeX = SCREEN_WIDTH * 0.85;
+  const rightGlobeY = SCREEN_HEIGHT * 0.60;
+
+  // Logo position (center)
+  const logoX = SCREEN_WIDTH / 2;
+  const logoY = SCREEN_HEIGHT / 2;
 
   // Map coordinates
   const latLongToMapCoords = (lat: number, lon: number) => {
@@ -85,125 +91,155 @@ const ConnectionIntroRedesign: React.FC = () => {
     : { x: 260, y: 120 };
 
   useEffect(() => {
-    // Journey duration matches ANIMATION_DURATIONS.CONNECTION_INTRO
-    // Using bezier easing for smoother, more premium feel
     masterProgress.value = withTiming(1, {
       duration: ANIMATION_DURATIONS.CONNECTION_INTRO,
-      easing: Easing.bezier(0.4, 0.0, 0.2, 1), // Material Design standard easing
+      easing: Easing.bezier(0.4, 0.0, 0.2, 1),
     });
 
-    // Cleanup animations on unmount
     return () => {
       cancelAnimation(masterProgress);
     };
   }, []);
 
-  // Act 1: Globes appear (0-0.2) - Enhanced with elastic entrance
+  // Act 1: Globes fly in (0-0.2)
   const leftGlobeStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const appearProgress = interpolate(progress, [0, 0.2], [0, 1], 'clamp');
 
-    // Fade out at very end - quick transition
-    const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
+    // Fade out when map appears
+    const fadeOut = interpolate(progress, [0.5, 0.65], [1, 0], 'clamp');
 
     const opacity = appearProgress * fadeOut;
-    // Elastic scale for more dynamic entrance (overshoots slightly)
-    const rawScale = interpolate(appearProgress, [0, 0.6, 1], [0.3, 1.15, 1], 'clamp');
-    const scale = rawScale;
-
-    // Subtle rotation for more life
-    const rotate = interpolate(appearProgress, [0, 1], [-5, 0], 'clamp');
+    const translateX = interpolate(appearProgress, [0, 1], [-100, 0], 'clamp');
+    const scale = interpolate(appearProgress, [0, 0.6, 1], [0.5, 1.1, 1], 'clamp');
 
     return {
       opacity,
-      transform: [{ scale }, { rotate: `${rotate}deg` }],
+      transform: [{ translateX }, { scale }],
     };
   });
 
   const rightGlobeStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const appearProgress = interpolate(progress, [0.05, 0.25], [0, 1], 'clamp');
-    const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
+    const fadeOut = interpolate(progress, [0.5, 0.65], [1, 0], 'clamp');
 
     const opacity = appearProgress * fadeOut;
-    // Elastic scale with different timing for visual interest
-    const rawScale = interpolate(appearProgress, [0, 0.6, 1], [0.3, 1.15, 1], 'clamp');
-    const scale = rawScale;
-
-    // Opposite rotation for balance
-    const rotate = interpolate(appearProgress, [0, 1], [5, 0], 'clamp');
+    const translateX = interpolate(appearProgress, [0, 1], [100, 0], 'clamp');
+    const scale = interpolate(appearProgress, [0, 0.6, 1], [0.5, 1.1, 1], 'clamp');
 
     return {
       opacity,
-      transform: [{ scale }, { rotate: `${rotate}deg` }],
+      transform: [{ translateX }, { scale }],
     };
   });
 
-  // Globe breathing pulse (starts after appearance) - Enhanced breathing
-  const globePulse = useSharedValue(0);
+  // Act 2: Aura Logo appears (0.2-0.35)
+  const logoStyle = useAnimatedStyle(() => {
+    const progress = masterProgress.value;
+    const logoProgress = interpolate(progress, [0.2, 0.35], [0, 1], 'clamp');
+    const fadeOut = interpolate(progress, [0.8, 1], [1, 0], 'clamp');
+
+    const opacity = logoProgress * fadeOut;
+    const scale = interpolate(logoProgress, [0, 0.7, 1], [0.3, 1.15, 1], 'clamp');
+
+    return {
+      opacity,
+      transform: [{ scale }],
+    };
+  });
+
+  // Logo glow (breathing after appearance)
+  const logoGlowScale = useSharedValue(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      globePulse.value = withRepeat(
+      logoGlowScale.value = withRepeat(
         withSequence(
-          withTiming(1, { duration: 1800, easing: Easing.bezier(0.37, 0, 0.63, 1) }),
-          withTiming(0, { duration: 1800, easing: Easing.bezier(0.37, 0, 0.63, 1) })
+          withTiming(1.15, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+          withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.sin) })
         ),
         -1,
         false
       );
-    }, 2000);
+    }, 3500);
 
     return () => {
       clearTimeout(timer);
-      cancelAnimation(globePulse);
+      cancelAnimation(logoGlowScale);
     };
   }, []);
 
-  const globePulseStyle = useAnimatedStyle(() => {
-    // More subtle, organic breathing
-    const pulseScale = interpolate(
-      globePulse.value,
-      [0, 0.5, 1],
-      [0, 0.12, 0], // Slightly larger pulse for more visible effect
-      'clamp'
-    );
-    const pulseOpacity = interpolate(
-      globePulse.value,
-      [0, 0.5, 1],
-      [0.4, 0.8, 0.4],
-      'clamp'
-    );
+  const logoGlowStyle = useAnimatedStyle(() => {
+    const progress = masterProgress.value;
+    const glowProgress = interpolate(progress, [0.2, 0.35], [0, 1], 'clamp');
+    const fadeOut = interpolate(progress, [0.8, 1], [1, 0], 'clamp');
 
     return {
-      transform: [{ scale: 1 + pulseScale }],
-      opacity: pulseOpacity,
+      opacity: glowProgress * fadeOut * 0.6,
+      transform: [{ scale: logoGlowScale.value }],
     };
   });
 
-  // Act 3: World map emerges (0.4-0.6) - Enhanced with smooth zoom
+  // Act 3: Energy beams from Logo to globes (0.35-0.5)
+  const energyBeamProgress = useSharedValue(0);
+
+  useEffect(() => {
+    energyBeamProgress.value = withDelay(
+      3500,
+      withTiming(1, {
+        duration: 1500,
+        easing: Easing.bezier(0.65, 0, 0.35, 1),
+      })
+    );
+
+    return () => {
+      cancelAnimation(energyBeamProgress);
+    };
+  }, []);
+
+  const energyBeamStyle = useAnimatedStyle(() => {
+    const progress = masterProgress.value;
+    const beamProgress = interpolate(progress, [0.35, 0.5], [0, 1], 'clamp');
+    const fadeOut = interpolate(progress, [0.65, 0.8], [1, 0], 'clamp');
+
+    return {
+      opacity: beamProgress * fadeOut,
+    };
+  });
+
+  // Energy beam paths
+  const leftBeamPath = `M ${logoX} ${logoY} L ${leftGlobeX} ${leftGlobeY}`;
+  const rightBeamPath = `M ${logoX} ${logoY} L ${rightGlobeX} ${rightGlobeY}`;
+  const beamLength = Math.sqrt(
+    Math.pow(leftGlobeX - logoX, 2) + Math.pow(leftGlobeY - logoY, 2)
+  );
+
+  const energyBeamPathProps = useAnimatedProps(() => {
+    const progress = energyBeamProgress.value;
+    return {
+      strokeDashoffset: beamLength * (1 - progress),
+    };
+  });
+
+  // Act 4: World map emerges, globes transform (0.5-0.65)
   const worldMapStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
-    const mapProgress = interpolate(progress, [0.4, 0.6], [0, 1], 'clamp');
+    const mapProgress = interpolate(progress, [0.5, 0.65], [0, 1], 'clamp');
     const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
-    const opacity = mapProgress * 0.6 * fadeOut;
-    // Smoother scale transition with slight overshoot
-    const scale = interpolate(mapProgress, [0, 0.7, 1], [0.7, 1.05, 1], 'clamp');
-
-    // Subtle rotation for more dynamic entrance
-    const rotate = interpolate(mapProgress, [0, 1], [2, 0], 'clamp');
+    const opacity = mapProgress * 0.5 * fadeOut;
+    const scale = interpolate(mapProgress, [0, 0.7, 1], [0.8, 1.05, 1], 'clamp');
 
     return {
       opacity,
-      transform: [{ scale }, { rotate: `${rotate}deg` }],
+      transform: [{ scale }],
     };
   });
 
-  // Act 3: City markers (0.5-0.65)
   const cityMarkersProps = useAnimatedProps(() => {
     const progress = masterProgress.value;
-    const markerProgress = interpolate(progress, [0.5, 0.65], [0, 1], 'clamp');
+    const markerProgress = interpolate(progress, [0.55, 0.7], [0, 1], 'clamp');
     const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     return {
@@ -211,15 +247,15 @@ const ConnectionIntroRedesign: React.FC = () => {
     };
   });
 
-  // Act 4: Heartline formation (0.6-0.8) - Smoother drawing animation
+  // Act 5: Heartline forms (0.65-0.8)
   const heartlineProgress = useSharedValue(0);
 
   useEffect(() => {
     heartlineProgress.value = withDelay(
-      6000,
+      6500,
       withTiming(1, {
-        duration: 2000,
-        easing: Easing.bezier(0.65, 0, 0.35, 1), // Custom bezier for smooth drawing
+        duration: 1500,
+        easing: Easing.bezier(0.65, 0, 0.35, 1),
       })
     );
 
@@ -230,7 +266,7 @@ const ConnectionIntroRedesign: React.FC = () => {
 
   const heartlineStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
-    const lineProgress = interpolate(progress, [0.6, 0.8], [0, 1], 'clamp');
+    const lineProgress = interpolate(progress, [0.65, 0.8], [0, 1], 'clamp');
     const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     return {
@@ -238,8 +274,7 @@ const ConnectionIntroRedesign: React.FC = () => {
     };
   });
 
-  // Heartline path (curved, like main screen)
-  const centerX = SCREEN_WIDTH / 2;
+  // Heartline path (curved)
   const curveControlX = SCREEN_WIDTH * 0.65;
   const heartlinePath = `M ${leftGlobeX} ${leftGlobeY} Q ${curveControlX} ${SCREEN_HEIGHT / 2} ${rightGlobeX} ${rightGlobeY}`;
   const heartlineLength = Math.sqrt(
@@ -253,7 +288,7 @@ const ConnectionIntroRedesign: React.FC = () => {
     };
   });
 
-  // Heartline breathing pulse - Enhanced with smoother breathing
+  // Heartline breathing
   const heartlinePulse = useSharedValue(0.5);
 
   useEffect(() => {
@@ -266,7 +301,7 @@ const ConnectionIntroRedesign: React.FC = () => {
         -1,
         false
       );
-    }, 7000);
+    }, 7500);
 
     return () => {
       clearTimeout(timer);
@@ -275,7 +310,6 @@ const ConnectionIntroRedesign: React.FC = () => {
   }, []);
 
   const heartlinePulseProps = useAnimatedProps(() => {
-    // More dynamic opacity range for better visibility
     const opacity = interpolate(
       heartlinePulse.value,
       [0.5, 0.75, 1],
@@ -288,7 +322,7 @@ const ConnectionIntroRedesign: React.FC = () => {
     };
   });
 
-  // Act 5: Final transition gradient (0.8-1)
+  // Act 6: Final transition (0.8-1)
   const finalGradientStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const gradientProgress = interpolate(progress, [0.8, 1], [0, 1], 'clamp');
@@ -301,7 +335,7 @@ const ConnectionIntroRedesign: React.FC = () => {
   // Text animations
   const titleStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
-    const textProgress = interpolate(progress, [0.3, 0.5], [0, 1], 'clamp');
+    const textProgress = interpolate(progress, [0.35, 0.55], [0, 1], 'clamp');
     const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = textProgress * fadeOut;
@@ -315,7 +349,7 @@ const ConnectionIntroRedesign: React.FC = () => {
 
   const subtitleStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
-    const textProgress = interpolate(progress, [0.5, 0.7], [0, 1], 'clamp');
+    const textProgress = interpolate(progress, [0.55, 0.75], [0, 1], 'clamp');
     const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = textProgress * fadeOut;
@@ -327,11 +361,11 @@ const ConnectionIntroRedesign: React.FC = () => {
     };
   });
 
-  // Stars fade out
+  // Stars fade
   const starsStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     return {
-      opacity: interpolate(progress, [0, 0.4, 0.95], [0.5, 0.2, 0], 'clamp'),
+      opacity: interpolate(progress, [0, 0.3, 0.95], [0.6, 0.2, 0], 'clamp'),
     };
   });
 
@@ -356,7 +390,7 @@ const ConnectionIntroRedesign: React.FC = () => {
                 top: star.y,
                 width: star.size,
                 height: star.size,
-                opacity: star.opacity * 0.8,
+                opacity: star.opacity * 0.7,
               },
             ]}
           />
@@ -368,7 +402,7 @@ const ConnectionIntroRedesign: React.FC = () => {
         <MinimalistWorldMap
           width={SCREEN_WIDTH * 0.95}
           height={(SCREEN_WIDTH * 0.95) / 2}
-          strokeColor="rgba(255, 255, 255, 0.3)"
+          strokeColor="rgba(255, 255, 255, 0.25)"
           strokeWidth={1}
         />
 
@@ -386,7 +420,7 @@ const ConnectionIntroRedesign: React.FC = () => {
               cy={myMapPos.y}
               r={4}
               fill={MARKER_CONFIG.MY_COLOR}
-              opacity={0.8}
+              opacity={0.9}
             />
             <Circle
               cx={myMapPos.x}
@@ -394,8 +428,8 @@ const ConnectionIntroRedesign: React.FC = () => {
               r={8}
               fill="none"
               stroke={MARKER_CONFIG.MY_COLOR}
-              strokeWidth={1.5}
-              opacity={0.4}
+              strokeWidth={2}
+              opacity={0.5}
             />
 
             {/* Partner city */}
@@ -404,7 +438,7 @@ const ConnectionIntroRedesign: React.FC = () => {
               cy={partnerMapPos.y}
               r={4}
               fill={MARKER_CONFIG.PARTNER_COLOR}
-              opacity={0.8}
+              opacity={0.9}
             />
             <Circle
               cx={partnerMapPos.x}
@@ -412,14 +446,14 @@ const ConnectionIntroRedesign: React.FC = () => {
               r={8}
               fill="none"
               stroke={MARKER_CONFIG.PARTNER_COLOR}
-              strokeWidth={1.5}
-              opacity={0.4}
+              strokeWidth={2}
+              opacity={0.5}
             />
           </AnimatedG>
         </Svg>
       </Animated.View>
 
-      {/* Two globes (same as Intro Screen) */}
+      {/* Two globes */}
       <Animated.View
         style={[
           styles.globeContainer,
@@ -434,9 +468,7 @@ const ConnectionIntroRedesign: React.FC = () => {
               <Stop offset="100%" stopColor="rgba(6, 182, 212, 0)" />
             </SvgRadialGradient>
           </Defs>
-          <Animated.View style={globePulseStyle}>
-            <Circle cx="40" cy="40" r="35" fill="url(#leftGlow)" opacity={0.4} />
-          </Animated.View>
+          <Circle cx="40" cy="40" r="35" fill="url(#leftGlow)" opacity={0.4} />
           <Circle
             cx="40"
             cy="40"
@@ -463,9 +495,7 @@ const ConnectionIntroRedesign: React.FC = () => {
               <Stop offset="100%" stopColor="rgba(236, 72, 153, 0)" />
             </SvgRadialGradient>
           </Defs>
-          <Animated.View style={globePulseStyle}>
-            <Circle cx="40" cy="40" r="35" fill="url(#rightGlow)" opacity={0.4} />
-          </Animated.View>
+          <Circle cx="40" cy="40" r="35" fill="url(#rightGlow)" opacity={0.4} />
           <Circle
             cx="40"
             cy="40"
@@ -475,6 +505,64 @@ const ConnectionIntroRedesign: React.FC = () => {
             strokeWidth="2"
           />
           <Circle cx="40" cy="40" r="4" fill="rgba(236, 72, 153, 1)" />
+        </Svg>
+      </Animated.View>
+
+      {/* Aura Logo - the unifying element */}
+      <Animated.View
+        style={[
+          styles.logoContainer,
+          logoStyle,
+        ]}
+      >
+        {/* Logo glow rings */}
+        <Animated.View style={[styles.logoGlowOuter, logoGlowStyle]} />
+        <Animated.View style={[styles.logoGlowInner, logoGlowStyle]} />
+
+        {/* Logo itself */}
+        <AuraLogo size={100} />
+      </Animated.View>
+
+      {/* Energy beams from Logo to globes */}
+      <Animated.View style={[StyleSheet.absoluteFill, energyBeamStyle]} pointerEvents="none">
+        <Svg width={SCREEN_WIDTH} height={SCREEN_HEIGHT}>
+          {/* Left beam */}
+          <AnimatedPath
+            d={leftBeamPath}
+            stroke="rgba(6, 182, 212, 0.8)"
+            strokeWidth="2"
+            fill="none"
+            strokeDasharray={beamLength}
+            animatedProps={energyBeamPathProps}
+          />
+          <AnimatedPath
+            d={leftBeamPath}
+            stroke="rgba(6, 182, 212, 0.3)"
+            strokeWidth="6"
+            fill="none"
+            strokeDasharray={beamLength}
+            animatedProps={energyBeamPathProps}
+            opacity={0.5}
+          />
+
+          {/* Right beam */}
+          <AnimatedPath
+            d={rightBeamPath}
+            stroke="rgba(236, 72, 153, 0.8)"
+            strokeWidth="2"
+            fill="none"
+            strokeDasharray={beamLength}
+            animatedProps={energyBeamPathProps}
+          />
+          <AnimatedPath
+            d={rightBeamPath}
+            stroke="rgba(236, 72, 153, 0.3)"
+            strokeWidth="6"
+            fill="none"
+            strokeDasharray={beamLength}
+            animatedProps={energyBeamPathProps}
+            opacity={0.5}
+          />
         </Svg>
       </Animated.View>
 
@@ -496,7 +584,7 @@ const ConnectionIntroRedesign: React.FC = () => {
           {/* Outer glow */}
           <AnimatedPath
             d={heartlinePath}
-            stroke="rgba(96, 165, 250, 0.3)"
+            stroke="rgba(167, 139, 250, 0.3)"
             strokeWidth="8"
             fill="none"
             strokeDasharray={heartlineLength}
@@ -518,7 +606,7 @@ const ConnectionIntroRedesign: React.FC = () => {
         </Animated.View>
       </View>
 
-      {/* Final transition gradient (fades in to match main screen) */}
+      {/* Final transition gradient */}
       <Animated.View style={[StyleSheet.absoluteFill, finalGradientStyle]}>
         <LinearGradient
           colors={['#1e293b', '#312e81', '#1e1b4b']}
@@ -556,9 +644,40 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
   },
+  logoContainer: {
+    position: 'absolute',
+    left: SCREEN_WIDTH / 2 - 50,
+    top: SCREEN_HEIGHT / 2 - 50,
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoGlowOuter: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(167, 139, 250, 0.15)',
+    shadowColor: '#a78bfa',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 40,
+  },
+  logoGlowInner: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(167, 139, 250, 0.2)',
+    shadowColor: '#a78bfa',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 30,
+  },
   textContainer: {
     position: 'absolute',
-    bottom: SCREEN_HEIGHT * 0.15,
+    bottom: SCREEN_HEIGHT * 0.12,
     width: '100%',
     alignItems: 'center',
     paddingHorizontal: 40,
@@ -569,7 +688,7 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     marginBottom: 12,
-    textShadowColor: 'rgba(96, 165, 250, 0.5)',
+    textShadowColor: 'rgba(167, 139, 250, 0.6)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 12,
   },
@@ -578,7 +697,7 @@ const styles = StyleSheet.create({
     color: '#cbd5e1',
     textAlign: 'center',
     fontWeight: '500',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
 });
 
