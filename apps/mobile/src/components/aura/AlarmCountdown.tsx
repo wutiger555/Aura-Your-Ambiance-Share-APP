@@ -5,6 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withRepeat,
   withTiming,
+  withSequence,
   Easing,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
@@ -45,8 +46,12 @@ const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const [showPopup, setShowPopup] = useState(false);
 
-  // Breathing pulse animation
+  // Breathing pulse animation for icon
   const pulseScale = useSharedValue(1);
+
+  // Badge update animation for real-time countdown feel
+  const badgeScale = useSharedValue(1);
+  const badgeOpacity = useSharedValue(1);
 
   useEffect(() => {
     pulseScale.value = withRepeat(
@@ -61,6 +66,12 @@ const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],
+  }));
+
+  // Badge animation for real-time countdown feel
+  const animatedBadgeStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: badgeScale.value }],
+    opacity: badgeOpacity.value,
   }));
 
   // Calculate next alarm
@@ -137,10 +148,21 @@ const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
 
-      if (hours > 0) {
-        setTimeRemaining(`${hours}h ${minutes}m`);
-      } else {
-        setTimeRemaining(`${minutes}m`);
+      const newTimeString = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+      // Only update and animate if time actually changed
+      if (newTimeString !== timeRemaining) {
+        setTimeRemaining(newTimeString);
+
+        // Trigger badge update animation for visual feedback
+        badgeScale.value = withSequence(
+          withTiming(1.15, { duration: 150, easing: Easing.out(Easing.cubic) }),
+          withTiming(1, { duration: 150, easing: Easing.inOut(Easing.cubic) })
+        );
+        badgeOpacity.value = withSequence(
+          withTiming(0.7, { duration: 100 }),
+          withTiming(1, { duration: 200 })
+        );
       }
     };
 
@@ -150,7 +172,7 @@ const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
     const interval = setInterval(updateTimeRemaining, 1000);
 
     return () => clearInterval(interval);
-  }, [nextAlarm]);
+  }, [nextAlarm, timeRemaining]);
 
   // Get compact time format for badge (e.g., "2h" or "45m")
   const getCompactTime = () => {
@@ -190,10 +212,10 @@ const AlarmCountdown: React.FC<AlarmCountdownProps> = ({ visible = true }) => {
             {/* Bell icon */}
             <Bell size={18} color="#06b6d4" strokeWidth={2.5} />
 
-            {/* Time badge */}
-            <View style={styles.badge}>
+            {/* Time badge with real-time update animation */}
+            <Animated.View style={[styles.badge, animatedBadgeStyle]}>
               <Text style={styles.badgeText}>{getCompactTime()}</Text>
-            </View>
+            </Animated.View>
           </BlurView>
         </TouchableOpacity>
       </Animated.View>
@@ -229,6 +251,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(6, 182, 212, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(6, 182, 212, 0.03)', // Subtle background for better blend
     // Subtle glow
     shadowColor: '#06b6d4',
     shadowOffset: { width: 0, height: 0 },

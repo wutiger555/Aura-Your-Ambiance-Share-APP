@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { X, Palette, MapPin, Calendar, Info } from 'lucide-react-native';
+import { X, Palette, Calendar, Info } from 'lucide-react-native';
 import { LocationData, WeatherData, DailySchedule } from '@aura/shared';
 import { useDisplaySettings, AppearanceMode } from '../stores/useDisplaySettings';
 import { useLocationStore } from '../stores/useLocationStore';
@@ -36,17 +36,16 @@ interface SettingsTabbedProps {
   onUpdateSchedules?: (mySchedule: DailySchedule, partnerSchedule: DailySchedule) => void;
 }
 
-type Tab = 'display' | 'connection' | 'schedule' | 'about';
+type Tab = 'display' | 'schedule' | 'about';
 
 /**
  * SettingsTabbed - Reorganized settings with tab navigation
- * v2.6.0: Cleaner organization for better user experience
+ * v2.6.0/v2.7.0: Cleaner organization for better user experience
  *
  * Tabs:
  * 1. Display: Appearance mode and element toggles
- * 2. Connection: Map, distance, flight info, nicknames
- * 3. Schedule: Daily Rhythm editor access
- * 4. About: CO₂, attributions, version
+ * 2. Schedule: Daily Rhythm editor access
+ * 3. About: Version, attributions, reset
  */
 export default function SettingsTabbed({
   visible,
@@ -132,16 +131,6 @@ export default function SettingsTabbed({
             <Palette size={18} color={activeTab === 'display' ? '#a78bfa' : '#94a3b8'} />
             <Text style={[styles.tabText, activeTab === 'display' && styles.tabTextActive]}>
               Display
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'connection' && styles.tabActive]}
-            onPress={() => setActiveTab('connection')}
-          >
-            <MapPin size={18} color={activeTab === 'connection' ? '#a78bfa' : '#94a3b8'} />
-            <Text style={[styles.tabText, activeTab === 'connection' && styles.tabTextActive]}>
-              Connection
             </Text>
           </TouchableOpacity>
 
@@ -242,23 +231,6 @@ export default function SettingsTabbed({
               >
                 <Text style={styles.resetDisplayText}>Reset to Minimal Defaults</Text>
               </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Connection Tab */}
-          {activeTab === 'connection' && (
-            <View style={styles.tabContent}>
-              <Text style={styles.sectionTitle}>Your Connection</Text>
-              <Text style={styles.placeholder}>
-                Map and connection info will be shown here
-                {'\n'}(Coming from existing Settings component)
-              </Text>
-              <Text style={styles.infoText}>
-                • World map with flight path{'\n'}
-                • Distance and flight time{'\n'}
-                • Airport codes{'\n'}
-                • Location nickname editing
-              </Text>
             </View>
           )}
 

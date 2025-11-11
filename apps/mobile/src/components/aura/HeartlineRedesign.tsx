@@ -318,6 +318,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 28, // Match outer button radius for perfect circle
   },
   // Info button (distance/time)
   infoButton: {
