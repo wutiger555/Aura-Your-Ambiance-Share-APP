@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -247,9 +248,18 @@ const LocationInputSimple: React.FC<LocationInputSimpleProps> = ({
         </Svg>
       </View>
 
-      {/* Input Section */}
-      <BlurView intensity={60} tint="dark" style={styles.inputSection}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {/* Input Section with Keyboard Avoidance */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <BlurView intensity={60} tint="dark" style={styles.inputSection}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           <Text style={styles.title}>
             {step === 'my' ? 'Where are you?' : step === 'partner' ? "Where's your partner?" : 'Confirm locations'}
           </Text>
@@ -351,6 +361,7 @@ const LocationInputSimple: React.FC<LocationInputSimpleProps> = ({
           </TouchableOpacity>
         </ScrollView>
       </BlurView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -370,15 +381,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
   },
-  inputSection: {
+  keyboardAvoidingView: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    maxHeight: '65%', // Increased to give more space when keyboard appears
+  },
+  inputSection: {
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     overflow: 'hidden',
-    maxHeight: '50%',
+    flex: 1,
   },
   scrollContent: {
     paddingTop: 32,

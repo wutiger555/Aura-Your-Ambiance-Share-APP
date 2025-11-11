@@ -19,16 +19,18 @@ interface CityCoordinates {
 /**
  * Search for cities by name using Nominatim API
  * @param query - City name to search
- * @returns Array of city suggestions
+ * @returns Array of city suggestions (deduplicated, English names only)
  */
 export async function searchCities(query: string): Promise<CitySuggestion[]> {
   try {
     const encodedQuery = encodeURIComponent(query);
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=5&featuretype=city&addressdetails=1`;
+    // Request more results to filter duplicates, force English with accept-language
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=15&featuretype=city&addressdetails=1`;
 
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Aura-App/2.7.0',
+        'Accept-Language': 'en', // Force English results
       },
     });
 
@@ -38,12 +40,27 @@ export async function searchCities(query: string): Promise<CitySuggestion[]> {
 
     const data = await response.json();
 
-    return data.map((item: any) => ({
+    // Map and deduplicate by city name
+    const cities = data.map((item: any) => ({
       name: item.address.city || item.address.town || item.address.village || item.display_name.split(',')[0],
       country: item.address.country || 'Unknown',
       latitude: parseFloat(item.lat),
       longitude: parseFloat(item.lon),
     }));
+
+    // Deduplicate by city name (keep first occurrence)
+    const seen = new Set<string>();
+    const uniqueCities = cities.filter((city: CitySuggestion) => {
+      const key = `${city.name.toLowerCase()}, ${city.country.toLowerCase()}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+
+    // Return max 5 unique results
+    return uniqueCities.slice(0, 5);
   } catch (error) {
     console.error('[Geocoding] Search failed:', error);
     return [];
