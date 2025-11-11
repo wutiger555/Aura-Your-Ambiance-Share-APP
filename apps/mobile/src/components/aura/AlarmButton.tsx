@@ -9,13 +9,19 @@ interface AlarmButtonProps {
 }
 
 const AlarmButton: React.FC<AlarmButtonProps> = ({ onPress }) => {
+  const handlePress = () => {
+    console.log('[AlarmButton] Button pressed');
+    onPress();
+  };
+
   return (
     <TouchableOpacity
       style={styles.container}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.7}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
     >
-      <BlurView intensity={20} style={styles.blur}>
+      <BlurView intensity={20} style={styles.blur} pointerEvents="none">
         <LinearGradient
           colors={['rgba(6, 182, 212, 0.3)', 'rgba(147, 51, 234, 0.3)']}
           start={{ x: 0, y: 0 }}
@@ -43,6 +49,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
+    zIndex: 100, // Ensure button is above other components
   },
   blur: {
     flex: 1,

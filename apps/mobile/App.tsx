@@ -325,11 +325,13 @@ export default function App() {
               setMyLocation(myLoc);
               setPartnerLocation(partnerLoc);
 
-              // Set couple names if provided
+              // Set couple names and emojis if provided
               if (data.coupleNames) {
                 setCoupleProfile({
                   myName: data.coupleNames.myName,
                   partnerName: data.coupleNames.partnerName,
+                  myEmoji: data.coupleNames.myEmoji,
+                  partnerEmoji: data.coupleNames.partnerEmoji,
                 });
               }
 
