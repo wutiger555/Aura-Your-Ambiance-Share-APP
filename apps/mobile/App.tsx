@@ -27,7 +27,8 @@ import IntroScreen from './src/components/aura/IntroScreenLottie'; // Lottie - p
 // import IntroScreen from './src/components/aura/IntroScreenNative'; // Native Animated API - simple fallback
 // import IntroScreen from './src/components/aura/IntroScreenStatic'; // ZERO animations fallback
 // import IntroScreen from './src/components/aura/IntroScreenAnimated'; // Reanimated (crashes on some simulators)
-import OnboardingFlow from './src/components/aura/OnboardingFlow'; // v2.6.5: Tutorial-style guided onboarding
+// import OnboardingFlow from './src/components/aura/OnboardingFlow'; // v2.6.5: Tutorial-style guided onboarding (old version)
+import QuickStartMapFlow from './src/components/aura/QuickStartMapFlow'; // v2.7.0: Premium interactive map interface
 import ConnectionIntro from './src/components/aura/ConnectionIntroRedesign';
 import BlendedSky from './src/components/aura/BlendedSky';
 import AuraGlobeMinimal from './src/components/aura/AuraGlobeMinimal'; // v2.6.0: Minimal version
@@ -299,12 +300,12 @@ export default function App() {
     );
   }
 
-  // v2.6.5: Render OnboardingFlow (tutorial-style guided setup)
+  // v2.7.0: Render QuickStartMapFlow (premium interactive map interface)
   if (setupStep === 'quickStart') {
     return (
       <>
         <StatusBar barStyle="light-content" />
-        <OnboardingFlow
+        <QuickStartMapFlow
           isReturningUser={isReturningUser}
           onComplete={async (data) => {
             setLoading(true);
