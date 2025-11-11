@@ -1016,12 +1016,12 @@ const styles = StyleSheet.create({
 
   // Display mode selection - Premium card design
   displayModeList: {
-    gap: 18,
-    marginBottom: 40, // Increased from 32 to ensure button has space
+    gap: 12, // Reduced from 18 to make cards more compact
+    marginBottom: 24,
   },
   displayModeCard: {
-    padding: 24,
-    borderRadius: 20,
+    padding: 16, // Reduced from 24 to make cards smaller
+    borderRadius: 16, // Slightly reduced for proportion
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -1047,20 +1047,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   displayModeLabel: {
-    fontSize: 20,
+    fontSize: 18, // Reduced from 20 for more compact look
     fontWeight: '700',
     color: 'white',
   },
   displayModeDescription: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 12,
+    marginBottom: 8, // Reduced from 12
   },
   displayModeFeatures: {
-    gap: 6,
+    gap: 4, // Reduced from 6
   },
   displayModeFeature: {
-    fontSize: 13,
+    fontSize: 12, // Reduced from 13
     color: 'rgba(255, 255, 255, 0.5)',
   },
 

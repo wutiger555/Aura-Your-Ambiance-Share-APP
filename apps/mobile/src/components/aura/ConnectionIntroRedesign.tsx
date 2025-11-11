@@ -8,8 +8,10 @@ import Animated, {
   withDelay,
   withSequence,
   withRepeat,
+  withSpring,
   Easing,
   interpolate,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -84,13 +86,19 @@ const ConnectionIntroRedesign: React.FC = () => {
 
   useEffect(() => {
     // Journey duration matches ANIMATION_DURATIONS.CONNECTION_INTRO
+    // Using bezier easing for smoother, more premium feel
     masterProgress.value = withTiming(1, {
       duration: ANIMATION_DURATIONS.CONNECTION_INTRO,
-      easing: Easing.inOut(Easing.cubic),
+      easing: Easing.bezier(0.4, 0.0, 0.2, 1), // Material Design standard easing
     });
+
+    // Cleanup animations on unmount
+    return () => {
+      cancelAnimation(masterProgress);
+    };
   }, []);
 
-  // Act 1: Globes appear (0-0.2)
+  // Act 1: Globes appear (0-0.2) - Enhanced with elastic entrance
   const leftGlobeStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const appearProgress = interpolate(progress, [0, 0.2], [0, 1], 'clamp');
@@ -99,11 +107,16 @@ const ConnectionIntroRedesign: React.FC = () => {
     const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = appearProgress * fadeOut;
-    const scale = interpolate(appearProgress, [0, 1], [0.3, 1], 'clamp');
+    // Elastic scale for more dynamic entrance (overshoots slightly)
+    const rawScale = interpolate(appearProgress, [0, 0.6, 1], [0.3, 1.15, 1], 'clamp');
+    const scale = rawScale;
+
+    // Subtle rotation for more life
+    const rotate = interpolate(appearProgress, [0, 1], [-5, 0], 'clamp');
 
     return {
       opacity,
-      transform: [{ scale }],
+      transform: [{ scale }, { rotate: `${rotate}deg` }],
     };
   });
 
@@ -113,47 +126,77 @@ const ConnectionIntroRedesign: React.FC = () => {
     const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = appearProgress * fadeOut;
-    const scale = interpolate(appearProgress, [0, 1], [0.3, 1], 'clamp');
+    // Elastic scale with different timing for visual interest
+    const rawScale = interpolate(appearProgress, [0, 0.6, 1], [0.3, 1.15, 1], 'clamp');
+    const scale = rawScale;
+
+    // Opposite rotation for balance
+    const rotate = interpolate(appearProgress, [0, 1], [5, 0], 'clamp');
 
     return {
       opacity,
-      transform: [{ scale }],
+      transform: [{ scale }, { rotate: `${rotate}deg` }],
     };
   });
 
-  // Globe breathing pulse (starts after appearance)
+  // Globe breathing pulse (starts after appearance) - Enhanced breathing
   const globePulse = useSharedValue(0);
 
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       globePulse.value = withRepeat(
         withSequence(
-          withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.sin) })
+          withTiming(1, { duration: 1800, easing: Easing.bezier(0.37, 0, 0.63, 1) }),
+          withTiming(0, { duration: 1800, easing: Easing.bezier(0.37, 0, 0.63, 1) })
         ),
         -1,
         false
       );
     }, 2000);
+
+    return () => {
+      clearTimeout(timer);
+      cancelAnimation(globePulse);
+    };
   }, []);
 
-  const globePulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + globePulse.value * 0.1 }],
-    opacity: 0.5 + globePulse.value * 0.3,
-  }));
+  const globePulseStyle = useAnimatedStyle(() => {
+    // More subtle, organic breathing
+    const pulseScale = interpolate(
+      globePulse.value,
+      [0, 0.5, 1],
+      [0, 0.12, 0], // Slightly larger pulse for more visible effect
+      'clamp'
+    );
+    const pulseOpacity = interpolate(
+      globePulse.value,
+      [0, 0.5, 1],
+      [0.4, 0.8, 0.4],
+      'clamp'
+    );
 
-  // Act 3: World map emerges (0.4-0.6)
+    return {
+      transform: [{ scale: 1 + pulseScale }],
+      opacity: pulseOpacity,
+    };
+  });
+
+  // Act 3: World map emerges (0.4-0.6) - Enhanced with smooth zoom
   const worldMapStyle = useAnimatedStyle(() => {
     const progress = masterProgress.value;
     const mapProgress = interpolate(progress, [0.4, 0.6], [0, 1], 'clamp');
     const fadeOut = interpolate(progress, [0.95, 1], [1, 0], 'clamp');
 
     const opacity = mapProgress * 0.6 * fadeOut;
-    const scale = interpolate(mapProgress, [0, 1], [0.7, 1], 'clamp');
+    // Smoother scale transition with slight overshoot
+    const scale = interpolate(mapProgress, [0, 0.7, 1], [0.7, 1.05, 1], 'clamp');
+
+    // Subtle rotation for more dynamic entrance
+    const rotate = interpolate(mapProgress, [0, 1], [2, 0], 'clamp');
 
     return {
       opacity,
-      transform: [{ scale }],
+      transform: [{ scale }, { rotate: `${rotate}deg` }],
     };
   });
 
@@ -168,7 +211,7 @@ const ConnectionIntroRedesign: React.FC = () => {
     };
   });
 
-  // Act 4: Heartline formation (0.6-0.8)
+  // Act 4: Heartline formation (0.6-0.8) - Smoother drawing animation
   const heartlineProgress = useSharedValue(0);
 
   useEffect(() => {
@@ -176,9 +219,13 @@ const ConnectionIntroRedesign: React.FC = () => {
       6000,
       withTiming(1, {
         duration: 2000,
-        easing: Easing.inOut(Easing.cubic),
+        easing: Easing.bezier(0.65, 0, 0.35, 1), // Custom bezier for smooth drawing
       })
     );
+
+    return () => {
+      cancelAnimation(heartlineProgress);
+    };
   }, []);
 
   const heartlineStyle = useAnimatedStyle(() => {
@@ -206,25 +253,40 @@ const ConnectionIntroRedesign: React.FC = () => {
     };
   });
 
-  // Heartline breathing pulse
+  // Heartline breathing pulse - Enhanced with smoother breathing
   const heartlinePulse = useSharedValue(0.5);
 
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       heartlinePulse.value = withRepeat(
         withSequence(
-          withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0.5, { duration: 2000, easing: Easing.inOut(Easing.sin) })
+          withTiming(1, { duration: 2000, easing: Easing.bezier(0.45, 0.05, 0.55, 0.95) }),
+          withTiming(0.5, { duration: 2000, easing: Easing.bezier(0.45, 0.05, 0.55, 0.95) })
         ),
         -1,
         false
       );
     }, 7000);
+
+    return () => {
+      clearTimeout(timer);
+      cancelAnimation(heartlinePulse);
+    };
   }, []);
 
-  const heartlinePulseProps = useAnimatedProps(() => ({
-    strokeOpacity: heartlinePulse.value,
-  }));
+  const heartlinePulseProps = useAnimatedProps(() => {
+    // More dynamic opacity range for better visibility
+    const opacity = interpolate(
+      heartlinePulse.value,
+      [0.5, 0.75, 1],
+      [0.5, 0.9, 0.7],
+      'clamp'
+    );
+
+    return {
+      strokeOpacity: opacity,
+    };
+  });
 
   // Act 5: Final transition gradient (0.8-1)
   const finalGradientStyle = useAnimatedStyle(() => {
