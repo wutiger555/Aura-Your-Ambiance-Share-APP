@@ -14,7 +14,9 @@ import { Clock, Globe, Trash2 } from 'lucide-react-native';
 interface AlarmCardProps {
   alarm: Alarm;
   displayTime: { hour: number; minute: number }; // Time in local timezone
+  referenceTime: { hour: number; minute: number }; // Time in reference timezone (original)
   referenceLocation: string; // Name of the reference location (my city or partner's city)
+  localLocation: string; // Name of the local location (other timezone)
   onToggle: (id: string) => void;
   onEdit: (alarm: Alarm) => void;
   onDelete: (id: string) => void;
@@ -24,7 +26,9 @@ interface AlarmCardProps {
 const AlarmCard: React.FC<AlarmCardProps> = ({
   alarm,
   displayTime,
+  referenceTime,
   referenceLocation,
+  localLocation,
   onToggle,
   onEdit,
   onDelete,
@@ -51,24 +55,63 @@ const AlarmCard: React.FC<AlarmCardProps> = ({
         <View style={styles.content}>
           {/* Left side: Time and label */}
           <View style={styles.leftSection}>
-            <View style={styles.timeRow}>
-              <Text
-                style={[
-                  styles.timeText,
-                  !alarm.enabled && styles.disabledText,
-                ]}
-              >
-                {formatAlarmTime(displayTime.hour, displayTime.minute, use24Hour)}
-              </Text>
-              <View style={styles.toggleContainer}>
-                <Switch
-                  value={alarm.enabled}
-                  onValueChange={() => onToggle(alarm.id)}
-                  trackColor={{ false: '#374151', true: '#06b6d4' }}
-                  thumbColor={alarm.enabled ? '#ffffff' : '#9ca3af'}
-                  ios_backgroundColor="#374151"
-                />
+            {/* Dual-timezone display */}
+            <View style={styles.dualTimezoneContainer}>
+              {/* Primary (local) time - larger */}
+              <View style={styles.primaryTimeSection}>
+                <Text
+                  style={[
+                    styles.timeText,
+                    !alarm.enabled && styles.disabledText,
+                  ]}
+                >
+                  {formatAlarmTime(displayTime.hour, displayTime.minute, use24Hour)}
+                </Text>
+                <Text
+                  style={[
+                    styles.timezoneLabelSmall,
+                    !alarm.enabled && styles.disabledText,
+                  ]}
+                >
+                  {localLocation}
+                </Text>
               </View>
+
+              {/* Arrow indicator */}
+              <View style={styles.arrowContainer}>
+                <Text style={styles.arrowText}>⟷</Text>
+              </View>
+
+              {/* Reference time - smaller */}
+              <View style={styles.secondaryTimeSection}>
+                <Text
+                  style={[
+                    styles.secondaryTimeText,
+                    !alarm.enabled && styles.disabledText,
+                  ]}
+                >
+                  {formatAlarmTime(referenceTime.hour, referenceTime.minute, use24Hour)}
+                </Text>
+                <Text
+                  style={[
+                    styles.timezoneLabelSmall,
+                    !alarm.enabled && styles.disabledText,
+                  ]}
+                >
+                  {referenceLocation}
+                </Text>
+              </View>
+            </View>
+
+            {/* Toggle switch */}
+            <View style={styles.toggleRow}>
+              <Switch
+                value={alarm.enabled}
+                onValueChange={() => onToggle(alarm.id)}
+                trackColor={{ false: '#374151', true: '#06b6d4' }}
+                thumbColor={alarm.enabled ? '#ffffff' : '#9ca3af'}
+                ios_backgroundColor="#374151"
+              />
             </View>
 
             {alarm.label && (
@@ -146,20 +189,51 @@ const styles = StyleSheet.create({
   leftSection: {
     flex: 1,
   },
-  timeRow: {
+  dualTimezoneContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
+    paddingRight: 8,
+  },
+  primaryTimeSection: {
+    flex: 1,
+  },
+  secondaryTimeSection: {
+    alignItems: 'flex-end',
+  },
+  arrowContainer: {
+    marginHorizontal: 12,
+  },
+  arrowText: {
+    fontSize: 20,
+    color: 'rgba(255, 255, 255, 0.3)',
   },
   timeText: {
     fontSize: 36,
     fontWeight: '300',
     color: '#ffffff',
     letterSpacing: -1,
+    marginBottom: 4,
   },
-  toggleContainer: {
-    marginLeft: 16,
+  secondaryTimeText: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: 'rgba(255, 255, 255, 0.7)',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  timezoneLabelSmall: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   labelText: {
     fontSize: 16,

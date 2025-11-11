@@ -42,6 +42,7 @@ import MessageCenter from './src/components/aura/MessageCenter'; // v2.5.0
 import SettingsButton from './src/components/aura/SettingsButton'; // v2.6.0: Elegant gear button
 import AlarmButton from './src/components/aura/AlarmButton'; // v2.7.0: Multi-timezone alarm button
 import AlarmListScreen from './src/components/aura/AlarmListScreen'; // v2.7.0: Alarm list screen
+import AlarmCountdown from './src/components/aura/AlarmCountdown'; // v2.7.0: Countdown indicator for upcoming alarms
 import { ANIMATION_DURATIONS } from './src/constants/Animations';
 import { generateWeatherReminders, generateTemperatureDifferenceReminder } from './src/utils/weatherReminders'; // v2.5.0
 import { hasLocationChanged, autoDetectCity } from './src/utils/locationService'; // v2.6.0
@@ -466,6 +467,9 @@ export default function App() {
         onSwapPositions={toggleSwappedPositions}
         showInfo={showHeartlineInfo}
       />
+
+      {/* AlarmCountdown (v2.7.0: Subtle countdown for upcoming alarms) */}
+      <AlarmCountdown visible={true} />
 
       {/* SettingsButton (v2.6.0: Elegant gear button replacing ConnectionWidget) */}
       <SettingsButton

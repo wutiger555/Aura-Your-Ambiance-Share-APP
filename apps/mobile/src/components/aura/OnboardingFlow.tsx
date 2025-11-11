@@ -1017,7 +1017,7 @@ const styles = StyleSheet.create({
   // Display mode selection - Premium card design
   displayModeList: {
     gap: 18,
-    marginBottom: 32,
+    marginBottom: 40, // Increased from 32 to ensure button has space
   },
   displayModeCard: {
     padding: 24,

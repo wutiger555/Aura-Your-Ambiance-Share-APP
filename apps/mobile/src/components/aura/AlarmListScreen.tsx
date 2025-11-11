@@ -219,18 +219,31 @@ const AlarmListScreen: React.FC<AlarmListScreenProps> = ({
                     myTimezone
                   );
 
-                  // Get reference location name
+                  // Reference time (original time set in reference timezone)
+                  const referenceTime = {
+                    hour: alarm.hour,
+                    minute: alarm.minute,
+                  };
+
+                  // Get location names
                   const referenceLocation =
                     alarm.timeZoneReference === 'my'
                       ? myLocation?.name || 'Your location'
                       : partnerLocation?.name || "Partner's location";
+
+                  const localLocation =
+                    alarm.timeZoneReference === 'my'
+                      ? partnerLocation?.name || "Partner's location"
+                      : myLocation?.name || 'Your location';
 
                   return (
                     <AlarmCard
                       key={alarm.id}
                       alarm={alarm}
                       displayTime={localTime}
+                      referenceTime={referenceTime}
                       referenceLocation={referenceLocation}
+                      localLocation={localLocation}
                       onToggle={handleToggleAlarm}
                       onEdit={handleEditAlarm}
                       onDelete={handleDeleteAlarm}
