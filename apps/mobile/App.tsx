@@ -40,6 +40,8 @@ import MilestoneEditModal from './src/components/aura/MilestoneEditModal'; // v2
 import WeatherReminderCard from './src/components/aura/WeatherReminderCard'; // v2.5.0
 import MessageCenter from './src/components/aura/MessageCenter'; // v2.5.0
 import SettingsButton from './src/components/aura/SettingsButton'; // v2.6.0: Elegant gear button
+import AlarmButton from './src/components/aura/AlarmButton'; // v2.7.0: Multi-timezone alarm button
+import AlarmListScreen from './src/components/aura/AlarmListScreen'; // v2.7.0: Alarm list screen
 import { ANIMATION_DURATIONS } from './src/constants/Animations';
 import { generateWeatherReminders, generateTemperatureDifferenceReminder } from './src/utils/weatherReminders'; // v2.5.0
 import { hasLocationChanged, autoDetectCity } from './src/utils/locationService'; // v2.6.0
@@ -108,6 +110,7 @@ export default function App() {
   const [editingStatus, setEditingStatus] = useState<'me' | 'partner' | null>(null); // v2.5.0
   const [showMilestoneEdit, setShowMilestoneEdit] = useState(false); // v2.5.0
   const [showMessages, setShowMessages] = useState(false); // v2.5.0
+  const [showAlarms, setShowAlarms] = useState(false); // v2.7.0: Multi-timezone alarms
   const [hasCheckedLocation, setHasCheckedLocation] = useState(false); // v2.6.0: Track if we've checked location
 
   // v2.5.0: Generate weather reminders (must be before any conditional returns)
@@ -467,6 +470,11 @@ export default function App() {
         onPress={() => setShowSettings(true)}
       />
 
+      {/* AlarmButton (v2.7.0: Multi-timezone alarm access) */}
+      <AlarmButton
+        onPress={() => setShowAlarms(true)}
+      />
+
       {/* v2.5.0/v2.6.0: Relationship Milestone (conditional based on DisplaySettings) */}
       {showMilestones && coupleProfile && (
         <RelationshipMilestone
@@ -557,6 +565,12 @@ export default function App() {
         onClose={() => setShowMessages(false)}
         onSend={(content, emoji) => addMessage(content, true, emoji)}
         onDelete={deleteMessage}
+      />
+
+      {/* v2.7.0: Multi-timezone Alarm List */}
+      <AlarmListScreen
+        visible={showAlarms}
+        onClose={() => setShowAlarms(false)}
       />
       </View>
     </GestureHandlerRootView>
