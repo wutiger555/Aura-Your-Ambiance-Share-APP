@@ -424,9 +424,10 @@ export default function App() {
         <StatusBar barStyle="light-content" />
 
       {/* Blended Sky Background with Celestial Bodies and Particles */}
+      {/* v2.6.6: Now respects swap state */}
       <BlendedSky
-        myWeather={myWeather!}
-        partnerWeather={partnerWeather!}
+        topWeather={topWeather!}
+        bottomWeather={bottomWeather!}
         distance={distance}
       />
 

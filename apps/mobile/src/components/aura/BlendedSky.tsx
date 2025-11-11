@@ -15,8 +15,8 @@ import {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface BlendedSkyProps {
-  myWeather: WeatherData | null;
-  partnerWeather: WeatherData | null;
+  topWeather: WeatherData | null; // v2.6.6: Renamed for clarity (respects swap state)
+  bottomWeather: WeatherData | null; // v2.6.6: Renamed for clarity (respects swap state)
   distance: number | null;
 }
 
@@ -46,57 +46,57 @@ const getWeatherEffect = (weatherCode: number) => {
 
 /**
  * BlendedSky - Blended gradient sky system with dynamic weather effects
- * Uses MaskedView to create smooth gradient blending between two weather states
+ * v2.6.6: Now respects swap state via topWeather/bottomWeather props
  */
 const BlendedSky: React.FC<BlendedSkyProps> = ({
-  myWeather,
-  partnerWeather,
+  topWeather,
+  bottomWeather,
   distance,
 }) => {
   // Get gradient colors for each weather
-  const myAtmosphere = myWeather
+  const topAtmosphere = topWeather
     ? getWeatherAtmosphere(
-        myWeather.current.weather_code,
-        myWeather.current.is_day === 1,
+        topWeather.current.weather_code,
+        topWeather.current.is_day === 1,
         distance
       )
     : null;
 
-  const partnerAtmosphere = partnerWeather
+  const bottomAtmosphere = bottomWeather
     ? getWeatherAtmosphere(
-        partnerWeather.current.weather_code,
-        partnerWeather.current.is_day === 1,
+        bottomWeather.current.weather_code,
+        bottomWeather.current.is_day === 1,
         distance
       )
     : null;
 
   // Get gradient colors - now directly from atmosphere.gradient which is already a tuple
-  const partnerColors = partnerAtmosphere?.gradient || ['#64748b', '#334155'];
-  const myColors = myAtmosphere?.gradient || ['#64748b', '#334155'];
+  const topColors = topAtmosphere?.gradient || ['#64748b', '#334155'];
+  const bottomColors = bottomAtmosphere?.gradient || ['#64748b', '#334155'];
 
   // Determine weather effects for each half
-  const myWeatherEffect = myWeather ? getWeatherEffect(myWeather.current.weather_code) : null;
-  const partnerWeatherEffect = partnerWeather ? getWeatherEffect(partnerWeather.current.weather_code) : null;
+  const topWeatherEffect = topWeather ? getWeatherEffect(topWeather.current.weather_code) : null;
+  const bottomWeatherEffect = bottomWeather ? getWeatherEffect(bottomWeather.current.weather_code) : null;
 
   // Determine if it's night time for both locations (for starfield)
-  const isMyNight = myWeather ? myWeather.current.is_day === 0 : false;
-  const isPartnerNight = partnerWeather ? partnerWeather.current.is_day === 0 : false;
-  const isAnyNight = isMyNight || isPartnerNight;
+  const isTopNight = topWeather ? topWeather.current.is_day === 0 : false;
+  const isBottomNight = bottomWeather ? bottomWeather.current.is_day === 0 : false;
+  const isAnyNight = isTopNight || isBottomNight;
 
   return (
     <View style={styles.container}>
-      {/* Top half (partner weather) - NO MASK, clean separation */}
+      {/* Top half - NO MASK, clean separation */}
       <View style={styles.topHalf}>
         {/* Background gradient */}
         <LinearGradient
-          colors={partnerColors}
+          colors={topColors}
           style={StyleSheet.absoluteFill}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
         />
 
-        {/* Starfield for partner (only if night) */}
-        {isPartnerNight && (
+        {/* Starfield for top (only if night) */}
+        {isTopNight && (
           <View style={StyleSheet.absoluteFill}>
             <EnhancedStarfield
               density={0.6}
@@ -107,33 +107,33 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
         )}
 
         {/* Celestial body for top half */}
-        {partnerWeather && (
-          <CelestialSky weather={partnerWeather} isTop={true} />
+        {topWeather && (
+          <CelestialSky weather={topWeather} isTop={true} />
         )}
 
         {/* Weather effects for top half */}
-        {partnerWeatherEffect && partnerWeather && (
+        {topWeatherEffect && topWeather && (
           <View style={StyleSheet.absoluteFill}>
-            {partnerWeatherEffect.type === 'rain' && (
+            {topWeatherEffect.type === 'rain' && (
               <EnhancedRainEffect
-                intensity={partnerWeatherEffect.intensity}
-                isDay={partnerWeather.current.is_day === 1}
+                intensity={topWeatherEffect.intensity}
+                isDay={topWeather.current.is_day === 1}
               />
             )}
-            {partnerWeatherEffect.type === 'snow' && (
+            {topWeatherEffect.type === 'snow' && (
               <EnhancedSnowEffect
-                intensity={partnerWeatherEffect.intensity}
-                isDay={partnerWeather.current.is_day === 1}
+                intensity={topWeatherEffect.intensity}
+                isDay={topWeather.current.is_day === 1}
               />
             )}
-            {partnerWeatherEffect.type === 'clouds' && (
+            {topWeatherEffect.type === 'clouds' && (
               <CloudEffect
-                density={partnerWeatherEffect.density}
-                isDay={partnerWeather.current.is_day === 1}
+                density={topWeatherEffect.density}
+                isDay={topWeather.current.is_day === 1}
               />
             )}
-            {partnerWeatherEffect.type === 'thunderstorm' && (
-              <EnhancedThunderstormEffect isDay={partnerWeather.current.is_day === 1} />
+            {topWeatherEffect.type === 'thunderstorm' && (
+              <EnhancedThunderstormEffect isDay={topWeather.current.is_day === 1} />
             )}
           </View>
         )}
@@ -152,18 +152,18 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
         />
       </View>
 
-      {/* Bottom half (my weather) - NO MASK, clean separation */}
+      {/* Bottom half - NO MASK, clean separation */}
       <View style={styles.bottomHalf}>
         {/* Background gradient */}
         <LinearGradient
-          colors={myColors}
+          colors={bottomColors}
           style={StyleSheet.absoluteFill}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
         />
 
-        {/* Starfield for me (only if night) */}
-        {isMyNight && (
+        {/* Starfield for bottom (only if night) */}
+        {isBottomNight && (
           <View style={StyleSheet.absoluteFill}>
             <EnhancedStarfield
               density={0.6}
@@ -174,31 +174,31 @@ const BlendedSky: React.FC<BlendedSkyProps> = ({
         )}
 
         {/* Celestial body for bottom half */}
-        {myWeather && <CelestialSky weather={myWeather} isTop={false} />}
+        {bottomWeather && <CelestialSky weather={bottomWeather} isTop={false} />}
 
         {/* Weather effects for bottom half */}
-        {myWeatherEffect && myWeather && (
+        {bottomWeatherEffect && bottomWeather && (
           <View style={StyleSheet.absoluteFill}>
-            {myWeatherEffect.type === 'rain' && (
+            {bottomWeatherEffect.type === 'rain' && (
               <EnhancedRainEffect
-                intensity={myWeatherEffect.intensity}
-                isDay={myWeather.current.is_day === 1}
+                intensity={bottomWeatherEffect.intensity}
+                isDay={bottomWeather.current.is_day === 1}
               />
             )}
-            {myWeatherEffect.type === 'snow' && (
+            {bottomWeatherEffect.type === 'snow' && (
               <EnhancedSnowEffect
-                intensity={myWeatherEffect.intensity}
-                isDay={myWeather.current.is_day === 1}
+                intensity={bottomWeatherEffect.intensity}
+                isDay={bottomWeather.current.is_day === 1}
               />
             )}
-            {myWeatherEffect.type === 'clouds' && (
+            {bottomWeatherEffect.type === 'clouds' && (
               <CloudEffect
-                density={myWeatherEffect.density}
-                isDay={myWeather.current.is_day === 1}
+                density={bottomWeatherEffect.density}
+                isDay={bottomWeather.current.is_day === 1}
               />
             )}
-            {myWeatherEffect.type === 'thunderstorm' && (
-              <EnhancedThunderstormEffect isDay={myWeather.current.is_day === 1} />
+            {bottomWeatherEffect.type === 'thunderstorm' && (
+              <EnhancedThunderstormEffect isDay={bottomWeather.current.is_day === 1} />
             )}
           </View>
         )}
