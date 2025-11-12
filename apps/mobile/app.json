@@ -2,7 +2,7 @@
   "expo": {
     "name": "Aura",
     "slug": "aura-ambiance-share",
-    "version": "2.6.0",
+    "version": "2.8.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,9 +15,13 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "plugins": [
+      "./plugins/withAlarmKit"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aura.ambianceshare",
+      "deploymentTarget": "26.0",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aura needs your location to create a shared atmosphere with your loved one.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aura uses your location to blend skies and connect your worlds."
